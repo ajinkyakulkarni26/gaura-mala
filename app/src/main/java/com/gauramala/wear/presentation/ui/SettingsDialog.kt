@@ -1,5 +1,6 @@
 package com.gauramala.wear.presentation.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,6 +43,10 @@ fun SettingsDialog(
     onDismiss: () -> Unit
 ) {
     var pendingReset by remember { mutableStateOf<ResetTarget?>(null) }
+
+    BackHandler(enabled = pendingReset != null) {
+        pendingReset = null
+    }
 
     if (pendingReset != null) {
         val isDailyReset = pendingReset == ResetTarget.DAILY_COUNT

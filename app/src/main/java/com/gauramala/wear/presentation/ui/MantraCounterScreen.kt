@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Undo
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -81,8 +82,15 @@ fun MantraCounterScreen(
         }
     }
 
+    BackHandler(enabled = showSettings && !isAmbient) {
+        showSettings = false
+    }
+    BackHandler(enabled = state.showGoalAchievedDialog && !isAmbient) {
+        viewModel.dismissGoalDialog()
+    }
+
     // Dialog Overlays
-    if (showSettings) {
+    if (showSettings && !isAmbient) {
         SettingsDialog(
             state = state,
             viewModel = viewModel,
@@ -91,7 +99,7 @@ fun MantraCounterScreen(
         return
     }
 
-    if (state.showGoalAchievedDialog) {
+    if (state.showGoalAchievedDialog && !isAmbient) {
         SummaryDialog(
             state = state,
             onDismiss = { viewModel.dismissGoalDialog() }
@@ -105,7 +113,7 @@ fun MantraCounterScreen(
         .onRotaryScrollEvent { event ->
             // Advance once per rotary detent while ignoring reverse rotation.
             val delta = event.verticalScrollPixels
-            if (delta <= 0f) {
+            if (isAmbient || delta <= 0f) {
                 rotaryPixels = 0f
                 false
             } else {
