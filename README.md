@@ -90,6 +90,13 @@ gaura-mala/
 
 ## 🚀 Getting Started
 
+### Requirements
+- Android Studio Quail 4 (2026.1.4) or newer, JDK 17, and the Android SDK Platform 37.
+- The Gradle wrapper uses Gradle 9.3.1 and Android Gradle Plugin 9.1.1.
+- To run the app in an emulator, install the Wear OS 7 (API 37) system image for your computer's architecture in Android Studio's SDK Manager, then create a round Wear OS device in Device Manager. Use revision 5 or newer of the API 37 image for reliable Google services.
+
+Build the debug app from the repository root with `./gradlew assembleDebug`. Android Studio can also build and install it with the `app` run configuration.
+
 ### 1. Open in Android Studio
 1. Launch **Android Studio**.
 2. Select **Open** and choose this repository's `gaura-mala` folder.
