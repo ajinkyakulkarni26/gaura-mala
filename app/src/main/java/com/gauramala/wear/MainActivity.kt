@@ -5,7 +5,10 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.wear.compose.foundation.LocalAmbientModeManager
+import androidx.wear.compose.foundation.rememberAmbientModeManager
 import com.gauramala.wear.presentation.MantraCounterViewModel
 import com.gauramala.wear.presentation.theme.GauraMalaTheme
 import com.gauramala.wear.presentation.ui.MantraCounterScreen
@@ -15,6 +18,11 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MantraCounterViewModel by viewModels()
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshDailySession()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,7 +40,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             GauraMalaTheme {
-                MantraCounterScreen(viewModel = viewModel)
+                val ambientModeManager = rememberAmbientModeManager()
+                CompositionLocalProvider(
+                    LocalAmbientModeManager provides ambientModeManager
+                ) {
+                    MantraCounterScreen(viewModel = viewModel)
+                }
             }
         }
     }

@@ -13,18 +13,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.focusable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,6 +41,15 @@ import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.foundation.AmbientMode
+import androidx.wear.compose.foundation.LocalAmbientModeManager
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureAction
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicatorState
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGesturePriority
+import androidx.wear.compose.material3.onehandedgesture.oneHandedGesture
+import androidx.wear.compose.material3.onehandedgesture.rememberOneHandedGestureConfiguration
+import kotlinx.coroutines.launch
 import com.gauramala.wear.presentation.MantraCounterViewModel
 import com.gauramala.wear.presentation.theme.GauraGold
 import com.gauramala.wear.presentation.theme.GauraGoldLight
@@ -48,6 +63,23 @@ fun MantraCounterScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showSettings by remember { mutableStateOf(false) }
+    val isAmbient = LocalAmbientModeManager.current?.currentAmbientMode is AmbientMode.Ambient
+    val gestureConfiguration = rememberOneHandedGestureConfiguration(
+        action = OneHandedGestureAction.Primary,
+        gestureId = "gaura-mala-count-bead",
+        priority = OneHandedGesturePriority.Clickable
+    )
+    val gestureIndicatorState = remember { OneHandedGestureClickIndicatorState() }
+    val coroutineScope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
+    var rotaryPixels by remember { mutableFloatStateOf(0f) }
+    val rotaryThreshold = with(LocalDensity.current) { 24.dp.toPx() }
+
+    LaunchedEffect(focusRequester, showSettings, state.showGoalAchievedDialog) {
+        if (!showSettings && !state.showGoalAchievedDialog) {
+            focusRequester.requestFocus()
+        }
+    }
 
     // Dialog Overlays
     if (showSettings) {
@@ -71,21 +103,40 @@ fun MantraCounterScreen(
     var containerModifier = modifier
         .fillMaxSize()
         .onRotaryScrollEvent { event ->
-            // Advance bead when user turns the watch crown downwards
-            if (event.verticalScrollPixels > 20f) {
-                viewModel.incrementBead()
+            // Advance once per rotary detent while ignoring reverse rotation.
+            val delta = event.verticalScrollPixels
+            if (delta <= 0f) {
+                rotaryPixels = 0f
+                false
+            } else {
+                rotaryPixels += delta
+                val steps = (rotaryPixels / rotaryThreshold).toInt()
+                repeat(steps) { viewModel.incrementBeadFromRotary() }
+                rotaryPixels -= steps * rotaryThreshold
                 true
-            } else false
+            }
         }
+        .focusRequester(focusRequester)
+        .focusable()
 
-    // Full-screen tap / primary gesture binding (also triggered by Wear OS accessibility gestures)
-    if ((state.isScreenTapEnabled || state.isPinchGestureEnabled) && !state.isAmbient) {
+    if (state.isScreenTapEnabled && !isAmbient) {
         containerModifier = containerModifier.clickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null // Silent indication for battery preservation
         ) {
             viewModel.incrementBead()
         }
+    }
+
+    if (state.isPinchGestureEnabled && !isAmbient) {
+        containerModifier = containerModifier.oneHandedGesture(
+            gestureConfiguration = gestureConfiguration,
+            onGestureLabel = "count a bead",
+            onGestureAvailable = {
+                coroutineScope.launch { gestureIndicatorState.showIndicator() }
+            },
+            onGesture = { viewModel.incrementBead() }
+        )
     }
 
     Box(
@@ -97,7 +148,7 @@ fun MantraCounterScreen(
             beadCount = state.beadCount,
             completedRounds = state.completedRounds,
             dailyGoal = state.dailyGoalRounds,
-            isAmbient = state.isAmbient
+            isAmbient = isAmbient
         )
 
         // Center Content & Digital Bead Readout
@@ -108,13 +159,15 @@ fun MantraCounterScreen(
         ) {
             // Round Header Indicator
             Text(
-                text = if (state.isAmbient) {
+                text = if (isAmbient) {
                     "R ${state.completedRounds}"
+                } else if (state.isGoalAchieved) {
+                    "Daily goal reached"
                 } else {
                     "Round ${state.completedRounds + 1} of ${state.dailyGoalRounds}"
                 },
                 style = MaterialTheme.typography.labelSmall,
-                color = if (state.isAmbient) Color.White else GauraGoldLight,
+                color = if (isAmbient) Color.White else GauraGoldLight,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -125,7 +178,7 @@ fun MantraCounterScreen(
             Text(
                 text = "${state.beadCount}",
                 style = MaterialTheme.typography.displayLarge,
-                color = if (state.isAmbient) Color.White else GauraGold,
+                color = if (isAmbient) Color.White else GauraGold,
                 fontSize = 46.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -134,12 +187,42 @@ fun MantraCounterScreen(
             Text(
                 text = "/ 108",
                 style = MaterialTheme.typography.labelSmall,
-                color = if (state.isAmbient) Color.Gray else OnSurfaceMuted,
+                color = if (isAmbient) Color.Gray else OnSurfaceMuted,
                 fontSize = 12.sp
             )
 
+            if (!isAmbient) {
+                val inputHint = when {
+                    state.isPinchGestureEnabled && state.isScreenTapEnabled -> "Tap or double pinch to count"
+                    state.isPinchGestureEnabled -> "Double pinch to count"
+                    state.isScreenTapEnabled -> "Tap to count"
+                    else -> "Turn the crown to count"
+                }
+                if (state.isPinchGestureEnabled) {
+                    OneHandedGestureClickIndicator(
+                        gestureConfiguration = gestureConfiguration,
+                        state = gestureIndicatorState,
+                        gestureIndicatorTint = GauraGold
+                    ) {
+                        Text(
+                            text = inputHint,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = OnSurfaceMuted,
+                            fontSize = 9.sp
+                        )
+                    }
+                } else {
+                    Text(
+                        text = inputHint,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OnSurfaceMuted,
+                        fontSize = 9.sp
+                    )
+                }
+            }
+
             // Bottom Control Action Row (Hidden during ambient mode)
-            if (!state.isAmbient) {
+            if (!isAmbient) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(
                     horizontalArrangement = Arrangement.Center,

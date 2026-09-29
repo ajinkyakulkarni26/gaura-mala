@@ -5,9 +5,6 @@
 
     <!-- Haptic feedback for beads and round completion -->
     <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- Keeps display in ambient/low-power mode during active chanting sessions -->
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"

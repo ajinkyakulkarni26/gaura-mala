@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 class MantraCounterViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -31,8 +32,11 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     init {
         // Collect saved preferences
         viewModelScope.launch {
+            preferences.resetIfNewDay()
             preferences.userPreferencesFlow.collect { prefs ->
                 _uiState.update { current ->
+                    val isNewDay = current.lastRecordedDate.isNotEmpty() &&
+                        current.lastRecordedDate != prefs.lastRecordedDate
                     current.copy(
                         beadCount = prefs.beadCount,
                         completedRounds = prefs.completedRounds,
@@ -41,7 +45,10 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
                         isScreenTapEnabled = prefs.screenTapEnabled,
                         isHapticsEnabled = prefs.hapticFeedbackEnabled,
                         isMilestonesEnabled = prefs.milestoneVibrationsEnabled,
-                        keepScreenOn = prefs.keepScreenOn
+                        keepScreenOn = prefs.keepScreenOn,
+                        lastRecordedDate = prefs.lastRecordedDate,
+                        canUndo = if (isNewDay) false else current.canUndo,
+                        showGoalAchievedDialog = if (isNewDay) false else current.showGoalAchievedDialog
                     )
                 }
             }
@@ -50,15 +57,23 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
 
     /**
      * Increment by 1 bead.
-     * Handles bead count from 1 to 108, round completions, and haptic feedback.
+     * Advances bead progress (0 through 107) and completes a round on the next count.
      */
-    fun incrementBead() {
-        val now = SystemClock.elapsedRealtime()
-        if (now - lastIncrementTimestamp < debounceWindowMs) {
-            return
-        }
-        lastIncrementTimestamp = now
+    fun incrementBead() = incrementBead(applyDebounce = true)
 
+    /** Crown rotations are already discrete input and should not share the tap/pinch debounce. */
+    fun incrementBeadFromRotary() = incrementBead(applyDebounce = false)
+
+    private fun incrementBead(applyDebounce: Boolean) {
+        if (applyDebounce) {
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastIncrementTimestamp < debounceWindowMs) {
+                return
+            }
+            lastIncrementTimestamp = now
+        }
+
+        resetMemoryForNewDayIfNeeded()
         val currentState = _uiState.value
         previousBeadCount = currentState.beadCount
         previousCompletedRounds = currentState.completedRounds
@@ -84,7 +99,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         } else {
             // 108th bead completed -> Round finished!
             val nextRounds = currentState.completedRounds + 1
-            val goalReached = nextRounds == currentState.dailyGoalRounds
+            val goalReached = !currentState.isGoalAchieved && nextRounds >= currentState.dailyGoalRounds
 
             _uiState.update {
                 it.copy(
@@ -110,6 +125,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
      * Undoes the last chant action in case of accidental gesture or tap.
      */
     fun undoLastBead() {
+        resetMemoryForNewDayIfNeeded()
         if (!_uiState.value.canUndo) return
 
         _uiState.update {
@@ -126,6 +142,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun resetCurrentRound() {
+        resetMemoryForNewDayIfNeeded()
         _uiState.update {
             it.copy(beadCount = 0, canUndo = false)
         }
@@ -143,7 +160,8 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
                     beadCount = 0,
                     completedRounds = 0,
                     canUndo = false,
-                    showGoalAchievedDialog = false
+                    showGoalAchievedDialog = false,
+                    lastRecordedDate = LocalDate.now().toString()
                 )
             }
         }
@@ -153,8 +171,8 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         _uiState.update { it.copy(showGoalAchievedDialog = false) }
     }
 
-    fun setAmbientMode(isAmbient: Boolean) {
-        _uiState.update { it.copy(isAmbient = isAmbient) }
+    fun refreshDailySession() {
+        viewModelScope.launch { preferences.resetIfNewDay() }
     }
 
     fun togglePinchGesture(enabled: Boolean) {
@@ -179,6 +197,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
 
     fun updateDailyGoal(newGoal: Int) {
         if (newGoal in 1..64) {
+            _uiState.update { it.copy(dailyGoalRounds = newGoal) }
             viewModelScope.launch { preferences.updateDailyGoal(newGoal) }
         }
     }
@@ -186,6 +205,24 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     private fun saveCounts(beads: Int, rounds: Int) {
         viewModelScope.launch {
             preferences.saveCounts(beads, rounds)
+        }
+    }
+
+    private fun resetMemoryForNewDayIfNeeded() {
+        val today = LocalDate.now().toString()
+        if (_uiState.value.lastRecordedDate.isNotEmpty() && _uiState.value.lastRecordedDate != today) {
+            previousBeadCount = 0
+            previousCompletedRounds = 0
+            _uiState.update {
+                it.copy(
+                    beadCount = 0,
+                    completedRounds = 0,
+                    canUndo = false,
+                    showGoalAchievedDialog = false,
+                    lastRecordedDate = today
+                )
+            }
+            viewModelScope.launch { preferences.resetIfNewDay() }
         }
     }
 }

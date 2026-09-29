@@ -1,7 +1,7 @@
 package com.gauramala.wear.presentation
 
 data class MantraUiState(
-    val beadCount: Int = 0,               // 0 to 108
+    val beadCount: Int = 0,               // 0 to 107; 108 completes the round
     val completedRounds: Int = 0,         // e.g. 0 to 16+
     val dailyGoalRounds: Int = 16,        // ISKCON standard vow: 16 rounds
     val isPinchGestureEnabled: Boolean = true,
@@ -9,7 +9,7 @@ data class MantraUiState(
     val isHapticsEnabled: Boolean = true,
     val isMilestonesEnabled: Boolean = true,
     val keepScreenOn: Boolean = false,
-    val isAmbient: Boolean = false,
+    val lastRecordedDate: String = "",
     val canUndo: Boolean = false,
     val showGoalAchievedDialog: Boolean = false
 ) {

@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,9 +41,10 @@ fun SettingsDialog(
     viewModel: MantraCounterViewModel,
     onDismiss: () -> Unit
 ) {
-    var showResetConfirm by remember { mutableStateOf(false) }
+    var pendingReset by remember { mutableStateOf<ResetTarget?>(null) }
 
-    if (showResetConfirm) {
+    if (pendingReset != null) {
+        val isDailyReset = pendingReset == ResetTarget.DAILY_COUNT
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -49,13 +53,17 @@ fun SettingsDialog(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Reset All Rounds?",
+                text = if (isDailyReset) "Reset Today's Count?" else "Reset Current Round?",
                 style = MaterialTheme.typography.titleMedium,
                 color = AlertRed
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "This resets your daily count to 0.",
+                text = if (isDailyReset) {
+                    "This clears today's completed rounds and bead progress."
+                } else {
+                    "This clears bead progress for the current round."
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 fontSize = 12.sp
             )
@@ -65,15 +73,19 @@ fun SettingsDialog(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Button(
-                    onClick = { showResetConfirm = false },
+                    onClick = { pendingReset = null },
                     colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
                 ) {
                     Text("Cancel", fontSize = 12.sp)
                 }
                 Button(
                     onClick = {
-                        viewModel.resetDailyCount()
-                        showResetConfirm = false
+                        if (isDailyReset) {
+                            viewModel.resetDailyCount()
+                        } else {
+                            viewModel.resetCurrentRound()
+                        }
+                        pendingReset = null
                         onDismiss()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AlertRed)
@@ -98,13 +110,56 @@ fun SettingsDialog(
             )
         }
 
+        item {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Daily goal", color = MaterialTheme.colorScheme.onSurface)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds - 1) },
+                        enabled = state.dailyGoalRounds > 1,
+                        modifier = Modifier.size(40.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
+                    ) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease daily goal")
+                    }
+                    Text(
+                        text = "${state.dailyGoalRounds} rounds",
+                        modifier = Modifier.padding(horizontal = 14.dp),
+                        color = GauraGold,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Button(
+                        onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds + 1) },
+                        enabled = state.dailyGoalRounds < 64,
+                        modifier = Modifier.size(40.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase daily goal")
+                    }
+                }
+                Text(
+                    "Choose from 1 to 64 rounds",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp
+                )
+            }
+        }
+
         // 1. Gesture Pinch Toggle
         item {
             SwitchButton(
                 checked = state.isPinchGestureEnabled,
                 onCheckedChange = { viewModel.togglePinchGesture(it) },
                 label = { Text("Double Pinch") },
-                secondaryLabel = { Text("Hands-free gesture") },
+                secondaryLabel = { Text("On supported Wear OS 7 watches") },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp)
             )
         }
@@ -157,8 +212,7 @@ fun SettingsDialog(
         item {
             Button(
                 onClick = {
-                    viewModel.resetCurrentRound()
-                    onDismiss()
+                    pendingReset = ResetTarget.CURRENT_ROUND
                 },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
@@ -170,7 +224,7 @@ fun SettingsDialog(
         // 7. Reset Entire Day
         item {
             Button(
-                onClick = { showResetConfirm = true },
+                onClick = { pendingReset = ResetTarget.DAILY_COUNT },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AlertRed.copy(alpha = 0.2f))
             ) {
@@ -191,4 +245,9 @@ fun SettingsDialog(
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
+}
+
+private enum class ResetTarget {
+    CURRENT_ROUND,
+    DAILY_COUNT
 }

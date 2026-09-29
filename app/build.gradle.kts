@@ -61,10 +61,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.8.1")
 
     // Wear Compose
-    implementation("androidx.wear.compose:compose-foundation:1.4.0")
-    implementation("androidx.wear.compose:compose-material:1.4.0")
-    implementation("androidx.wear.compose:compose-material3:1.0.0-alpha26")
-    implementation("androidx.wear.compose:compose-navigation:1.4.0")
+    implementation("androidx.wear.compose:compose-foundation:1.7.0")
+    implementation("androidx.wear.compose:compose-material3:1.7.0")
 
     // Wear Tiles & Complications
     implementation("androidx.wear.tiles:tiles:1.4.0")

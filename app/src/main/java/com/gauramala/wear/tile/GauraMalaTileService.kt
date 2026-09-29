@@ -35,6 +35,7 @@ class GauraMalaTileService : TileService() {
 
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest) = serviceScope.future {
         val prefs = MantraPreferences(this@GauraMalaTileService)
+        prefs.resetIfNewDay()
         val userPrefs = prefs.userPreferencesFlow.first()
 
         val primaryLayout = PrimaryLayout.Builder(requestParams.deviceConfiguration)

@@ -120,6 +120,7 @@ fun BeadProgressRing(
         if (!isAmbient && dailyGoal > 0) {
             val innerRadius = radius - 14.dp.toPx()
             val totalDots = dailyGoal.coerceAtMost(24) // up to 24 dots for visibility
+            val completedFraction = (completedRounds.toFloat() / dailyGoal.toFloat()).coerceIn(0f, 1f)
             for (i in 0 until totalDots) {
                 val dotFraction = i.toFloat() / totalDots.toFloat()
                 val angleDeg = -90f + (dotFraction * 360f)
@@ -128,7 +129,7 @@ fun BeadProgressRing(
                     x = (center.x + innerRadius * cos(angleRad)).toFloat(),
                     y = (center.y + innerRadius * sin(angleRad)).toFloat()
                 )
-                val isCompleted = i < completedRounds
+                val isCompleted = completedFraction >= (i + 1).toFloat() / totalDots.toFloat()
                 drawCircle(
                     color = if (isCompleted) GauraGold else Color(0x33666666),
                     radius = if (isCompleted) 2.2.dp.toPx() else 1.2.dp.toPx(),

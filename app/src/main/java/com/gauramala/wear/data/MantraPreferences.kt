@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.gauramala.wear.WearSurfaceUpdater
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
@@ -54,19 +55,38 @@ class MantraPreferences(private val context: Context) {
         )
     }
 
+    /** Starts a fresh daily count when saved progress belongs to an earlier local calendar day. */
+    suspend fun resetIfNewDay() {
+        val today = LocalDate.now().toString()
+        var didReset = false
+        context.dataStore.edit { prefs ->
+            if (prefs[KEY_LAST_DATE] != today) {
+                prefs[KEY_BEAD_COUNT] = 0
+                prefs[KEY_COMPLETED_ROUNDS] = 0
+                prefs[KEY_LAST_DATE] = today
+                didReset = true
+            }
+        }
+        if (didReset) WearSurfaceUpdater.requestUpdate(context)
+    }
+
     suspend fun saveCounts(beadCount: Int, completedRounds: Int) {
         val today = LocalDate.now().toString()
+        var roundsChanged = false
         context.dataStore.edit { prefs ->
+            roundsChanged = (prefs[KEY_COMPLETED_ROUNDS] ?: 0) != completedRounds
             prefs[KEY_BEAD_COUNT] = beadCount
             prefs[KEY_COMPLETED_ROUNDS] = completedRounds
             prefs[KEY_LAST_DATE] = today
         }
+        WearSurfaceUpdater.requestUpdate(context, updateComplications = roundsChanged)
     }
 
     suspend fun updateDailyGoal(goal: Int) {
         context.dataStore.edit { prefs ->
             prefs[KEY_DAILY_GOAL] = goal
         }
+        WearSurfaceUpdater.requestUpdate(context)
     }
 
     suspend fun toggleGesturePinch(enabled: Boolean) {
@@ -105,5 +125,6 @@ class MantraPreferences(private val context: Context) {
             prefs[KEY_COMPLETED_ROUNDS] = 0
             prefs[KEY_LAST_DATE] = LocalDate.now().toString()
         }
+        WearSurfaceUpdater.requestUpdate(context)
     }
 }

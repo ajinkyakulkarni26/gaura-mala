@@ -37,6 +37,7 @@ class GauraMalaComplicationService : SuspendingComplicationDataSourceService() {
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? {
         val prefs = MantraPreferences(this)
+        prefs.resetIfNewDay()
         val userPrefs = prefs.userPreferencesFlow.first()
 
         val intent = Intent(this, MainActivity::class.java)
