@@ -1,0 +1,47 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Circular sacred prayer beads motif with golden crown -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M24,24m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0" />
+    <path
+        android:strokeColor="#FFB300"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M24,6 A18,18 0 1,1 23.9,6" />
+    <!-- Center Meru / Guru bead -->
+    <path
+        android:fillColor="#FFE082"
+        android:pathData="M24,6m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+    <!-- Tassel / Sacred emblem -->
+    <path
+        android:strokeColor="#FF8F00"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M24,10 L24,16 M21,15 L27,15" />
+    <!-- Chanting bead counter focal dots -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M38,16m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M42,24m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M38,32m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M24,42m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0" />
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M10,32m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M6,24m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M10,16m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+</vector>

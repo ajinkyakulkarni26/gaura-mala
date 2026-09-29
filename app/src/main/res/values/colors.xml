@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sacred Saffron & Golden Tones (Inspired by Gaura / Chaitanya Mahaprabhu) -->
+    <color name="gaura_primary">#FFB300</color>
+    <color name="gaura_primary_container">#553B00</color>
+    <color name="gaura_secondary">#FF8F00</color>
+    <color name="gaura_accent">#FFE082</color>
+    <color name="gaura_tertiary">#FF7043</color>
+    <!-- Deep OLED Battery Saving Blacks -->
+    <color name="gaura_background">#000000</color>
+    <color name="gaura_surface">#121212</color>
+    <color name="gaura_surface_variant">#1E1E1E</color>
+    <color name="gaura_on_surface">#E0E0E0</color>
+</resources>

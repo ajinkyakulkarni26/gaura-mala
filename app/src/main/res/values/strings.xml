@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GauraMala</string>
+    <string name="title_counter">Mantra Counter</string>
+    <string name="tile_name">GauraMala Tile</string>
+    <string name="complication_name">GauraMala Rounds</string>
+    <string name="bead_count_format">%1$d / %2$d</string>
+    <string name="round_count_format">Round %1$d of %2$d</string>
+    <string name="mahaprasad_blessing">Hare Krishna</string>
+</resources>
