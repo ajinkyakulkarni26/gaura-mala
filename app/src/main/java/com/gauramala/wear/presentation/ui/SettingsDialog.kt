@@ -51,6 +51,11 @@ fun SettingsDialog(
     onDismiss: () -> Unit
 ) {
     var pendingReset by remember { mutableStateOf<ResetTarget?>(null) }
+    var showPrivacyPolicy by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = showPrivacyPolicy) {
+        showPrivacyPolicy = false
+    }
 
     BackHandler(enabled = pendingReset != null) {
         pendingReset = null
@@ -110,6 +115,11 @@ fun SettingsDialog(
                 }
             }
         }
+        return
+    }
+
+    if (showPrivacyPolicy) {
+        PrivacyPolicyScreen(onBack = { showPrivacyPolicy = false })
         return
     }
 
@@ -303,6 +313,19 @@ fun SettingsDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = AlertRed.copy(alpha = 0.2f))
             ) {
                 Text("Reset Today's Rounds", color = AlertRed, fontSize = 12.sp)
+            }
+        }
+
+        item {
+            Button(
+                onClick = { showPrivacyPolicy = true },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SurfaceDark,
+                    contentColor = OnSurfaceWhite
+                )
+            ) {
+                Text("Privacy Policy", fontSize = 12.sp)
             }
         }
 
