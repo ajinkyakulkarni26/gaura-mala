@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumnDefaults
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.material3.Button
@@ -134,10 +133,9 @@ fun SettingsDialog(
             .hierarchicalFocusGroup(active = true),
         state = listState,
         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 18.dp),
-        rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(
+        rotaryScrollableBehavior = RotaryScrollableDefaults.behavior(
             scrollableState = listState
         ),
-        flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state = listState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
@@ -164,7 +162,7 @@ fun SettingsDialog(
                     Button(
                         onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds - 1) },
                         enabled = state.dailyGoalRounds > 1,
-                        modifier = Modifier.size(38.dp),
+                        modifier = Modifier.size(44.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = SurfaceDark,
                             contentColor = OnSurfaceWhite
@@ -173,7 +171,7 @@ fun SettingsDialog(
                         Icon(
                             Icons.Default.Remove,
                             contentDescription = "Decrease daily goal",
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                     Text(
@@ -188,7 +186,7 @@ fun SettingsDialog(
                     Button(
                         onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds + 1) },
                         enabled = state.dailyGoalRounds < 64,
-                        modifier = Modifier.size(38.dp),
+                        modifier = Modifier.size(44.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = SurfaceDark,
                             contentColor = OnSurfaceWhite
@@ -197,15 +195,16 @@ fun SettingsDialog(
                         Icon(
                             Icons.Default.Add,
                             contentDescription = "Increase daily goal",
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                 }
                 Text(
-                    "Choose 1–64 rounds",
+                    "1–64 rounds",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 10.sp,
-                    maxLines = 1
+                    maxLines = 1,
+                    textAlign = TextAlign.Center
                 )
             }
         }
