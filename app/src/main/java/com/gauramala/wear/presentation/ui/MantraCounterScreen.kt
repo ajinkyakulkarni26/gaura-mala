@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.focusable
@@ -156,25 +157,25 @@ fun MantraCounterScreen(
         modifier = containerModifier,
         contentAlignment = Alignment.Center
     ) {
-        TimeText(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 20.dp)
-        )
-
         // Outer Circular Bead & Round Progress Tracks
         BeadProgressRing(
             beadCount = state.beadCount,
             completedRounds = state.completedRounds,
             dailyGoal = state.dailyGoalRounds,
-            isAmbient = isAmbient
+            isAmbient = isAmbient,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 32.dp)
         )
 
         // Center Content & Digital Bead Readout
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 32.dp)
+                .padding(24.dp)
         ) {
             // Round Header Indicator
             Text(
@@ -283,5 +284,11 @@ fun MantraCounterScreen(
                 }
             }
         }
+
+        TimeText(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .zIndex(1f)
+        )
     }
 }
