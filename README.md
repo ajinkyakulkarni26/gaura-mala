@@ -41,7 +41,7 @@ It addresses the fundamental limitation of traditional smartwatch counters: **re
 ### 4. 🎨 Sacred Aesthetic & Battery Efficiency
 - **Golden Gaura Theme:** Inspired by Lord Chaitanya’s golden complexion (deep saffron `#FFB300`, amber `#FF8F00`, and sacred gold `#FFE082`).
 - **OLED Pure Black:** Built on true `#000000` AMOLED canvas for maximum battery longevity during multi-hour chanting sessions.
-- **Ambient Mode Support:** Removes controls and progress animation and displays high-contrast essentials when the watch enters ambient mode.
+- **Ambient Mode Support:** Shows the time and counter while removing controls and progress animation when the watch enters low-power ambient mode. Keep Awake remains off by default; enabling it prevents ambient mode and uses more battery.
 
 ### 5. ⌚ Wear OS Ecosystem Integration
 - **Glanceable Wear OS Tile (`GauraMalaTileService`):** View today's round and bead progress, refreshed as you chant.

@@ -218,7 +218,7 @@ fun SettingsDialog(
                 checked = state.keepScreenOn,
                 onCheckedChange = { viewModel.toggleKeepScreenOn(it) },
                 label = { Text("Keep Awake") },
-                secondaryLabel = { Text("Prevent screen sleep") },
+                secondaryLabel = { Text("Prevents ambient mode; uses more battery") },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp)
             )
         }

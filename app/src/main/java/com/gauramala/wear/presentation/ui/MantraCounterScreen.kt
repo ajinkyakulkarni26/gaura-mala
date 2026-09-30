@@ -42,6 +42,7 @@ import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.foundation.AmbientMode
 import androidx.wear.compose.foundation.LocalAmbientModeManager
 import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureAction
@@ -151,6 +152,12 @@ fun MantraCounterScreen(
         modifier = containerModifier,
         contentAlignment = Alignment.Center
     ) {
+        TimeText(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 20.dp)
+        )
+
         // Outer Circular Bead & Round Progress Tracks
         BeadProgressRing(
             beadCount = state.beadCount,
@@ -242,7 +249,7 @@ fun MantraCounterScreen(
                         onClick = { viewModel.undoLastBead() },
                         enabled = state.canUndo,
                         modifier = Modifier
-                            .size(34.dp)
+                            .size(48.dp)
                             .alpha(if (state.canUndo) 1f else 0.3f),
                         colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
                     ) {
@@ -250,7 +257,7 @@ fun MantraCounterScreen(
                             imageVector = Icons.AutoMirrored.Filled.Undo,
                             contentDescription = "Undo Bead",
                             tint = if (state.canUndo) GauraGold else OnSurfaceMuted,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
 
@@ -259,14 +266,14 @@ fun MantraCounterScreen(
                     // Settings Button
                     Button(
                         onClick = { showSettings = true },
-                        modifier = Modifier.size(34.dp),
+                        modifier = Modifier.size(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Open Settings",
                             tint = GauraGoldLight,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
