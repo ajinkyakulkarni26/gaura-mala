@@ -93,7 +93,7 @@ gaura-mala/
 ### Requirements
 - Android Studio Quail 4 (2026.1.4) or newer, JDK 17, and the Android SDK Platform 37.
 - The Gradle wrapper uses Gradle 9.3.1 and Android Gradle Plugin 9.1.1.
-- To run the app in an emulator, install the Wear OS 7 (API 37) system image for your computer's architecture in Android Studio's SDK Manager, then create a round Wear OS device in Device Manager. Use revision 5 or newer of the API 37 image for reliable Google services.
+- To run the app in an emulator, install the latest stable Wear OS 7 (API 37) system image for your computer's architecture in Android Studio's SDK Manager, then create a round Wear OS device in Device Manager.
 
 Build the debug app from the repository root with `./gradlew assembleDebug`. Android Studio can also build and install it with the `app` run configuration.
 
@@ -131,7 +131,7 @@ Build the debug app from the repository root with `./gradlew assembleDebug`. And
 ~/Library/Android/sdk/platform-tools/adb install app/build/outputs/apk/debug/app-debug.apk
 
 # Launch GauraMala on the watch
-~/Library/Android/sdk/platform-tools/adb shell am start -n com.gauramala.wear.debug/.MainActivity
+~/Library/Android/sdk/platform-tools/adb shell am start -n com.gauramala.wear.debug/com.gauramala.wear.MainActivity
 ```
 
 The Android Studio `app` run configuration installs the debug build automatically. Rotary crown events should be tested using the emulator's rotary control or a physical watch; a regular keyboard key event does not reliably simulate crown input.

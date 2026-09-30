@@ -34,6 +34,7 @@ import com.gauramala.wear.presentation.MantraCounterViewModel
 import com.gauramala.wear.presentation.MantraUiState
 import com.gauramala.wear.presentation.theme.AlertRed
 import com.gauramala.wear.presentation.theme.GauraGold
+import com.gauramala.wear.presentation.theme.OnSurfaceWhite
 import com.gauramala.wear.presentation.theme.SurfaceDark
 
 @Composable
@@ -79,7 +80,10 @@ fun SettingsDialog(
             ) {
                 Button(
                     onClick = { pendingReset = null },
-                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SurfaceDark,
+                        contentColor = OnSurfaceWhite
+                    )
                 ) {
                     Text("Cancel", fontSize = 12.sp)
                 }
@@ -131,7 +135,10 @@ fun SettingsDialog(
                         onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds - 1) },
                         enabled = state.dailyGoalRounds > 1,
                         modifier = Modifier.size(40.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SurfaceDark,
+                            contentColor = OnSurfaceWhite
+                        )
                     ) {
                         Icon(Icons.Default.Remove, contentDescription = "Decrease daily goal")
                     }
@@ -145,7 +152,10 @@ fun SettingsDialog(
                         onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds + 1) },
                         enabled = state.dailyGoalRounds < 64,
                         modifier = Modifier.size(40.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = SurfaceDark,
+                            contentColor = OnSurfaceWhite
+                        )
                     ) {
                         Icon(Icons.Default.Add, contentDescription = "Increase daily goal")
                     }
@@ -220,7 +230,10 @@ fun SettingsDialog(
                     pendingReset = ResetTarget.CURRENT_ROUND
                 },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SurfaceDark,
+                    contentColor = OnSurfaceWhite
+                )
             ) {
                 Text("Reset Current Round", fontSize = 12.sp)
             }
