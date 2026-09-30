@@ -3,6 +3,7 @@ package com.gauramala.wear.presentation.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,19 +22,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumnDefaults
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.SwitchButton
+import androidx.wear.compose.material3.SwitchButtonDefaults
 import androidx.wear.compose.material3.Text
 import com.gauramala.wear.presentation.MantraCounterViewModel
 import com.gauramala.wear.presentation.MantraUiState
 import com.gauramala.wear.presentation.theme.AlertRed
 import com.gauramala.wear.presentation.theme.GauraGold
+import com.gauramala.wear.presentation.theme.OnSurfaceMuted
 import com.gauramala.wear.presentation.theme.OnSurfaceWhite
 import com.gauramala.wear.presentation.theme.SurfaceDark
 
@@ -106,8 +114,30 @@ fun SettingsDialog(
         return
     }
 
+    val listState = rememberScalingLazyListState()
+    val switchButtonColors = SwitchButtonDefaults.switchButtonColors(
+        checkedContainerColor = SurfaceDark,
+        checkedContentColor = OnSurfaceWhite,
+        checkedSecondaryContentColor = OnSurfaceMuted,
+        checkedThumbColor = GauraGold,
+        checkedTrackColor = GauraGold.copy(alpha = 0.55f),
+        uncheckedContainerColor = SurfaceDark,
+        uncheckedContentColor = OnSurfaceWhite,
+        uncheckedSecondaryContentColor = OnSurfaceMuted,
+        uncheckedThumbColor = OnSurfaceMuted,
+        uncheckedTrackColor = OnSurfaceMuted.copy(alpha = 0.35f)
+    )
+
     ScalingLazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .hierarchicalFocusGroup(active = true),
+        state = listState,
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 18.dp),
+        rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(
+            scrollableState = listState
+        ),
+        flingBehavior = ScalingLazyColumnDefaults.snapFlingBehavior(state = listState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
@@ -121,49 +151,61 @@ fun SettingsDialog(
 
         item {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Daily goal", color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(4.dp))
+                Text("Daily goal", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+                Spacer(modifier = Modifier.height(2.dp))
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Button(
                         onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds - 1) },
                         enabled = state.dailyGoalRounds > 1,
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(38.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = SurfaceDark,
                             contentColor = OnSurfaceWhite
                         )
                     ) {
-                        Icon(Icons.Default.Remove, contentDescription = "Decrease daily goal")
+                        Icon(
+                            Icons.Default.Remove,
+                            contentDescription = "Decrease daily goal",
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
                     Text(
                         text = "${state.dailyGoalRounds} rounds",
-                        modifier = Modifier.padding(horizontal = 14.dp),
+                        modifier = Modifier.weight(1f),
                         color = GauraGold,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1
                     )
                     Button(
                         onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds + 1) },
                         enabled = state.dailyGoalRounds < 64,
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(38.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = SurfaceDark,
                             contentColor = OnSurfaceWhite
                         )
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Increase daily goal")
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Increase daily goal",
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
                 }
                 Text(
-                    "Choose from 1 to 64 rounds",
+                    "Choose 1–64 rounds",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp
+                    fontSize = 10.sp,
+                    maxLines = 1
                 )
             }
         }
@@ -173,18 +215,20 @@ fun SettingsDialog(
             SwitchButton(
                 checked = state.isPinchGestureEnabled && state.supportsOneHandedGestures,
                 onCheckedChange = { viewModel.togglePinchGesture(it) },
-                label = { Text("Double Pinch") },
+                label = { Text("Double Pinch", fontSize = 12.sp, maxLines = 1) },
                 secondaryLabel = {
                     Text(
                         if (state.supportsOneHandedGestures) {
-                            "Enabled while the screen is dimmed"
+                            "Works while the screen is dimmed"
                         } else {
                             "Unavailable on this watch or emulator"
-                        }
+                        },
+                        fontSize = 9.sp
                     )
                 },
                 enabled = state.supportsOneHandedGestures,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp)
+                colors = switchButtonColors,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
 
@@ -193,9 +237,10 @@ fun SettingsDialog(
             SwitchButton(
                 checked = state.isScreenTapEnabled,
                 onCheckedChange = { viewModel.toggleScreenTap(it) },
-                label = { Text("Screen Tap") },
-                secondaryLabel = { Text("Tap watch to count") },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp)
+                label = { Text("Screen Tap", fontSize = 12.sp, maxLines = 1) },
+                secondaryLabel = { Text("Tap watch to count", fontSize = 9.sp) },
+                colors = switchButtonColors,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
 
@@ -204,9 +249,10 @@ fun SettingsDialog(
             SwitchButton(
                 checked = state.isHapticsEnabled,
                 onCheckedChange = { viewModel.toggleHaptics(it) },
-                label = { Text("Haptic Vibration") },
-                secondaryLabel = { Text("Tactile feedback") },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp)
+                label = { Text("Haptic Vibration", fontSize = 12.sp, maxLines = 1) },
+                secondaryLabel = { Text("Tactile feedback", fontSize = 9.sp) },
+                colors = switchButtonColors,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
 
@@ -215,9 +261,10 @@ fun SettingsDialog(
             SwitchButton(
                 checked = state.isMilestonesEnabled,
                 onCheckedChange = { viewModel.toggleMilestones(it) },
-                label = { Text("Milestones") },
-                secondaryLabel = { Text("Ticks at 27, 54, 81") },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp)
+                label = { Text("Milestones", fontSize = 12.sp, maxLines = 1) },
+                secondaryLabel = { Text("Ticks at 27, 54, 81", fontSize = 9.sp) },
+                colors = switchButtonColors,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
 
@@ -226,9 +273,10 @@ fun SettingsDialog(
             SwitchButton(
                 checked = state.keepScreenOn,
                 onCheckedChange = { viewModel.toggleKeepScreenOn(it) },
-                label = { Text("Keep Awake") },
-                secondaryLabel = { Text("Prevents ambient mode; uses more battery") },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp)
+                label = { Text("Keep Awake", fontSize = 12.sp, maxLines = 1) },
+                secondaryLabel = { Text("Prevents dimming; uses more battery", fontSize = 9.sp) },
+                colors = switchButtonColors,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
 

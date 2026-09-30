@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -31,29 +32,28 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     // Debounce timestamp to prevent accidental double-pinches or jitter
     private var lastIncrementTimestamp: Long = 0L
     private val debounceWindowMs: Long = 280L
+    private var preferencesLoaded = false
+    private var hasLocalProgressChanges = false
+    private val countSaveRequests = Channel<CountSnapshot>(Channel.CONFLATED)
 
     init {
+        viewModelScope.launch {
+            for (snapshot in countSaveRequests) {
+                preferences.saveCounts(snapshot.beadCount, snapshot.completedRounds)
+            }
+        }
+
         // Collect saved preferences
         viewModelScope.launch {
             preferences.resetIfNewDay()
             preferences.userPreferencesFlow.collect { prefs ->
                 _uiState.update { current ->
-                    val isNewDay = current.lastRecordedDate.isNotEmpty() &&
-                        current.lastRecordedDate != prefs.lastRecordedDate
-                    current.copy(
-                        beadCount = prefs.beadCount,
-                        completedRounds = prefs.completedRounds,
-                        dailyGoalRounds = prefs.dailyGoalRounds,
-                        isPinchGestureEnabled = prefs.gesturePinchEnabled,
-                        isScreenTapEnabled = prefs.screenTapEnabled,
-                        isHapticsEnabled = prefs.hapticFeedbackEnabled,
-                        isMilestonesEnabled = prefs.milestoneVibrationsEnabled,
-                        keepScreenOn = prefs.keepScreenOn,
-                        lastRecordedDate = prefs.lastRecordedDate,
-                        canUndo = if (isNewDay) false else current.canUndo,
-                        showGoalAchievedDialog = if (isNewDay) false else current.showGoalAchievedDialog
+                    current.withPreferences(
+                        preferences = prefs,
+                        preserveLocalProgress = hasLocalProgressChanges
                     )
                 }
+                preferencesLoaded = true
             }
         }
     }
@@ -71,6 +71,8 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     fun incrementBeadFromRotary() = incrementBead(applyDebounce = false, playAppHaptics = true)
 
     private fun incrementBead(applyDebounce: Boolean, playAppHaptics: Boolean = true) {
+        if (!preferencesLoaded) return
+
         if (applyDebounce) {
             val now = SystemClock.elapsedRealtime()
             if (now - lastIncrementTimestamp < debounceWindowMs) {
@@ -79,6 +81,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
             lastIncrementTimestamp = now
         }
 
+        hasLocalProgressChanges = true
         resetMemoryForNewDayIfNeeded()
         val currentState = _uiState.value
         val transition = counterStateMachine.increment(currentState)
@@ -108,10 +111,13 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
      * Undoes the last chant action in case of accidental gesture or tap.
      */
     fun undoLastBead() {
+        if (!preferencesLoaded) return
+
         resetMemoryForNewDayIfNeeded()
         val currentState = _uiState.value
         if (!currentState.canUndo) return
 
+        hasLocalProgressChanges = true
         val nextState = counterStateMachine.undo(currentState)
         _uiState.value = nextState
         saveCounts(nextState.beadCount, nextState.completedRounds)
@@ -121,6 +127,9 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun resetCurrentRound() {
+        if (!preferencesLoaded) return
+
+        hasLocalProgressChanges = true
         resetMemoryForNewDayIfNeeded()
         val nextState = counterStateMachine.resetCurrentRound(_uiState.value)
         _uiState.value = nextState
@@ -131,13 +140,15 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun resetDailyCount() {
-        viewModelScope.launch {
-            preferences.resetDay()
-            _uiState.value = counterStateMachine.resetDailyCount(
-                state = _uiState.value,
-                recordedDate = LocalDate.now().toString()
-            )
-        }
+        if (!preferencesLoaded) return
+
+        hasLocalProgressChanges = true
+        val nextState = counterStateMachine.resetDailyCount(
+            state = _uiState.value,
+            recordedDate = LocalDate.now().toString()
+        )
+        _uiState.value = nextState
+        saveCounts(nextState.beadCount, nextState.completedRounds)
     }
 
     fun dismissGoalDialog() {
@@ -149,26 +160,32 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun togglePinchGesture(enabled: Boolean) {
+        if (!preferencesLoaded) return
         viewModelScope.launch { preferences.toggleGesturePinch(enabled) }
     }
 
     fun toggleScreenTap(enabled: Boolean) {
+        if (!preferencesLoaded) return
         viewModelScope.launch { preferences.toggleScreenTap(enabled) }
     }
 
     fun toggleHaptics(enabled: Boolean) {
+        if (!preferencesLoaded) return
         viewModelScope.launch { preferences.toggleHaptics(enabled) }
     }
 
     fun toggleMilestones(enabled: Boolean) {
+        if (!preferencesLoaded) return
         viewModelScope.launch { preferences.toggleMilestones(enabled) }
     }
 
     fun toggleKeepScreenOn(enabled: Boolean) {
+        if (!preferencesLoaded) return
         viewModelScope.launch { preferences.toggleKeepScreenOn(enabled) }
     }
 
     fun updateDailyGoal(newGoal: Int) {
+        if (!preferencesLoaded) return
         if (newGoal in 1..64) {
             _uiState.value = counterStateMachine.updateDailyGoal(_uiState.value, newGoal)
             viewModelScope.launch { preferences.updateDailyGoal(newGoal) }
@@ -176,14 +193,13 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     }
 
     private fun saveCounts(beads: Int, rounds: Int) {
-        viewModelScope.launch {
-            preferences.saveCounts(beads, rounds)
-        }
+        countSaveRequests.trySend(CountSnapshot(beads, rounds))
     }
 
     private fun resetMemoryForNewDayIfNeeded() {
         val today = LocalDate.now().toString()
         if (_uiState.value.lastRecordedDate.isNotEmpty() && _uiState.value.lastRecordedDate != today) {
+            hasLocalProgressChanges = true
             counterStateMachine.clearUndoHistory()
             _uiState.update {
                 it.copy(
@@ -194,11 +210,13 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
                     lastRecordedDate = today
                 )
             }
-            viewModelScope.launch { preferences.resetIfNewDay() }
+            saveCounts(beads = 0, rounds = 0)
         }
     }
 
     private companion object {
         const val FEATURE_WEAR_GESTURE_DETECTION = "com.google.wear.feature.GESTURE_DETECTION"
     }
+
+    private data class CountSnapshot(val beadCount: Int, val completedRounds: Int)
 }

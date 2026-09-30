@@ -1,5 +1,7 @@
 package com.gauramala.wear.presentation
 
+import com.gauramala.wear.data.UserPreferences
+
 data class MantraUiState(
     val beadCount: Int = 0,               // 0 to 107; 108 completes the round
     val completedRounds: Int = 0,         // e.g. 0 to 16+
@@ -27,4 +29,28 @@ data class MantraUiState(
 
     val isGoalAchieved: Boolean
         get() = completedRounds >= dailyGoalRounds
+}
+
+/** Merges a stored snapshot without letting delayed writes roll back active in-memory progress. */
+internal fun MantraUiState.withPreferences(
+    preferences: UserPreferences,
+    preserveLocalProgress: Boolean
+): MantraUiState {
+    val isNewDay = lastRecordedDate.isNotEmpty() &&
+        lastRecordedDate != preferences.lastRecordedDate
+    val useSavedProgress = !preserveLocalProgress || isNewDay
+
+    return copy(
+        beadCount = if (useSavedProgress) preferences.beadCount else beadCount,
+        completedRounds = if (useSavedProgress) preferences.completedRounds else completedRounds,
+        dailyGoalRounds = preferences.dailyGoalRounds,
+        isPinchGestureEnabled = preferences.gesturePinchEnabled,
+        isScreenTapEnabled = preferences.screenTapEnabled,
+        isHapticsEnabled = preferences.hapticFeedbackEnabled,
+        isMilestonesEnabled = preferences.milestoneVibrationsEnabled,
+        keepScreenOn = preferences.keepScreenOn,
+        lastRecordedDate = preferences.lastRecordedDate,
+        canUndo = if (isNewDay) false else canUndo,
+        showGoalAchievedDialog = if (isNewDay) false else showGoalAchievedDialog
+    )
 }
