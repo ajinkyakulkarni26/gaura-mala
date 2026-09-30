@@ -62,15 +62,17 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
      * Increment by 1 bead.
      * Advances bead progress (0 through 107) and completes a round on the next count.
      */
-    fun incrementBead() = incrementBead(applyDebounce = true)
+    fun incrementBead() = incrementBead(applyDebounce = true, source = BeadInputSource.TAP)
 
-    /** The gesture framework already provides its own success haptic. */
-    fun incrementBeadFromGesture() = incrementBead(applyDebounce = true, playAppHaptics = false)
+    /** The gesture framework supplies normal feedback; app haptics are reserved for special cues. */
+    fun incrementBeadFromGesture() =
+        incrementBead(applyDebounce = true, source = BeadInputSource.GESTURE)
 
     /** Crown rotations are already discrete input and should not share the tap/pinch debounce. */
-    fun incrementBeadFromRotary() = incrementBead(applyDebounce = false, playAppHaptics = true)
+    fun incrementBeadFromRotary() =
+        incrementBead(applyDebounce = false, source = BeadInputSource.ROTARY)
 
-    private fun incrementBead(applyDebounce: Boolean, playAppHaptics: Boolean = true) {
+    private fun incrementBead(applyDebounce: Boolean, source: BeadInputSource) {
         if (!preferencesLoaded) return
 
         if (applyDebounce) {
@@ -89,21 +91,12 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         _uiState.value = nextState
         saveCounts(nextState.beadCount, nextState.completedRounds)
 
-        if (playAppHaptics && currentState.isHapticsEnabled) {
-            if (transition.completedRound) {
-                if (transition.goalJustReached) {
-                    hapticHelper.dailyGoalAchievedAlert()
-                } else {
-                    hapticHelper.roundCompletedAlert()
-                }
-            } else if (
-                currentState.isMilestonesEnabled &&
-                (nextState.beadCount == 27 || nextState.beadCount == 54 || nextState.beadCount == 81)
-            ) {
-                hapticHelper.milestoneAlert()
-            } else {
-                hapticHelper.beadClick()
-            }
+        when (selectHapticCue(currentState, transition, source)) {
+            HapticCue.BEAD -> hapticHelper.beadClick()
+            HapticCue.MILESTONE -> hapticHelper.milestoneAlert()
+            HapticCue.ROUND_COMPLETED -> hapticHelper.roundCompletedAlert()
+            HapticCue.DAILY_GOAL_ACHIEVED -> hapticHelper.dailyGoalAchievedAlert()
+            null -> Unit
         }
     }
 
