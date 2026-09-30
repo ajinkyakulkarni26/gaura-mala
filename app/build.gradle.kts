@@ -3,6 +3,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+val uploadStoreFile = providers.gradleProperty("GAURA_UPLOAD_STORE_FILE").orNull
+val uploadStorePassword = providers.gradleProperty("GAURA_UPLOAD_STORE_PASSWORD").orNull
+val uploadKeyAlias = providers.gradleProperty("GAURA_UPLOAD_KEY_ALIAS").orNull
+val uploadKeyPassword = providers.gradleProperty("GAURA_UPLOAD_KEY_PASSWORD").orNull
+
 android {
     namespace = "com.gauramala.wear"
     compileSdk = 37
@@ -15,8 +20,18 @@ android {
         versionName = "1.0.0"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = uploadStoreFile?.let { file(it) }
+            storePassword = uploadStorePassword
+            keyAlias = uploadKeyAlias
+            keyPassword = uploadKeyPassword
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
