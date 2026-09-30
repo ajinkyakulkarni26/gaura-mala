@@ -19,10 +19,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,13 +45,11 @@ import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.foundation.AmbientMode
 import androidx.wear.compose.foundation.LocalAmbientModeManager
 import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureAction
-import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicator
-import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicatorState
 import androidx.wear.compose.material3.onehandedgesture.OneHandedGesturePriority
 import androidx.wear.compose.material3.onehandedgesture.oneHandedGesture
 import androidx.wear.compose.material3.onehandedgesture.rememberOneHandedGestureConfiguration
-import kotlinx.coroutines.launch
 import com.gauramala.wear.presentation.MantraCounterViewModel
+import com.gauramala.wear.presentation.RotaryBeadInput
 import com.gauramala.wear.presentation.theme.GauraGold
 import com.gauramala.wear.presentation.theme.GauraGoldLight
 import com.gauramala.wear.presentation.theme.OnSurfaceMuted
@@ -73,11 +69,9 @@ fun MantraCounterScreen(
         gestureId = "gaura-mala-count-bead",
         priority = OneHandedGesturePriority.Clickable
     )
-    val gestureIndicatorState = remember { OneHandedGestureClickIndicatorState() }
-    val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
-    var rotaryPixels by remember { mutableFloatStateOf(0f) }
     val rotaryThreshold = with(LocalDensity.current) { 24.dp.toPx() }
+    val rotaryBeadInput = remember(rotaryThreshold) { RotaryBeadInput(rotaryThreshold) }
 
     LaunchedEffect(focusRequester, showSettings, state.showGoalAchievedDialog) {
         if (!showSettings && !state.showGoalAchievedDialog) {
@@ -114,16 +108,16 @@ fun MantraCounterScreen(
     var containerModifier = modifier
         .fillMaxSize()
         .onRotaryScrollEvent { event ->
-            // Advance once per rotary detent while ignoring reverse rotation.
-            val delta = event.verticalScrollPixels
-            if (isAmbient || delta <= 0f) {
-                rotaryPixels = 0f
+            // Keep raw pixel accumulation out of Compose state to avoid redrawing for tiny deltas.
+            if (isAmbient) {
+                rotaryBeadInput.reset()
                 false
             } else {
-                rotaryPixels += delta
-                val steps = (rotaryPixels / rotaryThreshold).toInt()
+                val steps = rotaryBeadInput.consume(
+                    deltaPx = event.verticalScrollPixels,
+                    eventUptimeMs = event.uptimeMillis
+                )
                 repeat(steps) { viewModel.incrementBeadFromRotary() }
-                rotaryPixels -= steps * rotaryThreshold
                 true
             }
         }
@@ -144,11 +138,6 @@ fun MantraCounterScreen(
             gestureConfiguration = gestureConfiguration,
             onGestureLabel = "count a bead",
             enabledInAmbient = true,
-            onGestureAvailable = {
-                if (!isAmbient) {
-                    coroutineScope.launch { gestureIndicatorState.showIndicator() }
-                }
-            },
             onGesture = { viewModel.incrementBeadFromGesture() }
         )
     }
@@ -212,27 +201,12 @@ fun MantraCounterScreen(
                     state.isScreenTapEnabled -> "Tap to count"
                     else -> "Turn the crown to count"
                 }
-                if (canUsePinchGesture) {
-                    OneHandedGestureClickIndicator(
-                        gestureConfiguration = gestureConfiguration,
-                        state = gestureIndicatorState,
-                        gestureIndicatorTint = GauraGold
-                    ) {
-                        Text(
-                            text = inputHint,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = OnSurfaceMuted,
-                            fontSize = 9.sp
-                        )
-                    }
-                } else {
-                    Text(
-                        text = inputHint,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = OnSurfaceMuted,
-                        fontSize = 9.sp
-                    )
-                }
+                Text(
+                    text = inputHint,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = OnSurfaceMuted,
+                    fontSize = 9.sp
+                )
             }
 
             // Bottom Control Action Row (Hidden during ambient mode)
