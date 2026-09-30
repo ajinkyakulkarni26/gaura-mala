@@ -162,20 +162,14 @@ fun MantraCounterScreen(
             beadCount = state.beadCount,
             completedRounds = state.completedRounds,
             dailyGoal = state.dailyGoalRounds,
-            isAmbient = isAmbient,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 32.dp)
+            isAmbient = isAmbient
         )
 
         // Center Content & Digital Bead Readout
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 32.dp)
-                .padding(24.dp)
+            modifier = Modifier.padding(24.dp)
         ) {
             // Round Header Indicator
             Text(
