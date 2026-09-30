@@ -11,7 +11,7 @@
 
 **GauraMala** is a native **Wear OS** application designed specifically for chanting the **Hare Krishna Maha-mantra**. Named in honor of **Sri Chaitanya Mahaprabhu (Gaura)**, who inaugurated the congregational chanting of the Holy Names, the app transforms your smartwatch into an ergonomic, eyes-closed digital *japa mala*.
 
-It addresses the fundamental limitation of traditional smartwatch counters: **requiring two hands** (one wearing the watch, the other tapping the screen). On supported Wear OS 7 devices, chanters can advance the counter with the system's **double-pinch gesture**. Screen tap and crown input remain available on other watches.
+It addresses the fundamental limitation of traditional smartwatch counters: **requiring two hands** (one wearing the watch, the other tapping the screen). On compatible Wear OS devices, chanters can advance the counter with the system's **double-pinch gesture**. Screen tap and crown input remain available on other watches.
 
 ---
 
@@ -20,7 +20,7 @@ It addresses the fundamental limitation of traditional smartwatch counters: **re
 ### 1. 🤏 Single-Handed Double-Pinch Gesture
 - Uses Wear Compose's one-handed gesture API for the system primary action (double pinch on Pixel Watch).
 - Enable or disable the gesture independently from full-screen tap in Settings.
-- This requires Wear OS 7 (API 37) and compatible hardware. On unsupported devices, tap and crown input continue to work. See [Android's one-handed gesture guide](https://developer.android.com/training/wearables/compose/one-handed-gestures).
+- This requires the Wear OS one-handed gesture API and hardware that advertises gesture detection. The app hides the pinch hint when the system feature is unavailable; tap and crown input continue to work. See [Android's one-handed gesture guide](https://developer.android.com/training/wearables/compose/one-handed-gestures).
 - A **280ms debounce window** filters accidental repeat taps and gestures.
 
 ### 2. 📳 Eyes-Closed Tactile Feedback (HapticHelper)
@@ -41,7 +41,7 @@ It addresses the fundamental limitation of traditional smartwatch counters: **re
 ### 4. 🎨 Sacred Aesthetic & Battery Efficiency
 - **Golden Gaura Theme:** Inspired by Lord Chaitanya’s golden complexion (deep saffron `#FFB300`, amber `#FF8F00`, and sacred gold `#FFE082`).
 - **OLED Pure Black:** Built on true `#000000` AMOLED canvas for maximum battery longevity during multi-hour chanting sessions.
-- **Ambient Mode Support:** Shows the time and counter while removing controls and progress animation when the watch enters low-power ambient mode. Keep Awake remains off by default; enabling it prevents ambient mode and uses more battery.
+- **Ambient Mode Support:** Shows the time, counter, and 108-bead progress ring while removing controls when the watch enters low-power ambient mode. The pinch handler opts into ambient mode on supported devices, so Keep Awake can remain off by default.
 
 ### 5. ⌚ Wear OS Ecosystem Integration
 - **Glanceable Wear OS Tile (`GauraMalaTileService`):** View today's round and bead progress, refreshed as you chant.
@@ -106,7 +106,7 @@ Build the debug app from the repository root with `./gradlew assembleDebug`. And
 - **Using an Emulator:**
   1. In Android Studio, go to **Tools > Device Manager**.
   2. Create a round **Wear OS** virtual device and install its system image if prompted.
-  3. To try double pinch, use a Wear OS 7 (API 37) image and a device profile that supports the gesture. Tap and crown input work on earlier images too.
+  3. Generic Wear OS AVD images may not include gesture-detection hardware. The app checks for that system feature and shows tap/crown input when it is missing. Test physical double pinch on a compatible Pixel Watch; tap and crown input work in the generic emulator.
   4. Select the `app` run configuration and click **Run (`Shift + F10`)**.
   5. Try tapping to count, undo, rotating the crown, changing the daily goal, and resetting progress. The emulator may not provide realistic vibration feedback.
 - **Using a Physical Watch (e.g., Pixel Watch):**

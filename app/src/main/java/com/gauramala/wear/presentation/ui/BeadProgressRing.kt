@@ -8,16 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.gauramala.wear.presentation.theme.GauraAmberDark
 import com.gauramala.wear.presentation.theme.GauraGold
 import com.gauramala.wear.presentation.theme.GauraGoldLight
-import com.gauramala.wear.presentation.theme.GauraSaffron
 import com.gauramala.wear.presentation.theme.MilestoneCyan
 import com.gauramala.wear.presentation.theme.SurfaceVariantDark
 import kotlin.math.cos
@@ -25,8 +21,8 @@ import kotlin.math.sin
 
 /**
  * Circular progress ring for round Wear OS displays.
- * Outer arc: 108 beads of the current round.
- * Milestone markers: 27, 54, 81, and 108 (Meru/Guru bead).
+ * Outer ring: 107 count beads plus the Meru/Guru bead, lit as the current round advances.
+ * Milestones at beads 27, 54, and 81 use a distinct color.
  * Inner ring dots: Completed rounds out of daily goal (e.g. 16).
  */
 @Composable
@@ -44,12 +40,12 @@ fun BeadProgressRing(
     )
 
     Canvas(modifier = modifier.fillMaxSize()) {
-        val strokeWidth = if (isAmbient) 3.dp.toPx() else 6.dp.toPx()
-        val diameter = size.minDimension - strokeWidth - 8.dp.toPx()
+        val strokeWidth = if (isAmbient) 1.dp.toPx() else 1.5.dp.toPx()
+        val diameter = size.minDimension - 12.dp.toPx()
         val radius = diameter / 2f
         val center = Offset(size.width / 2f, size.height / 2f)
 
-        // 1. Background Track
+        // A faint guide keeps the bead spacing legible when the watch is dimmed.
         drawCircle(
             color = if (isAmbient) Color(0xFF222222) else SurfaceVariantDark,
             radius = radius,
@@ -57,66 +53,53 @@ fun BeadProgressRing(
             style = Stroke(width = strokeWidth)
         )
 
-        // 2. Active Bead Progress Arc
-        if (animatedProgress > 0f) {
-            val sweepAngle = animatedProgress * 360f
-            val arcBrush = if (isAmbient) {
-                Brush.sweepGradient(listOf(Color.White, Color.White))
+        // 108 individual beads replace the continuous arc so progress reads like a mala.
+        for (index in 0 until 108) {
+            val isMeru = index == 0
+            val angleDeg = -90f + (index * 360f / 108f)
+            val angleRad = Math.toRadians(angleDeg.toDouble())
+            val beadCenter = Offset(
+                x = (center.x + radius * cos(angleRad)).toFloat(),
+                y = (center.y + radius * sin(angleRad)).toFloat()
+            )
+            val isReached = if (isMeru) {
+                beadCount >= 107
             } else {
-                Brush.sweepGradient(
-                    colors = listOf(
-                        GauraSaffron,
-                        GauraAmberDark,
-                        GauraGold,
-                        GauraGoldLight
-                    ),
-                    center = center
-                )
+                animatedProgress >= (index / 108f)
+            }
+            val isMilestone = index == 27 || index == 54 || index == 81
+            val beadColor = when {
+                isAmbient && isReached -> Color.White
+                isAmbient -> Color(0xFF454545)
+                isMeru && isReached -> GauraGoldLight
+                isMeru -> GauraAmberDark
+                isReached && isMilestone -> MilestoneCyan
+                isReached -> GauraGold
+                isMilestone -> GauraAmberDark
+                else -> Color(0x665F5547)
+            }
+            val beadRadius = when {
+                isMeru -> 3.1.dp.toPx()
+                isReached && isMilestone -> 2.8.dp.toPx()
+                isReached -> 2.35.dp.toPx()
+                isMilestone -> 2.2.dp.toPx()
+                else -> 1.8.dp.toPx()
             }
 
-            drawArc(
-                brush = arcBrush,
-                startAngle = -90f,
-                sweepAngle = sweepAngle,
-                useCenter = false,
-                topLeft = Offset(center.x - radius, center.y - radius),
-                size = Size(diameter, diameter),
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-            )
-        }
-
-        // 3. Milestone Markers at 27, 54, 81 beads
-        if (!isAmbient) {
-            val milestoneFractions = listOf(0.25f, 0.50f, 0.75f)
-            milestoneFractions.forEach { fraction ->
-                val angleDeg = -90f + (fraction * 360f)
-                val angleRad = Math.toRadians(angleDeg.toDouble())
-                val dotCenter = Offset(
-                    x = (center.x + radius * cos(angleRad)).toFloat(),
-                    y = (center.y + radius * sin(angleRad)).toFloat()
-                )
-                val isReached = animatedProgress >= fraction
+            drawCircle(color = beadColor, radius = beadRadius, center = beadCenter)
+            if (isReached && !isAmbient) {
                 drawCircle(
-                    color = if (isReached) MilestoneCyan else Color(0x66FFFFFF),
-                    radius = 2.5.dp.toPx(),
-                    center = dotCenter
+                    color = Color.White.copy(alpha = 0.65f),
+                    radius = beadRadius * 0.34f,
+                    center = Offset(
+                        beadCenter.x - beadRadius * 0.2f,
+                        beadCenter.y - beadRadius * 0.2f
+                    )
                 )
             }
-
-            // Top Apex Marker (Bead 108 / Meru Bead indicator)
-            val meruAngleRad = Math.toRadians(-90.0)
-            val meruCenter = Offset(
-                x = (center.x + radius * cos(meruAngleRad)).toFloat(),
-                y = (center.y + radius * sin(meruAngleRad)).toFloat()
-            )
-            drawCircle(
-                color = if (beadCount >= 107) GauraGoldLight else GauraAmberDark,
-                radius = 4.dp.toPx(),
-                center = meruCenter
-            )
         }
 
-        // 4. Daily Rounds Completed Indicator (Dots track inside the main ring)
+        // Daily rounds are tracked on a smaller inner ring.
         if (!isAmbient && dailyGoal > 0) {
             val innerRadius = radius - 14.dp.toPx()
             val totalDots = dailyGoal.coerceAtMost(24) // up to 24 dots for visibility

@@ -171,10 +171,19 @@ fun SettingsDialog(
         // 1. Gesture Pinch Toggle
         item {
             SwitchButton(
-                checked = state.isPinchGestureEnabled,
+                checked = state.isPinchGestureEnabled && state.supportsOneHandedGestures,
                 onCheckedChange = { viewModel.togglePinchGesture(it) },
                 label = { Text("Double Pinch") },
-                secondaryLabel = { Text("On supported Wear OS 7 watches") },
+                secondaryLabel = {
+                    Text(
+                        if (state.supportsOneHandedGestures) {
+                            "Enabled while the screen is dimmed"
+                        } else {
+                            "Unavailable on this watch or emulator"
+                        }
+                    )
+                },
+                enabled = state.supportsOneHandedGestures,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 2.dp)
             )
         }

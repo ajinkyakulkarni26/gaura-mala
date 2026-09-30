@@ -64,6 +64,7 @@ fun MantraCounterScreen(
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val canUsePinchGesture = state.isPinchGestureEnabled && state.supportsOneHandedGestures
     var showSettings by remember { mutableStateOf(false) }
     val isAmbient = LocalAmbientModeManager.current?.currentAmbientMode is AmbientMode.Ambient
     val gestureConfiguration = rememberOneHandedGestureConfiguration(
@@ -137,14 +138,17 @@ fun MantraCounterScreen(
         }
     }
 
-    if (state.isPinchGestureEnabled && !isAmbient) {
+    if (canUsePinchGesture) {
         containerModifier = containerModifier.oneHandedGesture(
             gestureConfiguration = gestureConfiguration,
             onGestureLabel = "count a bead",
+            enabledInAmbient = true,
             onGestureAvailable = {
-                coroutineScope.launch { gestureIndicatorState.showIndicator() }
+                if (!isAmbient) {
+                    coroutineScope.launch { gestureIndicatorState.showIndicator() }
+                }
             },
-            onGesture = { viewModel.incrementBead() }
+            onGesture = { viewModel.incrementBeadFromGesture() }
         )
     }
 
@@ -208,12 +212,12 @@ fun MantraCounterScreen(
 
             if (!isAmbient) {
                 val inputHint = when {
-                    state.isPinchGestureEnabled && state.isScreenTapEnabled -> "Tap or double pinch to count"
-                    state.isPinchGestureEnabled -> "Double pinch to count"
+                    canUsePinchGesture && state.isScreenTapEnabled -> "Tap or double pinch to count"
+                    canUsePinchGesture -> "Double pinch to count"
                     state.isScreenTapEnabled -> "Tap to count"
                     else -> "Turn the crown to count"
                 }
-                if (state.isPinchGestureEnabled) {
+                if (canUsePinchGesture) {
                     OneHandedGestureClickIndicator(
                         gestureConfiguration = gestureConfiguration,
                         state = gestureIndicatorState,

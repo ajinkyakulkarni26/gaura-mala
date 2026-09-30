@@ -18,7 +18,13 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     private val preferences = MantraPreferences(application)
     private val hapticHelper = HapticHelper(application)
 
-    private val _uiState = MutableStateFlow(MantraUiState())
+    private val _uiState = MutableStateFlow(
+        MantraUiState(
+            supportsOneHandedGestures = application.packageManager.hasSystemFeature(
+                FEATURE_WEAR_GESTURE_DETECTION
+            )
+        )
+    )
     val uiState: StateFlow<MantraUiState> = _uiState.asStateFlow()
     private val counterStateMachine = MantraCounterStateMachine()
 
@@ -58,10 +64,13 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
      */
     fun incrementBead() = incrementBead(applyDebounce = true)
 
-    /** Crown rotations are already discrete input and should not share the tap/pinch debounce. */
-    fun incrementBeadFromRotary() = incrementBead(applyDebounce = false)
+    /** The gesture framework already provides its own success haptic. */
+    fun incrementBeadFromGesture() = incrementBead(applyDebounce = true, playAppHaptics = false)
 
-    private fun incrementBead(applyDebounce: Boolean) {
+    /** Crown rotations are already discrete input and should not share the tap/pinch debounce. */
+    fun incrementBeadFromRotary() = incrementBead(applyDebounce = false, playAppHaptics = true)
+
+    private fun incrementBead(applyDebounce: Boolean, playAppHaptics: Boolean = true) {
         if (applyDebounce) {
             val now = SystemClock.elapsedRealtime()
             if (now - lastIncrementTimestamp < debounceWindowMs) {
@@ -77,7 +86,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         _uiState.value = nextState
         saveCounts(nextState.beadCount, nextState.completedRounds)
 
-        if (currentState.isHapticsEnabled) {
+        if (playAppHaptics && currentState.isHapticsEnabled) {
             if (transition.completedRound) {
                 if (transition.goalJustReached) {
                     hapticHelper.dailyGoalAchievedAlert()
@@ -187,5 +196,9 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
             }
             viewModelScope.launch { preferences.resetIfNewDay() }
         }
+    }
+
+    private companion object {
+        const val FEATURE_WEAR_GESTURE_DETECTION = "com.google.wear.feature.GESTURE_DETECTION"
     }
 }

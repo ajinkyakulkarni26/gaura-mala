@@ -17,6 +17,7 @@ class MantraCounterStateMachineTest {
         assertEquals(0f, state.roundProgressFraction)
         assertEquals(0f, state.dailyProgressFraction)
         assertEquals(16, state.dailyGoalRounds)
+        assertFalse(state.supportsOneHandedGestures)
         assertFalse(state.isGoalAchieved)
     }
 

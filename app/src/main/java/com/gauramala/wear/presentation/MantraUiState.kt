@@ -5,6 +5,7 @@ data class MantraUiState(
     val completedRounds: Int = 0,         // e.g. 0 to 16+
     val dailyGoalRounds: Int = 16,        // ISKCON standard vow: 16 rounds
     val isPinchGestureEnabled: Boolean = true,
+    val supportsOneHandedGestures: Boolean = false,
     val isScreenTapEnabled: Boolean = true,
     val isHapticsEnabled: Boolean = true,
     val isMilestonesEnabled: Boolean = true,
