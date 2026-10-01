@@ -1,4 +1,4 @@
-# 📿 GauraMala (`gaura-mala`)
+# 📿 Gaura Mala (`gaura-mala`)
 ### Native Wear OS Maha-Mantra Counter & Digital Japa Mala
 
 > *"harer nāma harer nāma harer nāmaiva kevalam*  
@@ -9,7 +9,7 @@
 
 ## 🌟 Overview
 
-**GauraMala** is a native **Wear OS** application designed specifically for chanting the **Hare Krishna Maha-mantra**. Named in honor of **Sri Chaitanya Mahaprabhu (Gaura)**, who inaugurated the congregational chanting of the Holy Names, the app transforms your smartwatch into an ergonomic, eyes-closed digital *japa mala*.
+**Gaura Mala** is a native **Wear OS** application designed specifically for chanting the **Hare Krishna Maha-mantra**. Named in honor of **Sri Chaitanya Mahaprabhu (Gaura)**, who inaugurated the congregational chanting of the Holy Names, the app transforms your smartwatch into an ergonomic, eyes-closed digital *japa mala*.
 
 It addresses the fundamental limitation of traditional smartwatch counters: **requiring two hands** (one wearing the watch, the other tapping the screen). On compatible Wear OS devices, chanters can advance the counter with the system's **double-pinch gesture**. Screen tap and crown input remain available on other watches.
 
@@ -22,6 +22,7 @@ It addresses the fundamental limitation of traditional smartwatch counters: **re
 - Enable or disable the gesture independently from full-screen tap in Settings.
 - This requires the Wear OS one-handed gesture API and hardware that advertises gesture detection. The app hides the pinch hint when the system feature is unavailable; tap and crown input continue to work. See [Android's one-handed gesture guide](https://developer.android.com/training/wearables/compose/one-handed-gestures).
 - A **280ms debounce window** filters accidental repeat taps and gestures.
+- The pinch cue appears at most once each time the counter screen is opened; counting with taps, crown turns, or pinches does not repeatedly show it.
 
 ### 2. 📳 Eyes-Closed Tactile Feedback (HapticHelper)
 - **Single Bead (1–107):** Subtle, crisp click (`VibrationEffect.EFFECT_CLICK`) providing quiet confirmation without looking.
@@ -33,15 +34,19 @@ It addresses the fundamental limitation of traditional smartwatch counters: **re
 ### 3. 🛡️ Input Fallbacks & Ergonomics
 - **Full-Screen Tap:** Tap anywhere on the watch display to advance.
 - **Rotary Crown Support:** Rotate the physical watch crown downwards to advance beads.
-- **Fatigue Mitigation:** Toggle between gesture and screen tap in Settings to avoid finger strain during long japa sessions.
+- **Fatigue Mitigation:** Enable or disable gesture and screen-tap input independently in Settings.
 - **Accidental Tap Protection:** Quick Undo button and confirmation dialogs before resetting current-round or daily progress.
 - **Daily Goal:** Adjust the target from 1 to 64 rounds in Settings.
 - **Daily Rollover:** Progress resets for a new local calendar day when you return to or use the app; preferences and daily progress persist across app restarts.
+- **Local data:** Counts and preferences stay on the watch, roll over by local calendar day, and are excluded from Android backup. The app has no account, ads, analytics, or server-side user-data collection; see the [privacy policy](https://ajinkyakulkarni26.github.io/gaura-mala/privacy-policy.html).
+- **Intermittent use:** Wear OS may dim the display and return to the watch face after its configured idle timeout. This is expected system behavior, not a counter reset; saved progress remains available when you reopen Gaura Mala.
+- **Keep Awake:** An optional setting prevents dimming and uses more battery. It remains off by default. There is no persistent activity notification pinning Gaura Mala to the watch face, so the app can leave the foreground during a chanting break.
 
 ### 4. 🎨 Sacred Aesthetic & Battery Efficiency
 - **Golden Gaura Theme:** Inspired by Lord Chaitanya’s golden complexion (deep saffron `#FFB300`, amber `#FF8F00`, and sacred gold `#FFE082`).
 - **OLED Pure Black:** Built on true `#000000` AMOLED canvas for maximum battery longevity during multi-hour chanting sessions.
 - **Ambient Mode Support:** Shows the time, counter, and 108-bead progress ring while removing controls when the watch enters low-power ambient mode. The pinch handler opts into ambient mode on supported devices, so Keep Awake can remain off by default.
+- **Privacy Policy:** Read the policy on the watch. Contact Developer opens the project's GitHub Issues page on a paired phone, with the URL shown on the watch if no phone is available.
 
 ### 5. ⌚ Wear OS Ecosystem Integration
 - **Glanceable Wear OS Tile (`GauraMalaTileService`):** View today's round and bead progress, refreshed as you chant.
@@ -86,6 +91,8 @@ gaura-mala/
 └── gradle.properties
 ```
 
+Additional source files: `presentation/CounterHapticPolicy.kt` selects input-specific feedback, `presentation/RotaryBeadInput.kt` turns crown motion into bead steps, and `presentation/ui/PrivacyPolicyScreen.kt` contains the on-watch policy and Contact Developer action. JVM tests for the counter, haptics, saved state, and crown input are under `app/src/test/`.
+
 ---
 
 ## 🚀 Getting Started
@@ -95,7 +102,7 @@ gaura-mala/
 - The Gradle wrapper uses Gradle 9.3.1 and Android Gradle Plugin 9.1.1.
 - To run the app in an emulator, install the latest stable Wear OS 7 (API 37) system image for your computer's architecture in Android Studio's SDK Manager, then create a round Wear OS device in Device Manager.
 
-Build the debug app from the repository root with `./gradlew assembleDebug`. Android Studio can also build and install it with the `app` run configuration.
+Build the debug app from the repository root with `./gradlew :app:assembleDebug`. Run the JVM unit tests with `./gradlew :app:test`. Android Studio can also build and install the app with the `app` run configuration.
 
 ### 1. Open in Android Studio
 1. Launch **Android Studio**.
@@ -130,7 +137,7 @@ Build the debug app from the repository root with `./gradlew assembleDebug`. And
 # Install debug APK directly via ADB
 ~/Library/Android/sdk/platform-tools/adb install app/build/outputs/apk/debug/app-debug.apk
 
-# Launch GauraMala on the watch
+# Launch Gaura Mala on the watch
 ~/Library/Android/sdk/platform-tools/adb shell am start -n com.gauramala.wear.debug/com.gauramala.wear.MainActivity
 ```
 
