@@ -76,6 +76,7 @@ fun MantraCounterScreen(
     )
     val gestureIndicatorState = remember { OneHandedGestureClickIndicatorState() }
     val coroutineScope = rememberCoroutineScope()
+    var hasPromptedPinchGesture by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val rotaryThreshold = with(LocalDensity.current) { 24.dp.toPx() }
     val rotaryBeadInput = remember(rotaryThreshold) { RotaryBeadInput(rotaryThreshold) }
@@ -146,9 +147,15 @@ fun MantraCounterScreen(
             onGestureLabel = "count a bead",
             enabledInAmbient = true,
             onGestureAvailable = {
-                coroutineScope.launch { gestureIndicatorState.showIndicator() }
+                if (!hasPromptedPinchGesture) {
+                    hasPromptedPinchGesture = true
+                    coroutineScope.launch { gestureIndicatorState.showIndicator() }
+                }
             },
-            onGesture = { viewModel.incrementBeadFromGesture() }
+            onGesture = {
+                hasPromptedPinchGesture = true
+                viewModel.incrementBeadFromGesture()
+            }
         )
     }
 
@@ -212,26 +219,18 @@ fun MantraCounterScreen(
                     else -> "Turn the crown to count"
                 }
                 if (canUsePinchGesture) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp),
-                        contentAlignment = Alignment.Center
+                    OneHandedGestureClickIndicator(
+                        gestureConfiguration = gestureConfiguration,
+                        state = gestureIndicatorState,
+                        gestureIndicatorSize = OneHandedGestureIndicatorSize.Small,
+                        gestureIndicatorTint = GauraGoldLight
                     ) {
-                        OneHandedGestureClickIndicator(
-                            gestureConfiguration = gestureConfiguration,
-                            state = gestureIndicatorState,
-                            modifier = Modifier.fillMaxSize(),
-                            gestureIndicatorSize = OneHandedGestureIndicatorSize.Medium,
-                            gestureIndicatorTint = GauraGoldLight
-                        ) {
-                            Text(
-                                text = inputHint,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = OnSurfaceMuted,
-                                fontSize = 9.sp
-                            )
-                        }
+                        Text(
+                            text = inputHint,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = OnSurfaceMuted,
+                            fontSize = 9.sp
+                        )
                     }
                 } else {
                     Text(
