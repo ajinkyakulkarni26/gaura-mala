@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,9 +46,13 @@ import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.foundation.AmbientMode
 import androidx.wear.compose.foundation.LocalAmbientModeManager
 import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureAction
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicator
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureClickIndicatorState
 import androidx.wear.compose.material3.onehandedgesture.OneHandedGesturePriority
+import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureIndicatorSize
 import androidx.wear.compose.material3.onehandedgesture.oneHandedGesture
 import androidx.wear.compose.material3.onehandedgesture.rememberOneHandedGestureConfiguration
+import kotlinx.coroutines.launch
 import com.gauramala.wear.presentation.MantraCounterViewModel
 import com.gauramala.wear.presentation.RotaryBeadInput
 import com.gauramala.wear.presentation.theme.GauraGold
@@ -69,6 +74,8 @@ fun MantraCounterScreen(
         gestureId = "gaura-mala-count-bead",
         priority = OneHandedGesturePriority.Clickable
     )
+    val gestureIndicatorState = remember { OneHandedGestureClickIndicatorState() }
+    val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
     val rotaryThreshold = with(LocalDensity.current) { 24.dp.toPx() }
     val rotaryBeadInput = remember(rotaryThreshold) { RotaryBeadInput(rotaryThreshold) }
@@ -138,6 +145,9 @@ fun MantraCounterScreen(
             gestureConfiguration = gestureConfiguration,
             onGestureLabel = "count a bead",
             enabledInAmbient = true,
+            onGestureAvailable = {
+                coroutineScope.launch { gestureIndicatorState.showIndicator() }
+            },
             onGesture = { viewModel.incrementBeadFromGesture() }
         )
     }
@@ -201,12 +211,36 @@ fun MantraCounterScreen(
                     state.isScreenTapEnabled -> "Tap to count"
                     else -> "Turn the crown to count"
                 }
-                Text(
-                    text = inputHint,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = OnSurfaceMuted,
-                    fontSize = 9.sp
-                )
+                if (canUsePinchGesture) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        OneHandedGestureClickIndicator(
+                            gestureConfiguration = gestureConfiguration,
+                            state = gestureIndicatorState,
+                            modifier = Modifier.fillMaxSize(),
+                            gestureIndicatorSize = OneHandedGestureIndicatorSize.Medium,
+                            gestureIndicatorTint = GauraGoldLight
+                        ) {
+                            Text(
+                                text = inputHint,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = OnSurfaceMuted,
+                                fontSize = 9.sp
+                            )
+                        }
+                    }
+                } else {
+                    Text(
+                        text = inputHint,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OnSurfaceMuted,
+                        fontSize = 9.sp
+                    )
+                }
             }
 
             // Bottom Control Action Row (Hidden during ambient mode)
