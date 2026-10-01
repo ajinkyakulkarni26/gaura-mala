@@ -16,7 +16,7 @@ android {
         applicationId = "com.gauramala.wear"
         minSdk = 30
         targetSdk = 37
-        versionCode = 8
+        versionCode = 9
         versionName = "1.0.0"
     }
 
@@ -92,6 +92,7 @@ dependencies {
 
     // Wearable Services
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
+    implementation("androidx.wear:wear-remote-interactions:1.2.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
