@@ -188,7 +188,7 @@ fun MantraCounterScreen(
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = if (isAmbient) Color.White else GauraGoldLight,
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             )
 
@@ -229,7 +229,7 @@ fun MantraCounterScreen(
                             text = inputHint,
                             style = MaterialTheme.typography.labelSmall,
                             color = OnSurfaceMuted,
-                            fontSize = 9.sp
+                            fontSize = 10.sp
                         )
                     }
                 } else {
@@ -237,7 +237,7 @@ fun MantraCounterScreen(
                         text = inputHint,
                         style = MaterialTheme.typography.labelSmall,
                         color = OnSurfaceMuted,
-                        fontSize = 9.sp
+                        fontSize = 10.sp
                     )
                 }
             }

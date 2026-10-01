@@ -133,7 +133,7 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
                     Text(
                         "github.com/ajinkyakulkarni26/gaura-mala/issues",
                         color = GauraGold,
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         textAlign = TextAlign.Center
                     )
                     Button(
@@ -143,7 +143,7 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
                             contentColor = OnSurfaceWhite
                         )
                     ) {
-                        Text("Dismiss", fontSize = 11.sp)
+                        Text("Dismiss", fontSize = 12.sp)
                     }
                 }
             }

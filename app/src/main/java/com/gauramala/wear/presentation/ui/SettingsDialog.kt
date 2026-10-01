@@ -172,7 +172,7 @@ fun SettingsDialog(
                     Button(
                         onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds - 1) },
                         enabled = state.dailyGoalRounds > 1,
-                        modifier = Modifier.size(44.dp),
+                        modifier = Modifier.size(48.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = SurfaceDark,
                             contentColor = OnSurfaceWhite
@@ -191,12 +191,12 @@ fun SettingsDialog(
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                         textAlign = TextAlign.Center,
-                        maxLines = 1
+                        maxLines = 2
                     )
                     Button(
                         onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds + 1) },
                         enabled = state.dailyGoalRounds < 64,
-                        modifier = Modifier.size(44.dp),
+                        modifier = Modifier.size(48.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = SurfaceDark,
                             contentColor = OnSurfaceWhite
@@ -213,7 +213,6 @@ fun SettingsDialog(
                     "1–64 rounds",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 10.sp,
-                    maxLines = 1,
                     textAlign = TextAlign.Center
                 )
             }
@@ -224,7 +223,7 @@ fun SettingsDialog(
             SwitchButton(
                 checked = state.isPinchGestureEnabled && state.supportsOneHandedGestures,
                 onCheckedChange = { viewModel.togglePinchGesture(it) },
-                label = { Text("Double Pinch", fontSize = 12.sp, maxLines = 1) },
+                label = { Text("Double Pinch", fontSize = 12.sp) },
                 secondaryLabel = {
                     Text(
                         if (state.supportsOneHandedGestures) {
@@ -232,7 +231,7 @@ fun SettingsDialog(
                         } else {
                             "Unavailable on this watch or emulator"
                         },
-                        fontSize = 9.sp
+                        fontSize = 10.sp
                     )
                 },
                 enabled = state.supportsOneHandedGestures,
@@ -246,8 +245,8 @@ fun SettingsDialog(
             SwitchButton(
                 checked = state.isScreenTapEnabled,
                 onCheckedChange = { viewModel.toggleScreenTap(it) },
-                label = { Text("Screen Tap", fontSize = 12.sp, maxLines = 1) },
-                secondaryLabel = { Text("Tap watch to count", fontSize = 9.sp) },
+                label = { Text("Screen Tap", fontSize = 12.sp) },
+                secondaryLabel = { Text("Tap watch to count", fontSize = 10.sp) },
                 colors = switchButtonColors,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
             )
@@ -258,8 +257,8 @@ fun SettingsDialog(
             SwitchButton(
                 checked = state.isHapticsEnabled,
                 onCheckedChange = { viewModel.toggleHaptics(it) },
-                label = { Text("Haptic Vibration", fontSize = 12.sp, maxLines = 1) },
-                secondaryLabel = { Text("Tactile feedback", fontSize = 9.sp) },
+                label = { Text("Haptic Vibration", fontSize = 12.sp) },
+                secondaryLabel = { Text("Tactile feedback", fontSize = 10.sp) },
                 colors = switchButtonColors,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
             )
@@ -270,8 +269,8 @@ fun SettingsDialog(
             SwitchButton(
                 checked = state.isMilestonesEnabled,
                 onCheckedChange = { viewModel.toggleMilestones(it) },
-                label = { Text("Milestones", fontSize = 12.sp, maxLines = 1) },
-                secondaryLabel = { Text("Ticks at 27, 54, 81", fontSize = 9.sp) },
+                label = { Text("Milestones", fontSize = 12.sp) },
+                secondaryLabel = { Text("Ticks at 27, 54, 81", fontSize = 10.sp) },
                 colors = switchButtonColors,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
             )
@@ -282,8 +281,8 @@ fun SettingsDialog(
             SwitchButton(
                 checked = state.keepScreenOn,
                 onCheckedChange = { viewModel.toggleKeepScreenOn(it) },
-                label = { Text("Keep Awake", fontSize = 12.sp, maxLines = 1) },
-                secondaryLabel = { Text("Prevents dimming; uses more battery", fontSize = 9.sp) },
+                label = { Text("Keep Awake", fontSize = 12.sp) },
+                secondaryLabel = { Text("Prevents dimming; uses more battery", fontSize = 10.sp) },
                 colors = switchButtonColors,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
             )

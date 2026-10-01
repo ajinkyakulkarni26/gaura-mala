@@ -7,7 +7,7 @@ Last reviewed: 2026-10-01
 Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It is a watch-only app with a circular 108-bead progress ring, daily round goal (16 by default), haptics, a Tile, and a watch-face complication.
 
 - Application ID: `com.gauramala.wear`
-- Current local version: `versionCode 9`, `versionName 1.0.0`
+- Current local version: `versionCode 10`, `versionName 1.0.0`
 - Main stack: Kotlin, Jetpack Compose for Wear OS Material 3, DataStore, Wearable Services
 - Minimum SDK 30; target and compile SDK 37; JDK 17
 - The app is declared standalone in `AndroidManifest.xml`; core counting does not require a phone app.
@@ -37,6 +37,7 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - Milestones are beads 27, 54, and 81; one round completes at 108. The daily-goal completion cue takes priority when the last bead also reaches the daily goal.
 - Keep Awake is optional and defaults off. The double-pinch path supports ambient mode; do not force the display to remain fully awake to make counting work.
 - Preserve the current centered round bead ring. Earlier circle redesigns looked disoriented to the user; the requested adjustment was text placement, not a different ring.
+- Wear OS screens must adapt to round displays with different usable diameters and system font scales. Let labels wrap where needed, keep important controls within the curved safe area, and preserve at least 48dp touch targets for primary actions.
 - Wrist-flick dismissal is standard Wear OS behavior. Do not try to intercept system navigation to keep the app open.
 - Progress and preferences are stored locally on the watch. Counts roll over on the local calendar date; preferences remain. The app does not send this data to a server, and Android backup is disabled. Do not describe the app as storing no data at all.
 - The launcher uses a black adaptive-icon background and a bead-mala foreground with no text. Keep the artwork centered and sized to avoid clipping in the circular mask.
@@ -80,14 +81,15 @@ Use a compatible physical Pixel Watch to verify double-pinch and real haptics. G
 
 Last known Play Console status (2026-10-01): the user had published a Wear OS closed-test release and passed the initial 12 opted-in tester gate. The remaining production-access requirement shown in Console was to run the closed test with at least 12 opted-in testers for at least 14 days, then apply for production access. Confirm the live Console status and dates before advising on progress; the 14-day window must not be assumed complete.
 
-Version 9 has been built, installed on the user's Pixel Watch 5, and the user confirmed the latest fixes work. The version 9 AAB is ready locally. Its upload to Google Play was not confirmed as of this note.
+Version 9 was built and installed on the user's Pixel Watch 5; the user confirmed its latest gesture and privacy-screen fixes work. Version 10 increases Daily Goal +/- controls to 48dp, raises small helper text to 10sp and the round label to 12sp, and permits settings copy to wrap. The version 10 debug build passed emulator layout checks at simulated 192dp and 227dp round sizes with reduced (0.85x) and enlarged (1.3x) system font scales. Physical watch font-scale review and a signed version 10 release bundle are still pending. The version 9 AAB upload to Google Play was not confirmed as of this note.
 
 Next steps:
 
-1. If not already done, upload version 9 to the correct Wear OS closed-testing track and publish it to testers.
-2. Verify the Contact Developer handoff with the watch paired to the user's phone; the emulator only verified the no-phone fallback.
-3. Keep at least 12 testers opted in for the full 14-day closed-test period, gather feedback, then complete the Play Console production-access application.
-4. Continue checking the Play listing, privacy/data declarations, screenshots, and required store assets before production review.
+1. Reconnect the Pixel Watch 5, install the version 10 debug build, and manually check a smaller and larger system font size on the watch; inspect the counter, settings, and privacy policy screens.
+2. After that review, build and upload version 10 to the correct Wear OS closed-testing track and publish it to testers.
+3. Verify the Contact Developer handoff with the watch paired to the user's phone; the emulator only verified the no-phone fallback.
+4. Keep at least 12 testers opted in for the full 14-day closed-test period, gather feedback, then complete the Play Console production-access application.
+5. Continue checking the Play listing, privacy/data declarations, screenshots, and required store assets before production review.
 
 ## Workspace hygiene
 
