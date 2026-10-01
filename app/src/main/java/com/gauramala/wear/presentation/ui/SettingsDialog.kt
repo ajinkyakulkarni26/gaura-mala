@@ -21,21 +21,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.hierarchicalFocusGroup
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.SwitchButtonDefaults
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import com.gauramala.wear.presentation.MantraCounterViewModel
 import com.gauramala.wear.presentation.MantraUiState
 import com.gauramala.wear.presentation.theme.AlertRed
@@ -123,7 +127,8 @@ fun SettingsDialog(
         return
     }
 
-    val listState = rememberScalingLazyListState()
+    val listState = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
     val switchButtonColors = SwitchButtonDefaults.switchButtonColors(
         checkedContainerColor = SurfaceDark,
         checkedContentColor = OnSurfaceWhite,
@@ -137,7 +142,7 @@ fun SettingsDialog(
         uncheckedTrackColor = OnSurfaceMuted.copy(alpha = 0.35f)
     )
 
-    ScalingLazyColumn(
+    TransformingLazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .hierarchicalFocusGroup(active = true),
@@ -153,13 +158,28 @@ fun SettingsDialog(
                 text = "Settings",
                 style = MaterialTheme.typography.titleMedium,
                 color = GauraGold,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier
+                    .transformedHeight(this, transformationSpec)
+                    .graphicsLayer {
+                        with(transformationSpec) {
+                            applyContentTransformation(scrollProgress)
+                        }
+                    }
+                    .padding(bottom = 8.dp)
             )
         }
 
         item {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec)
+                    .graphicsLayer {
+                        with(transformationSpec) {
+                            applyContentTransformation(scrollProgress)
+                        }
+                    }
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text("Daily goal", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
@@ -236,7 +256,11 @@ fun SettingsDialog(
                 },
                 enabled = state.supportsOneHandedGestures,
                 colors = switchButtonColors,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
+                transformation = SurfaceTransformation(transformationSpec),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec)
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
 
@@ -248,7 +272,11 @@ fun SettingsDialog(
                 label = { Text("Screen Tap", fontSize = 12.sp) },
                 secondaryLabel = { Text("Tap watch to count", fontSize = 10.sp) },
                 colors = switchButtonColors,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
+                transformation = SurfaceTransformation(transformationSpec),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec)
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
 
@@ -260,7 +288,11 @@ fun SettingsDialog(
                 label = { Text("Haptic Vibration", fontSize = 12.sp) },
                 secondaryLabel = { Text("Tactile feedback", fontSize = 10.sp) },
                 colors = switchButtonColors,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
+                transformation = SurfaceTransformation(transformationSpec),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec)
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
 
@@ -272,7 +304,11 @@ fun SettingsDialog(
                 label = { Text("Milestones", fontSize = 12.sp) },
                 secondaryLabel = { Text("Ticks at 27, 54, 81", fontSize = 10.sp) },
                 colors = switchButtonColors,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
+                transformation = SurfaceTransformation(transformationSpec),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec)
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
 
@@ -284,7 +320,11 @@ fun SettingsDialog(
                 label = { Text("Keep Awake", fontSize = 12.sp) },
                 secondaryLabel = { Text("Prevents dimming; uses more battery", fontSize = 10.sp) },
                 colors = switchButtonColors,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp)
+                transformation = SurfaceTransformation(transformationSpec),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec)
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
 
@@ -294,7 +334,11 @@ fun SettingsDialog(
                 onClick = {
                     pendingReset = ResetTarget.CURRENT_ROUND
                 },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec)
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                transformation = SurfaceTransformation(transformationSpec),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SurfaceDark,
                     contentColor = OnSurfaceWhite
@@ -308,7 +352,11 @@ fun SettingsDialog(
         item {
             Button(
                 onClick = { pendingReset = ResetTarget.DAILY_COUNT },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec)
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                transformation = SurfaceTransformation(transformationSpec),
                 colors = ButtonDefaults.buttonColors(containerColor = AlertRed.copy(alpha = 0.2f))
             ) {
                 Text("Reset Today's Rounds", color = AlertRed, fontSize = 12.sp)
@@ -318,7 +366,11 @@ fun SettingsDialog(
         item {
             Button(
                 onClick = { showPrivacyPolicy = true },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec)
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                transformation = SurfaceTransformation(transformationSpec),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SurfaceDark,
                     contentColor = OnSurfaceWhite
@@ -333,7 +385,11 @@ fun SettingsDialog(
             Spacer(modifier = Modifier.height(6.dp))
             Button(
                 onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .transformedHeight(this, transformationSpec)
+                    .padding(horizontal = 16.dp),
+                transformation = SurfaceTransformation(transformationSpec),
                 colors = ButtonDefaults.buttonColors(containerColor = GauraGold)
             ) {
                 Text("Done", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
