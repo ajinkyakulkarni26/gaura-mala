@@ -8,6 +8,7 @@
     <color name="gaura_tertiary">#FF7043</color>
     <!-- Deep OLED Battery Saving Blacks -->
     <color name="gaura_background">#000000</color>
+    <color name="gaura_icon_background">#000000</color>
     <color name="gaura_surface">#121212</color>
     <color name="gaura_surface_variant">#1E1E1E</color>
     <color name="gaura_on_surface">#E0E0E0</color>

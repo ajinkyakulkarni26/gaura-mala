@@ -3,6 +3,7 @@ package com.gauramala.wear.presentation.ui
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.hierarchicalFocusGroup
@@ -36,7 +38,7 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
     ScalingLazyColumn(
         modifier = Modifier.fillMaxSize().hierarchicalFocusGroup(active = true),
         state = listState,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 18.dp),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 18.dp),
         rotaryScrollableBehavior = RotaryScrollableDefaults.behavior(scrollableState = listState),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -105,6 +107,27 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
 
 @Composable
 private fun PolicySection(title: String, body: String) {
-    Text(title, color = GauraGold, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-    Text(body, color = OnSurfaceWhite, style = MaterialTheme.typography.bodySmall, fontSize = 11.sp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            title,
+            color = GauraGold,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            body,
+            color = OnSurfaceWhite,
+            style = MaterialTheme.typography.bodySmall,
+            fontSize = 10.sp,
+            lineHeight = 13.sp,
+            textAlign = TextAlign.Center
+        )
+    }
 }
