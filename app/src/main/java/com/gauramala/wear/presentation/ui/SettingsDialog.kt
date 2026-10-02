@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnDefaults
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.material3.Button
@@ -148,7 +149,10 @@ fun SettingsDialog(
         state = listState,
         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
-        rotaryScrollableBehavior = RotaryScrollableDefaults.behavior(
+        flingBehavior = TransformingLazyColumnDefaults.snapFlingBehavior(
+            state = listState
+        ),
+        rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(
             scrollableState = listState
         ),
         horizontalAlignment = Alignment.CenterHorizontally
