@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -147,7 +146,8 @@ fun SettingsDialog(
             .fillMaxSize()
             .hierarchicalFocusGroup(active = true),
         state = listState,
-        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 18.dp),
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
         rotaryScrollableBehavior = RotaryScrollableDefaults.behavior(
             scrollableState = listState
         ),
@@ -158,14 +158,7 @@ fun SettingsDialog(
                 text = "Settings",
                 style = MaterialTheme.typography.titleMedium,
                 color = GauraGold,
-                modifier = Modifier
-                    .transformedHeight(this, transformationSpec)
-                    .graphicsLayer {
-                        with(transformationSpec) {
-                            applyContentTransformation(scrollProgress)
-                        }
-                    }
-                    .padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 6.dp)
             )
         }
 
@@ -173,13 +166,7 @@ fun SettingsDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .transformedHeight(this, transformationSpec)
-                    .graphicsLayer {
-                        with(transformationSpec) {
-                            applyContentTransformation(scrollProgress)
-                        }
-                    }
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text("Daily goal", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
@@ -247,7 +234,7 @@ fun SettingsDialog(
                 secondaryLabel = {
                     Text(
                         if (state.supportsOneHandedGestures) {
-                            "Works while the screen is dimmed"
+                            "Works in dim mode"
                         } else {
                             "Unavailable on this watch or emulator"
                         },
@@ -260,7 +247,7 @@ fun SettingsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .transformedHeight(this, transformationSpec)
-                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                    .padding(horizontal = 4.dp)
             )
         }
 
@@ -270,13 +257,13 @@ fun SettingsDialog(
                 checked = state.isScreenTapEnabled,
                 onCheckedChange = { viewModel.toggleScreenTap(it) },
                 label = { Text("Screen Tap", fontSize = 12.sp) },
-                secondaryLabel = { Text("Tap watch to count", fontSize = 10.sp) },
+                secondaryLabel = { Text("Tap to count", fontSize = 10.sp) },
                 colors = switchButtonColors,
                 transformation = SurfaceTransformation(transformationSpec),
                 modifier = Modifier
                     .fillMaxWidth()
                     .transformedHeight(this, transformationSpec)
-                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                    .padding(horizontal = 4.dp)
             )
         }
 
@@ -292,7 +279,7 @@ fun SettingsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .transformedHeight(this, transformationSpec)
-                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                    .padding(horizontal = 4.dp)
             )
         }
 
@@ -308,7 +295,7 @@ fun SettingsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .transformedHeight(this, transformationSpec)
-                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                    .padding(horizontal = 4.dp)
             )
         }
 
@@ -318,13 +305,13 @@ fun SettingsDialog(
                 checked = state.keepScreenOn,
                 onCheckedChange = { viewModel.toggleKeepScreenOn(it) },
                 label = { Text("Keep Awake", fontSize = 12.sp) },
-                secondaryLabel = { Text("Prevents dimming; uses more battery", fontSize = 10.sp) },
+                secondaryLabel = { Text("Prevents dimming; more battery", fontSize = 10.sp) },
                 colors = switchButtonColors,
                 transformation = SurfaceTransformation(transformationSpec),
                 modifier = Modifier
                     .fillMaxWidth()
                     .transformedHeight(this, transformationSpec)
-                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                    .padding(horizontal = 4.dp)
             )
         }
 
@@ -337,7 +324,7 @@ fun SettingsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .transformedHeight(this, transformationSpec)
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
                 transformation = SurfaceTransformation(transformationSpec),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SurfaceDark,
@@ -355,7 +342,7 @@ fun SettingsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .transformedHeight(this, transformationSpec)
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
                 transformation = SurfaceTransformation(transformationSpec),
                 colors = ButtonDefaults.buttonColors(containerColor = AlertRed.copy(alpha = 0.2f))
             ) {
@@ -369,7 +356,7 @@ fun SettingsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .transformedHeight(this, transformationSpec)
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
                 transformation = SurfaceTransformation(transformationSpec),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SurfaceDark,
