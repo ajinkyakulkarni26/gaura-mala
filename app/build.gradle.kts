@@ -16,7 +16,7 @@ android {
         applicationId = "com.gauramala.wear"
         minSdk = 30
         targetSdk = 37
-        versionCode = 10
+        versionCode = 11
         versionName = "1.0.0"
     }
 
@@ -80,10 +80,10 @@ dependencies {
     implementation("androidx.wear.compose:compose-material3:1.7.0")
 
     // Wear Tiles & Complications
-    implementation("androidx.wear.tiles:tiles:1.4.0")
-    implementation("androidx.wear.protolayout:protolayout:1.2.0")
-    implementation("androidx.wear.protolayout:protolayout-expression:1.2.0")
-    implementation("androidx.wear.protolayout:protolayout-material:1.2.0")
+    implementation("androidx.wear.tiles:tiles:1.5.0")
+    implementation("androidx.wear.protolayout:protolayout:1.3.0")
+    implementation("androidx.wear.protolayout:protolayout-expression:1.3.0")
+    implementation("androidx.wear.protolayout:protolayout-material:1.3.0")
     implementation("androidx.wear.watchface:watchface-complications-data-source:1.2.1")
     implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1")
 

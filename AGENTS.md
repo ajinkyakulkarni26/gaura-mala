@@ -1,13 +1,13 @@
 # Gaura Mala Agent Notes
 
-Last reviewed: 2026-10-02
+Last reviewed: 2026-10-06
 
 ## Project
 
 Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It is a watch-only app with a circular 108-bead progress ring, daily round goal (16 by default), haptics, a Tile, and a watch-face complication.
 
 - Application ID: `com.gauramala.wear`
-- Current local version: `versionCode 10`, `versionName 1.0.0`
+- Current local version: `versionCode 11`, `versionName 1.0.0`
 - Main stack: Kotlin, Jetpack Compose for Wear OS Material 3, DataStore, Wearable Services
 - Minimum SDK 30; target and compile SDK 37; JDK 17
 - The app is declared standalone in `AndroidManifest.xml`; core counting does not require a phone app.
@@ -80,15 +80,17 @@ Use a compatible physical Pixel Watch to verify double-pinch and real haptics. G
 
 ## Release status and next work
 
-Last known Play Console status (2026-10-01): the user had published a Wear OS closed-test release and passed the initial 12 opted-in tester gate. The remaining production-access requirement shown in Console was to run the closed test with at least 12 opted-in testers for at least 14 days, then apply for production access. Confirm the live Console status and dates before advising on progress; the 14-day window must not be assumed complete.
+Last known Play Console status (2026-10-06): the user has two active Wear OS closed-testing tracks. The “Closed testing Round 2” track shows release 10 (1.0.0), last updated Oct 2, 2026. The earlier “Closed Testing Gaura Mala” track shows release 4 (1.0.0), last updated Sep 30, 2026. The user had passed the initial 12 opted-in tester gate; production access still requires at least 12 testers opted in continuously for 14 days, then an application for production access. Confirm live tester counts and dates before advising; do not assume the 14-day period is complete.
 
-Version 9 was built and installed on the user's Pixel Watch 5; the user confirmed its gesture and privacy-screen fixes work. Version 10 increases Daily Goal +/- controls to 48dp, raises small helper text to 10sp and the round label to 12sp, and permits settings copy to wrap. The version 10 debug build passed emulator layout checks at simulated 192dp and 227dp round sizes with reduced (0.85x) and enlarged (1.3x) system font scales. After comparing a watch recording with the Wear OS app list, Settings was migrated to Material 3 `TransformingLazyColumn` and tuned for free scrolling; the user reported the scroll still felt rough on the Pixel Watch 5. A matching snap-and-fling experiment felt too slow and stepped like an elevator. The current version 10 debug build uses a regular `Column` with continuous touch scrolling and direct rotary scrolling, compiles successfully, and is installed on the Pixel Watch 5; the user confirmed scrolling is now smooth. A signed version 10 release bundle is still pending. The version 9 AAB upload to Google Play was not confirmed as of this note.
+Version 9 was built and installed on the user's Pixel Watch 5; the user confirmed its gesture and privacy-screen fixes work. Version 10 increases Daily Goal +/- controls to 48dp, raises small helper text to 10sp and the round label to 12sp, and permits settings copy to wrap. The version 10 debug build passed emulator layout checks at simulated 192dp and 227dp round sizes with reduced (0.85x) and enlarged (1.3x) system font scales. The current Settings implementation uses a regular `Column` with continuous touch scrolling and direct rotary scrolling; the user confirmed it feels smooth on the Pixel Watch 5.
+
+Version 11 is a dependency maintenance release. `app/build.gradle.kts` now uses Wear Tiles 1.5.0 and Wear ProtoLayout 1.3.0. Gradle resolves `tiles-proto` 1.5.0 and ProtoLayout artifacts 1.3.0; these include the fixes for the Wear OS 5/API 34 Tile update `SecurityException` and protobuf CVE-2024-7254 warnings seen on release 4. The signed version 11 AAB built successfully on 2026-10-06. It has not been uploaded to Play Console or manually validated on a physical watch. The Fragment 1.1.0 “outdated SDK” notice remains a lower-priority transitive dependency warning and was not changed.
 
 Next steps:
 
-1. Keep the confirmed smooth plain continuous Settings scroll. Manually check a smaller and larger system font size on the watch; inspect the counter, settings, and privacy policy screens.
-2. Manually check a smaller and larger system font size on the watch; inspect the counter, settings, and privacy policy screens.
-3. After UI review, build and upload the next unused version code to the correct Wear OS closed-testing track and publish it to testers.
+1. Manually check a smaller and larger system font size on the watch; inspect the counter, settings, and privacy policy screens.
+2. If approved by the user, upload version 11 to a Wear OS closed-testing track, then check whether Play Console clears the Tile and protobuf notices for that artifact.
+3. Verify Tile updates on a Wear OS 5/API 34 device if available; also check the Tile and complication after the dependency update on the Pixel Watch 5.
 4. Verify the Contact Developer handoff with the watch paired to the user's phone; the emulator only verified the no-phone fallback.
 5. Keep at least 12 testers opted in for the full 14-day closed-test period, gather feedback, then complete the Play Console production-access application.
 6. Continue checking the Play listing, privacy/data declarations, screenshots, and required store assets before production review.
