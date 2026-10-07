@@ -1,10 +1,9 @@
 name: Android CI
 
 on:
+  # Run on every contributor branch push as well as on pull requests.
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -92,7 +91,7 @@ jobs:
             ln -s android-37.0 "${sdk_platforms}/android-37"
           fi
 
-      - name: Run tap and rotary integration tests on Wear OS
+      - name: Run Wear OS UI integration tests
         uses: reactivecircus/android-emulator-runner@v2.38.0
         with:
           api-level: 35
@@ -103,6 +102,10 @@ jobs:
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: ./gradlew :app:connectedDebugAndroidTest
+
+      - name: List individual Wear OS test cases
+        if: always()
+        run: python3 scripts/print-android-test-results.py
 
       - name: Save Wear OS instrumentation results
         if: always()

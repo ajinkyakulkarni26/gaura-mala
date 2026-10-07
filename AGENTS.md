@@ -28,8 +28,8 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - `haptics/HapticHelper.kt`: vibration patterns.
 - `tile/GauraMalaTileService.kt`, `complication/GauraMalaComplicationService.kt`: Wear OS surfaces.
 - `app/src/test/`: unit tests for counter transitions, haptic policy, preference state, and rotary input.
-- `app/src/androidTest/`: Wear OS UI integration tests for screen tap and rotary counting.
-- `scripts/test-local.sh`: local pre-push checks with optional Wear OS emulator integration tests.
+- `app/src/androidTest/`: Wear OS UI integration tests for the counter, tap/rotary input, undo, round completion and adjustment, settings, and reset flows.
+- `scripts/test-local.sh`: local pre-push checks with optional Wear OS emulator integration tests; `scripts/print-android-test-results.py` prints individual case names, descriptions, and outcomes.
 
 ## Product decisions to preserve
 
@@ -90,7 +90,9 @@ adb -s <watch-serial> shell am start -n com.gauramala.wear/.MainActivity
 
 Use a compatible physical Pixel Watch to verify double-pinch and real haptics. Generic Wear OS emulators may not expose gesture hardware or realistic vibration. Emulator testing can still check layout, navigation, and the no-phone Contact Developer fallback.
 
-Run `./scripts/test-local.sh` before pushing. It always runs unit tests, the 90% core-logic coverage gate, and a debug build; when it finds a running Wear OS emulator, it also runs tap and rotary instrumentation tests. `.github/workflows/android-ci.yml` runs the same test layers in GitHub Actions on pushes and pull requests to `main`, with a Wear OS 5.1 (API 35) emulator. A manual trigger is also available. Compose rotary injection checks the app's rotary event path, but it does not verify physical crown hardware, double-pinch detection, or real haptics. Keep those checks in the physical-watch release checklist.
+Run `./scripts/test-local.sh` before pushing. It always runs unit tests, the 90% core-logic coverage gate, and a debug build; when it finds a running Wear OS emulator, it runs the UI integration suite and prints each test case's outcome. `.github/workflows/android-ci.yml` runs the same test layers in GitHub Actions on every branch push and pull request, with a Wear OS 5.1 (API 35) emulator, and prints named case results in the workflow log. The instrumentation XML and HTML reports are uploaded as artifacts. Compose rotary injection checks the app's rotary event path, but it does not verify physical crown hardware, double-pinch detection, or real haptics. Keep those checks in the physical-watch release checklist.
+
+The repository's `main` branch is protected: changes go through pull requests, and both the unit/coverage/build job and Wear OS emulator integration job must pass before merge. Do not push directly to `main`.
 
 ## Release status and next work
 
@@ -98,7 +100,7 @@ Last known Play Console status (2026-10-06): the user has two active Wear OS clo
 
 Version 9 was built and installed on the user's Pixel Watch 5; the user confirmed its gesture and privacy-screen fixes work. Version 10 increases Daily Goal +/- controls to 48dp, raises small helper text to 10sp and the round label to 12sp, and permits settings copy to wrap. The version 10 debug build passed emulator layout checks at simulated 192dp and 227dp round sizes with reduced (0.85x) and enlarged (1.3x) system font scales. The current Settings implementation uses a regular `Column` with continuous touch scrolling and direct rotary scrolling; the user confirmed it feels smooth on the Pixel Watch 5.
 
-Version 11 is a dependency maintenance release. `app/build.gradle.kts` now uses Wear Tiles 1.5.0 and Wear ProtoLayout 1.3.0. Gradle resolves `tiles-proto` 1.5.0 and ProtoLayout artifacts 1.3.0; these include the fixes for the Wear OS 5/API 34 Tile update `SecurityException` and protobuf CVE-2024-7254 warnings seen on release 4. The signed version 11 AAB built successfully on 2026-10-06. It has not been uploaded to Play Console or manually validated on a physical watch. The Fragment 1.1.0 “outdated SDK” notice remains a lower-priority transitive dependency warning and was not changed.
+Version 11 is a dependency maintenance release. `app/build.gradle.kts` now uses Wear Tiles 1.5.0 and Wear ProtoLayout 1.3.0. Gradle resolves `tiles-proto` 1.5.0 and ProtoLayout artifacts 1.3.0; these include the fixes for the Wear OS 5/API 34 Tile update `SecurityException` and protobuf CVE-2024-7254 warnings seen on release 4. The signed version 11 AAB built successfully on 2026-10-06. It has not been uploaded to Play Console or manually validated on a physical watch. The old Fragment 1.1.0 dependency warning was traced to wearable/Play Services transitive dependencies; the build now constrains Fragment to 1.9.1, uses Gradle 9.8.0, and uses Android Gradle Plugin 9.4.0. Verify dependency resolution and whether Play Console clears its notice on the next uploaded bundle.
 
 Version 12's signed AAB was built on 2026-10-06; Play Console upload is not confirmed. The user confirmed its crown counting and picker haptics work on the Pixel Watch 5. Version 13 shortens on-watch confirmation, settings, summary, and privacy text. Its signed AAB and debug APK built successfully on 2026-10-06. An earlier v13 debug build was installed on the Pixel Watch 5 and the round-reset message was checked; reinstalling the final copy update is pending because the watch disconnected from ADB. Play Console upload is not confirmed. Its English, Hindi, and Marathi release notes are in `RELEASE_NOTES_v13.txt`.
 

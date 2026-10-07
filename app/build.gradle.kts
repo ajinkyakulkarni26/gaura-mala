@@ -62,6 +62,12 @@ kotlin {
 }
 
 dependencies {
+    constraints {
+        implementation("androidx.fragment:fragment:1.9.1") {
+            because("Avoid resolving the obsolete Fragment 1.1.0 transitive dependency from wearable and Play Services libraries.")
+        }
+    }
+
     testImplementation("junit:junit:4.13.2")
 
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.02"))
