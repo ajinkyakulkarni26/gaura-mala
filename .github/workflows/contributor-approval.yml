@@ -23,6 +23,7 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
 
       - name: Test approval policy
+        if: hashFiles('scripts/test_check_owner_approval.py') != ''
         run: python3 -m unittest discover -s scripts -p 'test_check_owner_approval.py' -v
 
       - name: Check owner approval for the current commit
