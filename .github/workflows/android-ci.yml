@@ -93,9 +93,9 @@ jobs:
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: |
-            sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT}}"
+            sdk_root="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
             sdk_platforms="${sdk_root}/platforms"
-            if [[ -d "${sdk_platforms}/android-37.0" && ! -e "${sdk_platforms}/android-37" ]]; then
+            if [ -d "${sdk_platforms}/android-37.0" ] && [ ! -e "${sdk_platforms}/android-37" ]; then
               ln -s android-37.0 "${sdk_platforms}/android-37"
             fi
             ./gradlew :app:connectedDebugAndroidTest
