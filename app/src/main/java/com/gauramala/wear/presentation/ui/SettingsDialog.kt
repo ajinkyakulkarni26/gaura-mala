@@ -14,6 +14,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -89,17 +91,18 @@ fun SettingsDialog(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier.fillMaxWidth(0.75f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
             ) {
                 Button(
                     onClick = { pendingReset = null },
+                    modifier = Modifier.size(48.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = SurfaceDark,
                         contentColor = OnSurfaceWhite
                     )
                 ) {
-                    Text("Cancel", fontSize = 12.sp)
+                    Icon(Icons.Default.Close, contentDescription = "Cancel reset", modifier = Modifier.size(22.dp))
                 }
                 Button(
                     onClick = {
@@ -111,9 +114,10 @@ fun SettingsDialog(
                         pendingReset = null
                         onDismiss()
                     },
+                    modifier = Modifier.size(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AlertRed)
                 ) {
-                    Text("Reset", color = MaterialTheme.colorScheme.onPrimary, fontSize = 12.sp)
+                    Icon(Icons.Default.Check, contentDescription = "Confirm reset", modifier = Modifier.size(22.dp))
                 }
             }
         }

@@ -7,7 +7,7 @@ Last reviewed: 2026-10-06
 Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It is a watch-only app with a circular 108-bead progress ring, daily round goal (16 by default), haptics, a Tile, and a watch-face complication.
 
 - Application ID: `com.gauramala.wear`
-- Current local version: `versionCode 11`, `versionName 1.0.0`
+- Current local version: `versionCode 12`, `versionName 1.0.0`
 - Main stack: Kotlin, Jetpack Compose for Wear OS Material 3, DataStore, Wearable Services
 - Minimum SDK 30; target and compile SDK 37; JDK 17
 - The app is declared standalone in `AndroidManifest.xml`; core counting does not require a phone app.
@@ -37,6 +37,7 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - Tap and crown use app haptics for bead progress and special milestone/round cues. Double-pinch relies on the system's ordinary gesture feedback while retaining the app's special milestone, round-completion, and daily-goal cues.
 - Milestones are beads 27, 54, and 81; one round completes at 108. The daily-goal completion cue takes priority when the last bead also reaches the daily goal.
 - The counter's round label opens a manual adjustment for completed rounds today, so users can reconcile progress after chanting with physical beads. The picker supports plus/minus buttons and crown rotation, with a subtle selection tick when haptics are enabled; use a short title and check/cross actions to fit the round display. Saving starts the next watch round at bead 0, clears the previous bead's undo history, and does not play chanting haptics or show the goal celebration.
+- Reset confirmation actions use accessible check/cross icon buttons to avoid clipped labels on round displays.
 - When a modal screen takes focus for crown input, restore focus to the counter after it closes so crown counting continues without requiring a tap.
 - The ambient counter header shows the current round (`completedRounds + 1`) to match the active display, and shows `Goal` when the daily goal is complete.
 - Keep Awake is optional and defaults off. The double-pinch path supports ambient mode; do not force the display to remain fully awake to make counting work.
@@ -90,10 +91,12 @@ Version 9 was built and installed on the user's Pixel Watch 5; the user confirme
 
 Version 11 is a dependency maintenance release. `app/build.gradle.kts` now uses Wear Tiles 1.5.0 and Wear ProtoLayout 1.3.0. Gradle resolves `tiles-proto` 1.5.0 and ProtoLayout artifacts 1.3.0; these include the fixes for the Wear OS 5/API 34 Tile update `SecurityException` and protobuf CVE-2024-7254 warnings seen on release 4. The signed version 11 AAB built successfully on 2026-10-06. It has not been uploaded to Play Console or manually validated on a physical watch. The Fragment 1.1.0 “outdated SDK” notice remains a lower-priority transitive dependency warning and was not changed.
 
+Version 12 is the next closed-testing candidate. It includes physical-mala round reconciliation, crown selection with haptic ticks, crown-focus restoration after the picker closes, corrected ambient round labels, and icon-only reset confirmation actions. The user confirmed crown counting and picker haptics work on the Pixel Watch 5. The signed version 12 AAB was built successfully on 2026-10-06; Play Console upload is not confirmed. Play release notes in English, Hindi, and Marathi are in `RELEASE_NOTES_v12.txt`.
+
 Next steps:
 
 1. Manually check the new round adjustment on the watch, including crown increments/decrements with selection haptics, crown counting after dismissing the picker, and a save with partial bead progress; then check smaller and larger system font sizes on the counter, settings, and privacy policy screens.
-2. Before preparing the next Play bundle, confirm whether version 11 was uploaded; use a new version code if it was. Build and upload the updated source to a Wear OS closed-testing track, then check whether Play Console clears the Tile and protobuf notices for that artifact.
+2. Upload `app/build/outputs/bundle/release/app-release.aab` (version code 12) to a Wear OS closed-testing track, then check whether Play Console clears the Tile and protobuf notices for that artifact.
 3. Verify Tile updates on a Wear OS 5/API 34 device if available; also check the Tile and complication after the dependency update on the Pixel Watch 5.
 4. Verify the Contact Developer handoff with the watch paired to the user's phone; the emulator only verified the no-phone fallback.
 5. Keep at least 12 testers opted in for the full 14-day closed-test period, gather feedback, then complete the Play Console production-access application.

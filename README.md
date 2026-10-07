@@ -30,12 +30,14 @@ It addresses the fundamental limitation of traditional smartwatch counters: **re
 - **Round Completed (108 Beads = 1 Mala):** Distinctive, deep double-pulse waveform (`[0, 140ms, 100ms, 260ms]`) signaling the completion of a round.
 - **Daily Goal Complete:** Triumphant 3-pulse crescendo vibration when the configurable daily round goal is reached (16 rounds by default).
 - **Haptic Undo Alert:** Soft tick confirmation when undoing an accidental chant.
+- **Round Picker Tick:** A subtle haptic tick confirms each completed-round adjustment when app haptics are enabled.
 
 ### 3. 🛡️ Input Fallbacks & Ergonomics
 - **Full-Screen Tap:** Tap anywhere on the watch display to advance.
 - **Rotary Crown Support:** Rotate the physical watch crown downwards to advance beads.
+- **Physical Mala Progress:** Tap the round label to set completed rounds after chanting with a physical mala. Adjust the value with the crown or +/- buttons; saving starts the next watch round at bead 0 and clears any partial bead progress.
 - **Fatigue Mitigation:** Enable or disable gesture and screen-tap input independently in Settings.
-- **Accidental Tap Protection:** Quick Undo button and confirmation dialogs before resetting current-round or daily progress.
+- **Accidental Tap Protection:** Quick Undo button and confirmation dialogs before resetting current-round or daily progress; reset confirmations use check/cross icons that fit round displays.
 - **Daily Goal:** Adjust the target from 1 to 64 rounds in Settings.
 - **Daily Rollover:** Progress resets for a new local calendar day when you return to or use the app; preferences and daily progress persist across app restarts.
 - **Local data:** Counts and preferences stay on the watch, roll over by local calendar day, and are excluded from Android backup. The app has no account, ads, analytics, or server-side user-data collection; see the [privacy policy](https://ajinkyakulkarni26.github.io/gaura-mala/privacy-policy.html).
@@ -46,6 +48,7 @@ It addresses the fundamental limitation of traditional smartwatch counters: **re
 - **Golden Gaura Theme:** Inspired by Lord Chaitanya’s golden complexion (deep saffron `#FFB300`, amber `#FF8F00`, and sacred gold `#FFE082`).
 - **OLED Pure Black:** Built on true `#000000` AMOLED canvas for maximum battery longevity during multi-hour chanting sessions.
 - **Ambient Mode Support:** Shows the time, counter, and 108-bead progress ring while removing controls when the watch enters low-power ambient mode. The pinch handler opts into ambient mode on supported devices, so Keep Awake can remain off by default.
+- **Consistent Round Display:** Active and ambient screens show the current round; ambient mode shows “Goal” after the daily target is complete.
 - **Privacy Policy:** Read the policy on the watch. Contact Developer opens the project's GitHub Issues page on a paired phone, with the URL shown on the watch if no phone is available.
 
 ### 5. ⌚ Wear OS Ecosystem Integration
@@ -78,6 +81,7 @@ gaura-mala/
 │   │       │   └── ui/
 │   │       │       ├── MantraCounterScreen.kt    # Main circular counter UI
 │   │       │       ├── BeadProgressRing.kt       # Canvas 108-bead circular track
+│   │       │       ├── RoundProgressDialog.kt    # Manual completed-round adjustment
 │   │       │       ├── SettingsDialog.kt         # Toggles for pinch, tap, haptics
 │   │       │       └── SummaryDialog.kt          # 16-round completion celebration
 │   │       ├── tile/
@@ -103,6 +107,8 @@ Additional source files: `presentation/CounterHapticPolicy.kt` selects input-spe
 - To run the app in an emulator, install the latest stable Wear OS 7 (API 37) system image for your computer's architecture in Android Studio's SDK Manager, then create a round Wear OS device in Device Manager.
 
 Build the debug app from the repository root with `./gradlew :app:assembleDebug`. Run the JVM unit tests with `./gradlew :app:test`. Android Studio can also build and install the app with the `app` run configuration.
+
+The current Play testing release notes in English, Hindi, and Marathi are in [RELEASE_NOTES_v12.txt](./RELEASE_NOTES_v12.txt).
 
 ### 1. Open in Android Studio
 1. Launch **Android Studio**.

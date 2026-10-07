@@ -16,7 +16,7 @@ android {
         applicationId = "com.gauramala.wear"
         minSdk = 30
         targetSdk = 37
-        versionCode = 11
+        versionCode = 12
         versionName = "1.0.0"
     }
 
