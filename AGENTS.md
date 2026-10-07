@@ -94,6 +94,8 @@ Run `./scripts/test-local.sh` before pushing. It tests the repository policy scr
 
 The repository's `main` branch is protected: changes go through pull requests, and both Android CI jobs plus the contributor-approval job must pass before merge. Contributor PRs require approval from `ajinkyakulkarni26` on the current commit; owner-authored PRs are exempt from that approval check. New commits after approval require a fresh owner approval. `.github/CODEOWNERS` assigns the owner to CI workflows, coverage/build configuration, Gradle policy, and scripts; those files require an additional code-owner review even on owner-authored PRs. Update the GitHub ruleset's required checks and code-owner review setting when changing this policy. Do not push directly to `main`.
 
+The contributor-approval workflow checks out the approval script from the target branch, so a PR cannot change the checker it is being evaluated by. During the initial policy bootstrap only, when that script is not on `main` yet, the workflow permits the repository owner to land the setup PR and rejects other authors.
+
 ## Release status and next work
 
 Last known Play Console status (2026-10-06): the user has two active Wear OS closed-testing tracks. The “Closed testing Round 2” track shows release 10 (1.0.0), last updated Oct 2, 2026. The earlier “Closed Testing Gaura Mala” track shows release 4 (1.0.0), last updated Sep 30, 2026. The user had passed the initial 12 opted-in tester gate; production access still requires at least 12 testers opted in continuously for 14 days, then an application for production access. Confirm live tester counts and dates before advising; do not assume the 14-day period is complete.
