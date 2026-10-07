@@ -201,7 +201,11 @@ fun MantraCounterScreen(
             // Round Header Indicator
             if (isAmbient) {
                 Text(
-                    text = "R ${state.completedRounds}",
+                    text = if (state.isGoalAchieved) {
+                        "Goal"
+                    } else {
+                        "R ${state.completedRounds + 1}"
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White,
                     fontSize = 12.sp,

@@ -1,6 +1,7 @@
 package com.gauramala.wear.presentation.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,14 +15,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -46,22 +54,42 @@ fun RoundProgressDialog(
         mutableIntStateOf(state.completedRounds.coerceAtMost(MAX_COMPLETED_ROUNDS))
     }
     val maxRounds = maxOf(MAX_COMPLETED_ROUNDS, state.completedRounds)
+    val rotaryThreshold = with(LocalDensity.current) { 16.dp.toPx() }
+    val rotaryInput = remember(rotaryThreshold) { RoundAdjustmentRotaryInput(rotaryThreshold) }
+    val rotaryFocusRequester = remember { FocusRequester() }
 
     BackHandler(onBack = onDismiss)
+    LaunchedEffect(rotaryFocusRequester) {
+        rotaryFocusRequester.requestFocus()
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .onRotaryScrollEvent { event ->
+                val roundSteps = rotaryInput.consume(
+                    deltaPx = event.verticalScrollPixels,
+                    eventUptimeMs = event.uptimeMillis
+                )
+                if (roundSteps != 0) {
+                    selectedRounds = (selectedRounds.toLong() + roundSteps)
+                        .coerceIn(0L, maxRounds.toLong())
+                        .toInt()
+                }
+                true
+            }
+            .focusRequester(rotaryFocusRequester)
+            .focusable()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Set today's rounds",
-            style = MaterialTheme.typography.labelLarge,
+            text = "Rounds",
+            style = MaterialTheme.typography.labelSmall,
             color = GauraGold,
-            fontSize = 14.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center
         )
@@ -130,29 +158,80 @@ fun RoundProgressDialog(
         Spacer(modifier = Modifier.height(6.dp))
 
         Row(
-            modifier = Modifier.fillMaxWidth(0.92f),
+            modifier = Modifier.fillMaxWidth(0.75f),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
                 onClick = onDismiss,
-                modifier = Modifier.weight(1f).height(48.dp),
+                modifier = Modifier.size(48.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SurfaceDark,
                     contentColor = OnSurfaceWhite
                 )
             ) {
-                Text("Cancel", fontSize = 11.sp, maxLines = 1)
+                Icon(Icons.Default.Close, contentDescription = "Cancel round adjustment", modifier = Modifier.size(22.dp))
             }
             Button(
                 onClick = { onSetRounds(selectedRounds) },
-                modifier = Modifier.weight(1f).height(48.dp),
+                modifier = Modifier.size(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = GauraGold)
             ) {
-                Text("Set", color = MaterialTheme.colorScheme.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Icon(
+                    Icons.Default.Check,
+                    contentDescription = "Set completed rounds",
+                    modifier = Modifier.size(22.dp)
+                )
             }
         }
     }
 }
 
 private const val MAX_COMPLETED_ROUNDS = 999
+
+private class RoundAdjustmentRotaryInput(
+    private val thresholdPx: Float,
+    private val idleResetMs: Long = 180L
+) {
+    private var accumulatedPx = 0f
+    private var lastEventUptimeMs: Long? = null
+
+    init {
+        require(thresholdPx > 0f && thresholdPx.isFinite())
+        require(idleResetMs >= 0L)
+    }
+
+    fun consume(deltaPx: Float, eventUptimeMs: Long): Int {
+        val previousEventTime = lastEventUptimeMs
+        if (previousEventTime != null &&
+            (eventUptimeMs < previousEventTime || eventUptimeMs - previousEventTime > idleResetMs)
+        ) {
+            accumulatedPx = 0f
+        }
+        lastEventUptimeMs = eventUptimeMs
+
+        if (!deltaPx.isFinite()) {
+            accumulatedPx = 0f
+            return 0
+        }
+        if (deltaPx == 0f) return 0
+        if (accumulatedPx != 0f && accumulatedPx.sign != deltaPx.sign) {
+            accumulatedPx = 0f
+        }
+
+        accumulatedPx += deltaPx
+        val direction = accumulatedPx.sign.toInt()
+        val steps = (kotlin.math.abs(accumulatedPx) / thresholdPx).toInt()
+        if (steps == 0) return 0
+
+        accumulatedPx -= direction * steps * thresholdPx
+        return direction * steps
+    }
+
+    private val Float.sign: Float
+        get() = when {
+            this > 0f -> 1f
+            this < 0f -> -1f
+            else -> 0f
+        }
+}
