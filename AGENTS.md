@@ -104,4 +104,4 @@ Next steps:
 
 ## Workspace hygiene
 
-At the time this file was added, `play-store/`, `test-artifacts/`, `testers.csv`, and generated Gemini image drafts were untracked. Review them individually before staging anything. In particular, `testers.csv` contains tester email addresses; do not commit it. Avoid broad `git add .` when these user-owned files are present.
+Branding files are grouped under `assets/branding/`; generated visual references are under `assets/design-references/gemini-generated/`; Play Store artwork and listing screenshots are under `play-store/`; watch recordings and captures are under `test-artifacts/`. Review screenshots and test artifacts individually before staging. `testers.csv` contains tester email addresses; do not commit it. Avoid broad `git add .` while these user-owned files are present.

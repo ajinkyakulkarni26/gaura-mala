@@ -97,6 +97,13 @@ gaura-mala/
 
 Additional source files: `presentation/CounterHapticPolicy.kt` selects input-specific feedback, `presentation/RotaryBeadInput.kt` turns crown motion into bead steps, and `presentation/ui/PrivacyPolicyScreen.kt` contains the on-watch policy and Contact Developer action. JVM tests for the counter, haptics, saved state, and crown input are under `app/src/test/`.
 
+## Design and Store Assets
+
+- `assets/branding/` contains the app icon and logo source files.
+- `assets/design-references/gemini-generated/` keeps generated visual explorations outside the app source tree.
+- `play-store/` contains the Play Store feature graphic and watch listing screenshots. Refresh the screenshots before production after the UI is finalized.
+- `test-artifacts/` contains watch recordings and captures used during testing; review files individually before adding them to Git.
+
 ---
 
 ## 🚀 Getting Started
