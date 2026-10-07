@@ -115,6 +115,10 @@ Additional source files: `presentation/CounterHapticPolicy.kt` selects input-spe
 
 Build the debug app from the repository root with `./gradlew :app:assembleDebug`. Run the JVM unit tests with `./gradlew :app:test`. Android Studio can also build and install the app with the `app` run configuration.
 
+### Continuous Integration
+
+GitHub Actions runs the JVM unit tests and builds a debug APK on pushes and pull requests to `main`. You can also start a run manually from the repository's **Actions** tab by selecting **Android CI** and choosing **Run workflow**. CI covers the pure Kotlin counter, haptic-policy, preferences, and crown-input logic; double-pinch detection and real watch haptics still need a compatible physical watch.
+
 The current Play testing release notes in English, Hindi, and Marathi are in [RELEASE_NOTES_v13.txt](./RELEASE_NOTES_v13.txt).
 
 ### 1. Open in Android Studio

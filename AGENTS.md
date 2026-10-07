@@ -83,6 +83,8 @@ adb -s <watch-serial> shell am start -n com.gauramala.wear/.MainActivity
 
 Use a compatible physical Pixel Watch to verify double-pinch and real haptics. Generic Wear OS emulators may not expose gesture hardware or realistic vibration. Emulator testing can still check layout, navigation, and the no-phone Contact Developer fallback.
 
+`.github/workflows/android-ci.yml` runs `:app:test` and `:app:assembleDebug` on pushes and pull requests to `main`, with a manual trigger available in GitHub Actions. CI does not replace physical-watch gesture and haptic checks.
+
 ## Release status and next work
 
 Last known Play Console status (2026-10-06): the user has two active Wear OS closed-testing tracks. The “Closed testing Round 2” track shows release 10 (1.0.0), last updated Oct 2, 2026. The earlier “Closed Testing Gaura Mala” track shows release 4 (1.0.0), last updated Sep 30, 2026. The user had passed the initial 12 opted-in tester gate; production access still requires at least 12 testers opted in continuously for 14 days, then an application for production access. Confirm live tester counts and dates before advising; do not assume the 14-day period is complete.
