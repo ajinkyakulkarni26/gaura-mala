@@ -1,6 +1,7 @@
 package com.gauramala.wear.presentation.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,11 +28,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.focusable
 import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
@@ -207,11 +210,14 @@ fun MantraCounterScreen(
             } else {
                 Row(
                     modifier = Modifier
+                        .clip(CircleShape)
+                        .background(SurfaceDark)
                         .clickable(
                             onClickLabel = "Adjust rounds completed today",
                             role = Role.Button
                         ) { showRoundProgress = true }
-                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                        .height(32.dp)
+                        .padding(horizontal = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -230,7 +236,7 @@ fun MantraCounterScreen(
                         imageVector = Icons.Default.Edit,
                         contentDescription = null,
                         tint = GauraGoldLight,
-                        modifier = Modifier.size(12.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
