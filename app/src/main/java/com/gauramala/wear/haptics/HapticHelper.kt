@@ -98,7 +98,7 @@ class HapticHelper(context: Context) {
     /**
      * Subtle undo vibration to confirm bead deduction.
      */
-    fun undoAlert(enabled: Boolean = true) {
+    fun selectionTick(enabled: Boolean = true) {
         if (!enabled) return
         val deviceVibrator = activeVibrator() ?: return
 
@@ -110,4 +110,7 @@ class HapticHelper(context: Context) {
             deviceVibrator.vibrate(15)
         }
     }
+
+    /** Subtle tick confirming a round-selection change in the manual progress picker. */
+    fun undoAlert(enabled: Boolean = true) = selectionTick(enabled)
 }

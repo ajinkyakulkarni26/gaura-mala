@@ -48,6 +48,7 @@ import com.gauramala.wear.presentation.theme.SurfaceDark
 fun RoundProgressDialog(
     state: MantraUiState,
     onDismiss: () -> Unit,
+    onSelectionTick: () -> Unit,
     onSetRounds: (Int) -> Unit
 ) {
     var selectedRounds by remember(state.completedRounds) {
@@ -63,6 +64,16 @@ fun RoundProgressDialog(
         rotaryFocusRequester.requestFocus()
     }
 
+    fun adjustRoundsBy(delta: Int) {
+        val updatedRounds = (selectedRounds.toLong() + delta)
+            .coerceIn(0L, maxRounds.toLong())
+            .toInt()
+        if (updatedRounds != selectedRounds) {
+            selectedRounds = updatedRounds
+            onSelectionTick()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -72,9 +83,7 @@ fun RoundProgressDialog(
                     eventUptimeMs = event.uptimeMillis
                 )
                 if (roundSteps != 0) {
-                    selectedRounds = (selectedRounds.toLong() + roundSteps)
-                        .coerceIn(0L, maxRounds.toLong())
-                        .toInt()
+                    adjustRoundsBy(roundSteps)
                 }
                 true
             }
@@ -102,7 +111,7 @@ fun RoundProgressDialog(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
-                onClick = { selectedRounds = (selectedRounds - 1).coerceAtLeast(0) },
+                onClick = { adjustRoundsBy(-1) },
                 enabled = selectedRounds > 0,
                 modifier = Modifier.size(48.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -124,7 +133,7 @@ fun RoundProgressDialog(
             )
 
             Button(
-                onClick = { selectedRounds = (selectedRounds + 1).coerceAtMost(maxRounds) },
+                onClick = { adjustRoundsBy(1) },
                 enabled = selectedRounds < maxRounds,
                 modifier = Modifier.size(48.dp),
                 colors = ButtonDefaults.buttonColors(

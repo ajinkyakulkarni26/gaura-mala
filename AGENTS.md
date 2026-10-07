@@ -36,7 +36,8 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - Crown movement is converted from accumulated rotary pixels to discrete bead steps. The accumulator resets after idle time to prevent counts continuing after crown rotation stops.
 - Tap and crown use app haptics for bead progress and special milestone/round cues. Double-pinch relies on the system's ordinary gesture feedback while retaining the app's special milestone, round-completion, and daily-goal cues.
 - Milestones are beads 27, 54, and 81; one round completes at 108. The daily-goal completion cue takes priority when the last bead also reaches the daily goal.
-- The counter's round label opens a manual adjustment for completed rounds today, so users can reconcile progress after chanting with physical beads. The picker supports plus/minus buttons and crown rotation; use a short title and check/cross actions to fit the round display. Saving starts the next watch round at bead 0, clears the previous bead's undo history, and does not play chanting haptics or show the goal celebration.
+- The counter's round label opens a manual adjustment for completed rounds today, so users can reconcile progress after chanting with physical beads. The picker supports plus/minus buttons and crown rotation, with a subtle selection tick when haptics are enabled; use a short title and check/cross actions to fit the round display. Saving starts the next watch round at bead 0, clears the previous bead's undo history, and does not play chanting haptics or show the goal celebration.
+- When a modal screen takes focus for crown input, restore focus to the counter after it closes so crown counting continues without requiring a tap.
 - The ambient counter header shows the current round (`completedRounds + 1`) to match the active display, and shows `Goal` when the daily goal is complete.
 - Keep Awake is optional and defaults off. The double-pinch path supports ambient mode; do not force the display to remain fully awake to make counting work.
 - Preserve the current centered round bead ring. Earlier circle redesigns looked disoriented to the user; the requested adjustment was text placement, not a different ring.
@@ -91,7 +92,7 @@ Version 11 is a dependency maintenance release. `app/build.gradle.kts` now uses 
 
 Next steps:
 
-1. Manually check the new round adjustment on the watch, including crown increments/decrements and a save with partial bead progress, then check smaller and larger system font sizes on the counter, settings, and privacy policy screens.
+1. Manually check the new round adjustment on the watch, including crown increments/decrements with selection haptics, crown counting after dismissing the picker, and a save with partial bead progress; then check smaller and larger system font sizes on the counter, settings, and privacy policy screens.
 2. Before preparing the next Play bundle, confirm whether version 11 was uploaded; use a new version code if it was. Build and upload the updated source to a Wear OS closed-testing track, then check whether Play Console clears the Tile and protobuf notices for that artifact.
 3. Verify Tile updates on a Wear OS 5/API 34 device if available; also check the Tile and complication after the dependency update on the Pixel Watch 5.
 4. Verify the Contact Developer handoff with the watch paired to the user's phone; the emulator only verified the no-phone fallback.

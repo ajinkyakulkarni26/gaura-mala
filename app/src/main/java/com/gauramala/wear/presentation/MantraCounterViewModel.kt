@@ -143,6 +143,10 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         saveCounts(nextState.beadCount, nextState.completedRounds)
     }
 
+    fun roundAdjustmentSelectionTick() {
+        hapticHelper.selectionTick(enabled = _uiState.value.isHapticsEnabled)
+    }
+
     fun resetDailyCount() {
         if (!preferencesLoaded) return
 
