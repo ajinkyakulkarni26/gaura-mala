@@ -47,6 +47,17 @@ internal class MantraCounterStateMachine {
         return state.copy(beadCount = 0, canUndo = false)
     }
 
+    fun setCompletedRounds(state: MantraUiState, completedRounds: Int): MantraUiState {
+        if (completedRounds !in MIN_COMPLETED_ROUNDS..MAX_COMPLETED_ROUNDS) return state
+        clearUndoHistory()
+        return state.copy(
+            beadCount = 0,
+            completedRounds = completedRounds,
+            canUndo = false,
+            showGoalAchievedDialog = false
+        )
+    }
+
     fun resetDailyCount(state: MantraUiState, recordedDate: String): MantraUiState {
         clearUndoHistory()
         return state.copy(
@@ -74,6 +85,8 @@ internal class MantraCounterStateMachine {
         const val LAST_BEAD_COUNT = 107
         const val MIN_DAILY_GOAL = 1
         const val MAX_DAILY_GOAL = 64
+        const val MIN_COMPLETED_ROUNDS = 0
+        const val MAX_COMPLETED_ROUNDS = 999
     }
 }
 

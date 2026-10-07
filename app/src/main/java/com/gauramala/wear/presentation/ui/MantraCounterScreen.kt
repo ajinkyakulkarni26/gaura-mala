@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
@@ -30,6 +31,7 @@ import androidx.compose.ui.zIndex
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.focusable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
@@ -68,6 +70,7 @@ fun MantraCounterScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val canUsePinchGesture = state.isPinchGestureEnabled && state.supportsOneHandedGestures
     var showSettings by remember { mutableStateOf(false) }
+    var showRoundProgress by remember { mutableStateOf(false) }
     val isAmbient = LocalAmbientModeManager.current?.currentAmbientMode is AmbientMode.Ambient
     val gestureConfiguration = rememberOneHandedGestureConfiguration(
         action = OneHandedGestureAction.Primary,
@@ -90,6 +93,9 @@ fun MantraCounterScreen(
     BackHandler(enabled = showSettings && !isAmbient) {
         showSettings = false
     }
+    BackHandler(enabled = showRoundProgress && !isAmbient) {
+        showRoundProgress = false
+    }
     BackHandler(enabled = state.showGoalAchievedDialog && !isAmbient) {
         viewModel.dismissGoalDialog()
     }
@@ -100,6 +106,18 @@ fun MantraCounterScreen(
             state = state,
             viewModel = viewModel,
             onDismiss = { showSettings = false }
+        )
+        return
+    }
+
+    if (showRoundProgress && !isAmbient) {
+        RoundProgressDialog(
+            state = state,
+            onDismiss = { showRoundProgress = false },
+            onSetRounds = { rounds ->
+                viewModel.setCompletedRounds(rounds)
+                showRoundProgress = false
+            }
         )
         return
     }
@@ -178,19 +196,44 @@ fun MantraCounterScreen(
             modifier = Modifier.padding(24.dp)
         ) {
             // Round Header Indicator
-            Text(
-                text = if (isAmbient) {
-                    "R ${state.completedRounds}"
-                } else if (state.isGoalAchieved) {
-                    "Daily goal reached"
-                } else {
-                    "Round ${state.completedRounds + 1} of ${state.dailyGoalRounds}"
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = if (isAmbient) Color.White else GauraGoldLight,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            if (isAmbient) {
+                Text(
+                    text = "R ${state.completedRounds}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            } else {
+                Row(
+                    modifier = Modifier
+                        .clickable(
+                            onClickLabel = "Adjust rounds completed today",
+                            role = Role.Button
+                        ) { showRoundProgress = true }
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (state.isGoalAchieved) {
+                            "Daily goal reached"
+                        } else {
+                            "Round ${state.completedRounds + 1} of ${state.dailyGoalRounds}"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = GauraGoldLight,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = GauraGoldLight,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(2.dp))
 

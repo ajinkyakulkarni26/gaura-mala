@@ -132,6 +132,17 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    /** Sets completed rounds from chanting done with physical beads; no chanting haptics are played. */
+    fun setCompletedRounds(completedRounds: Int) {
+        if (!preferencesLoaded || completedRounds !in 0..MAX_COMPLETED_ROUNDS) return
+
+        resetMemoryForNewDayIfNeeded()
+        hasLocalProgressChanges = true
+        val nextState = counterStateMachine.setCompletedRounds(_uiState.value, completedRounds)
+        _uiState.value = nextState
+        saveCounts(nextState.beadCount, nextState.completedRounds)
+    }
+
     fun resetDailyCount() {
         if (!preferencesLoaded) return
 
@@ -209,6 +220,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
 
     private companion object {
         const val FEATURE_WEAR_GESTURE_DETECTION = "com.google.wear.feature.GESTURE_DETECTION"
+        const val MAX_COMPLETED_ROUNDS = 999
     }
 
     private data class CountSnapshot(val beadCount: Int, val completedRounds: Int)
