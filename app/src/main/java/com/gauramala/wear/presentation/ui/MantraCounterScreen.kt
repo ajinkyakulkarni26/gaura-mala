@@ -223,7 +223,8 @@ fun MantraCounterScreen(
                             role = Role.Button
                         ) { showRoundProgress = true }
                         .height(32.dp)
-                        .padding(horizontal = 8.dp),
+                        .padding(horizontal = 8.dp)
+                        .testTag("round-progress-button"),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

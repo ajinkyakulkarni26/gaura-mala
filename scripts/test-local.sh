@@ -39,5 +39,8 @@ if [[ -z "$wear_emulator" ]]; then
   exit 0
 fi
 
-echo "Found Wear OS emulator $wear_emulator; running tap and rotary integration tests..."
-./gradlew :app:connectedDebugAndroidTest
+echo "Found Wear OS emulator $wear_emulator; running Wear OS UI integration tests..."
+test_exit_code=0
+./gradlew :app:connectedDebugAndroidTest || test_exit_code=$?
+python3 scripts/print-android-test-results.py
+exit "$test_exit_code"

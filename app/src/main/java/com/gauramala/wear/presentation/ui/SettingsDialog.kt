@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.hierarchicalFocusGroup
@@ -195,7 +196,7 @@ fun SettingsDialog(
                 }
                 Text(
                     text = "${state.dailyGoalRounds} rounds",
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).testTag("daily-goal-value"),
                     color = GauraGold,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
@@ -243,7 +244,7 @@ fun SettingsDialog(
             },
             enabled = state.supportsOneHandedGestures,
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-double-pinch")
         )
 
         // 2. Screen Tap Toggle
@@ -253,7 +254,7 @@ fun SettingsDialog(
             label = { Text("Screen Tap", fontSize = 12.sp) },
             secondaryLabel = { Text("Tap to count", fontSize = 10.sp) },
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-screen-tap")
         )
 
         // 3. Haptics Toggle
@@ -263,7 +264,7 @@ fun SettingsDialog(
             label = { Text("Haptics", fontSize = 12.sp) },
             secondaryLabel = { Text("Bead and milestone cues", fontSize = 10.sp) },
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-haptics")
         )
 
         // 4. Milestone Vibrations
@@ -273,7 +274,7 @@ fun SettingsDialog(
             label = { Text("Milestones", fontSize = 12.sp) },
             secondaryLabel = { Text("Ticks at 27, 54, 81", fontSize = 10.sp) },
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-milestones")
         )
 
         // 5. Keep Screen Awake
@@ -283,7 +284,7 @@ fun SettingsDialog(
             label = { Text("Keep Awake", fontSize = 12.sp) },
             secondaryLabel = { Text("Keeps screen on; uses more power", fontSize = 10.sp) },
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-keep-awake")
         )
 
         // 6. Reset Current Round

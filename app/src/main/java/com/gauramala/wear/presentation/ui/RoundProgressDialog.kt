@@ -29,6 +29,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -124,7 +125,7 @@ fun RoundProgressDialog(
 
             Text(
                 text = "$selectedRounds",
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).testTag("selected-completed-rounds"),
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
