@@ -28,7 +28,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          cache-provider: basic
+          cache-provider: enhanced
+          build-scan-publish: true
+          build-scan-terms-of-use-url: 'https://gradle.com/terms-of-service'
+          build-scan-terms-of-use-agree: 'yes'
 
       - name: Test repository policy scripts
         run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
@@ -76,7 +79,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          cache-provider: basic
+          cache-provider: enhanced
+          build-scan-publish: true
+          build-scan-terms-of-use-url: 'https://gradle.com/terms-of-service'
+          build-scan-terms-of-use-agree: 'yes'
 
       - name: Enable KVM for the emulator
         run: |
@@ -104,11 +110,16 @@ jobs:
           profile: wearos_large_round
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          script: ./gradlew :app:connectedDebugAndroidTest
-
-      - name: List individual Wear OS test cases
-        if: always()
-        run: python3 scripts/print-android-test-results.py
+          script: |
+            set +e
+            ./gradlew :app:connectedDebugAndroidTest
+            test_status=$?
+            python3 scripts/print-android-test-results.py
+            report_status=$?
+            if [ "$test_status" -ne 0 ]; then
+              exit "$test_status"
+            fi
+            exit "$report_status"
 
       - name: Save Wear OS instrumentation results
         if: always()
