@@ -1,6 +1,6 @@
 # Gaura Mala Agent Notes
 
-Last reviewed: 2026-10-06
+Last reviewed: 2026-10-07
 
 ## Project
 
@@ -28,6 +28,8 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - `haptics/HapticHelper.kt`: vibration patterns.
 - `tile/GauraMalaTileService.kt`, `complication/GauraMalaComplicationService.kt`: Wear OS surfaces.
 - `app/src/test/`: unit tests for counter transitions, haptic policy, preference state, and rotary input.
+- `app/src/androidTest/`: Wear OS UI integration tests for screen tap and rotary counting.
+- `scripts/test-local.sh`: local pre-push checks with optional Wear OS emulator integration tests.
 
 ## Product decisions to preserve
 
@@ -63,8 +65,13 @@ From the repository root:
 ```bash
 ./gradlew :app:assembleDebug
 ./gradlew :app:test
+./gradlew :app:verifyCoreLogicCoverage
+./gradlew :app:connectedDebugAndroidTest
+./scripts/test-local.sh
 ./gradlew :app:bundleRelease :app:assembleRelease
 ```
+
+Maintain at least 90% JaCoCo **line coverage** across the pure counter logic in `MantraCounterStateMachine.kt`, `CounterHapticPolicy.kt`, `RotaryBeadInput.kt`, and `MantraUiState.kt`. `:app:verifyCoreLogicCoverage` is the CI gate; add or update unit tests whenever these behaviors change, and do not lower the threshold or exclude core files just to make the build pass. The complete unit-test coverage report is generated at `app/build/reports/coverage/test/debug/index.html`; the 90% gate is scoped to this Android-independent counter logic, while Compose screens and Android services are exercised by integration/device tests.
 
 Build outputs:
 
@@ -83,7 +90,7 @@ adb -s <watch-serial> shell am start -n com.gauramala.wear/.MainActivity
 
 Use a compatible physical Pixel Watch to verify double-pinch and real haptics. Generic Wear OS emulators may not expose gesture hardware or realistic vibration. Emulator testing can still check layout, navigation, and the no-phone Contact Developer fallback.
 
-`.github/workflows/android-ci.yml` runs `:app:test` and `:app:assembleDebug` on pushes and pull requests to `main`, with a manual trigger available in GitHub Actions. CI does not replace physical-watch gesture and haptic checks.
+Run `./scripts/test-local.sh` before pushing. It always runs unit tests, the 90% core-logic coverage gate, and a debug build; when it finds a running Wear OS emulator, it also runs tap and rotary instrumentation tests. `.github/workflows/android-ci.yml` runs the same test layers in GitHub Actions on pushes and pull requests to `main`, with a Wear OS 5.1 (API 35) emulator. A manual trigger is also available. Compose rotary injection checks the app's rotary event path, but it does not verify physical crown hardware, double-pinch detection, or real haptics. Keep those checks in the physical-watch release checklist.
 
 ## Release status and next work
 

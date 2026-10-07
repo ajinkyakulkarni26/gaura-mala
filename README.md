@@ -113,11 +113,11 @@ Additional source files: `presentation/CounterHapticPolicy.kt` selects input-spe
 - The Gradle wrapper uses Gradle 9.3.1 and Android Gradle Plugin 9.1.1.
 - To run the app in an emulator, install the latest stable Wear OS 7 (API 37) system image for your computer's architecture in Android Studio's SDK Manager, then create a round Wear OS device in Device Manager.
 
-Build the debug app from the repository root with `./gradlew :app:assembleDebug`. Run the JVM unit tests with `./gradlew :app:test`. Android Studio can also build and install the app with the `app` run configuration.
+Build the debug app from the repository root with `./gradlew :app:assembleDebug`. Before pushing, run `./scripts/test-local.sh`: it always runs the JVM unit tests, 90% core-logic coverage gate, and debug build, then detects a connected Wear OS emulator and adds the tap/rotary integration suite when one is online. To run device tests directly, start a Wear OS emulator and use `./gradlew :app:connectedDebugAndroidTest`. Android Studio can also build and install the app with the `app` run configuration.
 
 ### Continuous Integration
 
-GitHub Actions runs the JVM unit tests and builds a debug APK on pushes and pull requests to `main`. You can also start a run manually from the repository's **Actions** tab by selecting **Android CI** and choosing **Run workflow**. CI covers the pure Kotlin counter, haptic-policy, preferences, and crown-input logic; double-pinch detection and real watch haptics still need a compatible physical watch.
+GitHub Actions runs the JVM unit tests, enforces at least 90% JaCoCo line coverage for the pure counter logic, builds a debug APK, and then runs touch and rotary-input integration tests on a round Wear OS 5.1 (API 35) emulator for pushes and pull requests to `main`. You can start a run manually from the repository's **Actions** tab by selecting **Android CI** and choosing **Run workflow**. The full unit coverage report and emulator test results are available as workflow artifacts. Compose tests inject a rotary event through the app's input handler; double-pinch hardware detection and real vibration still need a compatible physical watch.
 
 The current Play testing release notes in English, Hindi, and Marathi are in [RELEASE_NOTES_v13.txt](./RELEASE_NOTES_v13.txt).
 

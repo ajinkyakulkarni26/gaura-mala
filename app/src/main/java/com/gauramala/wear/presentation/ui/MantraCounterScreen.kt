@@ -37,6 +37,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -182,7 +183,7 @@ fun MantraCounterScreen(
     }
 
     Box(
-        modifier = containerModifier,
+        modifier = containerModifier.testTag("counter-surface"),
         contentAlignment = Alignment.Center
     ) {
         // Outer Circular Bead & Round Progress Tracks
@@ -251,6 +252,7 @@ fun MantraCounterScreen(
             // Main Bead Number (Large, high-contrast, easily visible at arm's length)
             Text(
                 text = "${state.beadCount}",
+                modifier = Modifier.testTag("bead-count"),
                 style = MaterialTheme.typography.displayLarge,
                 color = if (isAmbient) Color.White else GauraGold,
                 fontSize = 46.sp,

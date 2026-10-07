@@ -18,6 +18,7 @@ android {
         targetSdk = 37
         versionCode = 13
         versionName = "1.0.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -40,6 +41,7 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
+            enableUnitTestCoverage = true
         }
     }
 
@@ -61,6 +63,11 @@ kotlin {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
+
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.02"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
 
     // AndroidX Core & Activity
     implementation("androidx.core:core-ktx:1.13.1")
@@ -96,4 +103,75 @@ dependencies {
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+tasks.register("verifyCoreLogicCoverage") {
+    group = "verification"
+    description = "Fails when unit-test line coverage for core counter logic is below 90%."
+    dependsOn("createDebugUnitTestCoverageReport")
+
+    doLast {
+        val reportFile = layout.buildDirectory
+            .file("reports/coverage/test/debug/report.xml")
+            .get()
+            .asFile
+        check(reportFile.isFile) {
+            "JaCoCo report not found at ${reportFile.path}"
+        }
+
+        val requiredSourceFiles = setOf(
+            "MantraCounterStateMachine.kt",
+            "CounterHapticPolicy.kt",
+            "RotaryBeadInput.kt",
+            "MantraUiState.kt"
+        )
+        val documentFactory = javax.xml.parsers.DocumentBuilderFactory.newInstance().apply {
+            setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+            setFeature("http://xml.org/sax/features/external-general-entities", false)
+            setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+            isXIncludeAware = false
+            isExpandEntityReferences = false
+        }
+        val report = documentFactory.newDocumentBuilder().parse(reportFile)
+        val sourceFiles = report.getElementsByTagName("package")
+            .let { packages ->
+                (0 until packages.length)
+                    .map { packages.item(it) as org.w3c.dom.Element }
+                    .filter { it.getAttribute("name") == "com/gauramala/wear/presentation" }
+                    .flatMap { packageNode ->
+                        val files = packageNode.getElementsByTagName("sourcefile")
+                        (0 until files.length).map { files.item(it) as org.w3c.dom.Element }
+                    }
+            }
+            .filter { it.getAttribute("name") in requiredSourceFiles }
+            .associateBy { it.getAttribute("name") }
+
+        val missingFiles = requiredSourceFiles - sourceFiles.keys
+        check(missingFiles.isEmpty()) {
+            "Coverage report is missing core source files: ${missingFiles.joinToString()}"
+        }
+
+        var coveredLines = 0
+        var missedLines = 0
+        sourceFiles.forEach { (name, sourceFile) ->
+            val lineCounter = sourceFile.getElementsByTagName("counter")
+                .let { counters ->
+                    (0 until counters.length)
+                        .map { counters.item(it) as org.w3c.dom.Element }
+                        .first { it.getAttribute("type") == "LINE" && it.parentNode === sourceFile }
+                }
+            val covered = lineCounter.getAttribute("covered").toInt()
+            val missed = lineCounter.getAttribute("missed").toInt()
+            coveredLines += covered
+            missedLines += missed
+            logger.lifecycle("Core unit coverage: $name ${covered * 100 / (covered + missed)}% ($covered/${covered + missed} lines)")
+        }
+
+        val totalLines = coveredLines + missedLines
+        val coverage = if (totalLines == 0) 1.0 else coveredLines.toDouble() / totalLines
+        logger.lifecycle("Core unit-test line coverage: ${"%.1f".format(coverage * 100)}% ($coveredLines/$totalLines lines)")
+        check(coverage >= 0.90) {
+            "Core unit-test line coverage is below the required 90% threshold. Add tests for the uncovered counter behavior."
+        }
+    }
 }

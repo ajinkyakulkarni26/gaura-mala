@@ -103,6 +103,32 @@ class MantraCounterStateMachineTest {
     }
 
     @Test
+    fun setCompletedRoundsStartsNextRoundAndClearsUndoAndGoalDialog() {
+        val state = MantraUiState(
+            beadCount = 52,
+            completedRounds = 3,
+            canUndo = true,
+            showGoalAchievedDialog = true
+        )
+
+        val adjusted = machine.setCompletedRounds(state, completedRounds = 6)
+
+        assertEquals(0, adjusted.beadCount)
+        assertEquals(6, adjusted.completedRounds)
+        assertFalse(adjusted.canUndo)
+        assertFalse(adjusted.showGoalAchievedDialog)
+        assertSame(adjusted, machine.undo(adjusted))
+    }
+
+    @Test
+    fun setCompletedRoundsRejectsValuesOutsideSupportedRange() {
+        val state = MantraUiState(beadCount = 52, completedRounds = 3)
+
+        assertSame(state, machine.setCompletedRounds(state, completedRounds = -1))
+        assertSame(state, machine.setCompletedRounds(state, completedRounds = 1_000))
+    }
+
+    @Test
     fun dailyResetClearsCountsAndDialogButKeepsGoalAndSettings() {
         val state = MantraUiState(
             beadCount = 20,
