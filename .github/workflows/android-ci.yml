@@ -30,6 +30,9 @@ jobs:
         with:
           cache-provider: basic
 
+      - name: Test repository policy scripts
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
+
       # GitHub's Ubuntu image names the API 37 platform android-37.0;
       # this project asks Android Gradle Plugin for android-37.
       - name: Add API 37 SDK platform alias when needed
