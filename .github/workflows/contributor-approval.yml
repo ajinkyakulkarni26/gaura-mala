@@ -31,4 +31,13 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REQUIRED_APPROVER: ${{ github.repository_owner }}
-        run: python3 scripts/check_owner_approval.py
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          if [[ -f scripts/check_owner_approval.py ]]; then
+            python3 scripts/check_owner_approval.py
+          elif [[ "$PR_AUTHOR" == "$REQUIRED_APPROVER" ]]; then
+            echo "The repository owner is bootstrapping the approval policy; owner-authored PRs are exempt."
+          else
+            echo "::error::The approval policy is not on the target branch yet. Only the repository owner can bootstrap it."
+            exit 1
+          fi
