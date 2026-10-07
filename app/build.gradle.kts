@@ -113,7 +113,7 @@ dependencies {
 
 tasks.register("verifyCoreLogicCoverage") {
     group = "verification"
-    description = "Fails when unit-test line coverage for core counter logic is below 90%."
+    description = "Fails unless unit-test line coverage for core counter logic is 100%."
     dependsOn("createDebugUnitTestCoverageReport")
 
     doLast {
@@ -176,8 +176,8 @@ tasks.register("verifyCoreLogicCoverage") {
         val totalLines = coveredLines + missedLines
         val coverage = if (totalLines == 0) 1.0 else coveredLines.toDouble() / totalLines
         logger.lifecycle("Core unit-test line coverage: ${"%.1f".format(coverage * 100)}% ($coveredLines/$totalLines lines)")
-        check(coverage >= 0.90) {
-            "Core unit-test line coverage is below the required 90% threshold. Add tests for the uncovered counter behavior."
+        check(coverage >= 1.0) {
+            "Core unit-test line coverage is below 100%. Add tests for every uncovered counter behavior."
         }
     }
 }

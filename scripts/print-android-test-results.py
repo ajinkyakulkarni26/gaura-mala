@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RESULTS_ROOT = REPO_ROOT / "app" / "build" / "outputs" / "androidTest-results" / "connected"
+MIN_EXPECTED_CASES = 17
 
 
 def readable_name(name: str) -> str:
@@ -36,6 +37,12 @@ def main() -> int:
             cases.append((outcome, case.get("classname", "unknown"), case.get("name", "unnamed"), problem))
 
     print(f"Wear OS instrumentation cases: {len(cases)}")
+    if len(cases) < MIN_EXPECTED_CASES:
+        print(
+            f"Expected at least {MIN_EXPECTED_CASES} integration cases; found {len(cases)}. "
+            "Do not remove existing coverage without replacing it with equivalent tests.",
+            file=sys.stderr,
+        )
     for outcome, classname, method, problem in cases:
         description = readable_name(method)
         duration = ""
@@ -48,7 +55,7 @@ def main() -> int:
     failed = sum(outcome == "FAIL" for outcome, *_ in cases)
     skipped = sum(outcome == "SKIP" for outcome, *_ in cases)
     print(f"Summary: {len(cases) - failed - skipped} passed, {failed} failed, {skipped} skipped")
-    return 1 if failed else 0
+    return 1 if failed or len(cases) < MIN_EXPECTED_CASES else 0
 
 
 if __name__ == "__main__":

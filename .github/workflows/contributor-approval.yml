@@ -1,0 +1,33 @@
+name: Contributor PR approval
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  approval:
+    name: Owner approval for contributor PRs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out target-branch approval policy
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Test approval policy
+        run: python3 -m unittest discover -s scripts -p 'test_check_owner_approval.py' -v
+
+      - name: Check owner approval for the current commit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REQUIRED_APPROVER: ${{ github.repository_owner }}
+        run: python3 scripts/check_owner_approval.py
