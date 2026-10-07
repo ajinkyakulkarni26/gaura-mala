@@ -62,35 +62,35 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
                 fontWeight = FontWeight.Bold
             )
         }
-        item { PolicySection("Gaura Mala", "Effective date: September 30, 2026") }
+        item { PolicySection("Gaura Mala", "Effective: Sep 30, 2026") }
         item {
             PolicySection(
                 "Information and storage",
-                "Gaura Mala does not collect or send personal information to a server. The app has no account, ads, or analytics. It stores your bead count, completed rounds, daily goal, and app settings locally on your watch so your progress and preferences are available when you reopen the app."
+                "Gaura Mala has no account, ads, or analytics and sends no personal data to a server. Your bead count, rounds, daily goal, and settings stay on this watch."
             )
         }
         item {
             PolicySection(
                 "Daily reset and deletion",
-                "The daily bead and round count resets when the local date changes. Your preferences remain on the watch until you clear the app's storage or uninstall Gaura Mala. You can also reset today's count in Settings. Android app backup is disabled for Gaura Mala."
+                "Counts reset each new day. Settings remain until you clear app storage or uninstall. Backups are off."
             )
         }
         item {
             PolicySection(
                 "Sharing and permissions",
-                "The app does not share this locally stored information with the developer or other companies. The app requests vibration access for haptic feedback. It does not request access to your location, contacts, microphone, camera, or health data."
+                "We don't share local data. Vibration access is used for haptics. The app doesn't access location, contacts, microphone, camera, or health data."
             )
         }
         item {
             PolicySection(
                 "Children and changes",
-                "Gaura Mala does not knowingly collect personal information from children or adults. If the app's data practices change, this policy will be updated before the change takes effect."
+                "We don't knowingly collect personal information from children or adults. If data practices change, this policy will be updated first."
             )
         }
         item {
             PolicySection(
                 "Contact",
-                "For privacy questions, contact the developer through the Gaura Mala GitHub issue page. Please do not post private information in a public issue."
+                "For privacy questions, open a GitHub issue. Don't post private details in public issues."
             )
         }
         item {
@@ -125,7 +125,7 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Phone unavailable. Open this on your phone:",
+                        "Phone unavailable. Open on phone:",
                         color = OnSurfaceWhite,
                         fontSize = 10.sp,
                         textAlign = TextAlign.Center

@@ -41,7 +41,7 @@ fun SummaryDialog(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "Daily Vow Completed",
+            text = "Daily goal reached",
             style = MaterialTheme.typography.bodyMedium,
             color = SuccessGreen,
             fontSize = 12.sp
@@ -53,7 +53,7 @@ fun SummaryDialog(
             color = MaterialTheme.colorScheme.onBackground
         )
         Text(
-            text = "${state.totalMantrasChanted} Mantras Chanted",
+            text = "${state.totalMantrasChanted} mantras",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

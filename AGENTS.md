@@ -7,7 +7,7 @@ Last reviewed: 2026-10-06
 Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It is a watch-only app with a circular 108-bead progress ring, daily round goal (16 by default), haptics, a Tile, and a watch-face complication.
 
 - Application ID: `com.gauramala.wear`
-- Current local version: `versionCode 12`, `versionName 1.0.0`
+- Current local version: `versionCode 13`, `versionName 1.0.0`
 - Main stack: Kotlin, Jetpack Compose for Wear OS Material 3, DataStore, Wearable Services
 - Minimum SDK 30; target and compile SDK 37; JDK 17
 - The app is declared standalone in `AndroidManifest.xml`; core counting does not require a phone app.
@@ -91,12 +91,12 @@ Version 9 was built and installed on the user's Pixel Watch 5; the user confirme
 
 Version 11 is a dependency maintenance release. `app/build.gradle.kts` now uses Wear Tiles 1.5.0 and Wear ProtoLayout 1.3.0. Gradle resolves `tiles-proto` 1.5.0 and ProtoLayout artifacts 1.3.0; these include the fixes for the Wear OS 5/API 34 Tile update `SecurityException` and protobuf CVE-2024-7254 warnings seen on release 4. The signed version 11 AAB built successfully on 2026-10-06. It has not been uploaded to Play Console or manually validated on a physical watch. The Fragment 1.1.0 “outdated SDK” notice remains a lower-priority transitive dependency warning and was not changed.
 
-Version 12 is the next closed-testing candidate. It includes physical-mala round reconciliation, crown selection with haptic ticks, crown-focus restoration after the picker closes, corrected ambient round labels, and icon-only reset confirmation actions. The user confirmed crown counting and picker haptics work on the Pixel Watch 5. The signed version 12 AAB was built successfully on 2026-10-06; Play Console upload is not confirmed. Play release notes in English, Hindi, and Marathi are in `RELEASE_NOTES_v12.txt`.
+Version 12's signed AAB was built on 2026-10-06; Play Console upload is not confirmed. The user confirmed its crown counting and picker haptics work on the Pixel Watch 5. Version 13 shortens on-watch confirmation, settings, summary, and privacy text. Its signed AAB and debug APK built successfully on 2026-10-06. An earlier v13 debug build was installed on the Pixel Watch 5 and the round-reset message was checked; reinstalling the final copy update is pending because the watch disconnected from ADB. Play Console upload is not confirmed. Its English, Hindi, and Marathi release notes are in `RELEASE_NOTES_v13.txt`.
 
 Next steps:
 
 1. Manually check the new round adjustment on the watch, including crown increments/decrements with selection haptics, crown counting after dismissing the picker, and a save with partial bead progress; then check smaller and larger system font sizes on the counter, settings, and privacy policy screens.
-2. Upload `app/build/outputs/bundle/release/app-release.aab` (version code 12) to a Wear OS closed-testing track, then check whether Play Console clears the Tile and protobuf notices for that artifact.
+2. Upload `app/build/outputs/bundle/release/app-release.aab` (version code 13) to a Wear OS closed-testing track, then check whether Play Console clears the Tile and protobuf notices for that artifact.
 3. Verify Tile updates on a Wear OS 5/API 34 device if available; also check the Tile and complication after the dependency update on the Pixel Watch 5.
 4. Verify the Contact Developer handoff with the watch paired to the user's phone; the emulator only verified the no-phone fallback.
 5. Keep at least 12 testers opted in for the full 14-day closed-test period, gather feedback, then complete the Play Console production-access application.

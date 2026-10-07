@@ -146,7 +146,7 @@ fun RoundProgressDialog(
         }
 
         Text(
-            text = "Next watch round: ${selectedRounds + 1}",
+            text = "Next round: ${selectedRounds + 1}",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
@@ -156,7 +156,7 @@ fun RoundProgressDialog(
         if (state.beadCount > 0) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Setting this will clear ${state.beadCount}/108 beads in the current round.",
+                text = "Saving clears ${state.beadCount}/108 beads.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,

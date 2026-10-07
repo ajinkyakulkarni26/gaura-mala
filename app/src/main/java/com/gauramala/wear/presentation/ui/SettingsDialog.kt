@@ -75,16 +75,16 @@ fun SettingsDialog(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = if (isDailyReset) "Reset Today's Count?" else "Reset Current Round?",
+                text = if (isDailyReset) "Reset today's count?" else "Reset this round?",
                 style = MaterialTheme.typography.titleMedium,
                 color = AlertRed
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = if (isDailyReset) {
-                    "This clears today's completed rounds and bead progress."
+                    "Clears today's rounds and beads."
                 } else {
-                    "This clears bead progress for the current round."
+                    "Clears beads in this round."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 fontSize = 12.sp
@@ -236,7 +236,7 @@ fun SettingsDialog(
                     if (state.supportsOneHandedGestures) {
                         "Works in dim mode"
                     } else {
-                        "Unavailable on this watch or emulator"
+                        "Not supported here"
                     },
                     fontSize = 10.sp
                 )
@@ -260,8 +260,8 @@ fun SettingsDialog(
         SwitchButton(
             checked = state.isHapticsEnabled,
             onCheckedChange = { viewModel.toggleHaptics(it) },
-            label = { Text("Haptic Vibration", fontSize = 12.sp) },
-            secondaryLabel = { Text("Tactile feedback", fontSize = 10.sp) },
+            label = { Text("Haptics", fontSize = 12.sp) },
+            secondaryLabel = { Text("Bead and milestone cues", fontSize = 10.sp) },
             colors = switchButtonColors,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
         )
@@ -281,7 +281,7 @@ fun SettingsDialog(
             checked = state.keepScreenOn,
             onCheckedChange = { viewModel.toggleKeepScreenOn(it) },
             label = { Text("Keep Awake", fontSize = 12.sp) },
-            secondaryLabel = { Text("Prevents dimming; more battery", fontSize = 10.sp) },
+            secondaryLabel = { Text("Keeps screen on; uses more power", fontSize = 10.sp) },
             colors = switchButtonColors,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
         )
@@ -299,7 +299,7 @@ fun SettingsDialog(
                 contentColor = OnSurfaceWhite
             )
         ) {
-            Text("Reset Current Round", fontSize = 12.sp)
+            Text("Reset Round", fontSize = 12.sp)
         }
 
         // 7. Reset Entire Day
@@ -310,7 +310,7 @@ fun SettingsDialog(
                 .padding(horizontal = 16.dp, vertical = 2.dp),
             colors = ButtonDefaults.buttonColors(containerColor = AlertRed.copy(alpha = 0.2f))
         ) {
-            Text("Reset Today's Rounds", color = AlertRed, fontSize = 12.sp)
+            Text("Reset Today", color = AlertRed, fontSize = 12.sp)
         }
 
         Button(

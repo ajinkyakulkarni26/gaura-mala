@@ -108,7 +108,7 @@ Additional source files: `presentation/CounterHapticPolicy.kt` selects input-spe
 
 Build the debug app from the repository root with `./gradlew :app:assembleDebug`. Run the JVM unit tests with `./gradlew :app:test`. Android Studio can also build and install the app with the `app` run configuration.
 
-The current Play testing release notes in English, Hindi, and Marathi are in [RELEASE_NOTES_v12.txt](./RELEASE_NOTES_v12.txt).
+The current Play testing release notes in English, Hindi, and Marathi are in [RELEASE_NOTES_v13.txt](./RELEASE_NOTES_v13.txt).
 
 ### 1. Open in Android Studio
 1. Launch **Android Studio**.
