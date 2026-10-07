@@ -4,6 +4,9 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+echo "Running the repository policy and integration-inventory tests..."
+python3 -m unittest discover -s scripts -p 'test_*.py' -v
+
 echo "Running JVM unit tests, the core coverage gate, and a debug build..."
 ./gradlew :app:verifyCoreLogicCoverage :app:assembleDebug
 

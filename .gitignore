@@ -12,5 +12,9 @@ local.properties
 # Kotlin tooling
 .kotlin/
 
+# Python test artifacts
+__pycache__/
+*.py[cod]
+
 # OS files
 .DS_Store
