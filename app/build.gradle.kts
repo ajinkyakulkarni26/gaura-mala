@@ -75,12 +75,12 @@ dependencies {
 
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.02"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
-    androidTestImplementation("androidx.wear.tiles:tiles-renderer:1.5.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.wear.tiles:tiles-renderer:1.6.2")
 
     // AndroidX Core & Activity
-    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
@@ -90,7 +90,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.11.0")
 
     // Wear Compose
     implementation("androidx.wear.compose:compose-foundation:1.7.0")
@@ -98,11 +98,11 @@ dependencies {
 
     // Wear Tiles & Complications
     implementation("androidx.wear.tiles:tiles:1.6.2")
-    implementation("androidx.wear.protolayout:protolayout:1.3.0")
-    implementation("androidx.wear.protolayout:protolayout-expression:1.3.0")
-    implementation("androidx.wear.protolayout:protolayout-material:1.3.0")
-    implementation("androidx.wear.watchface:watchface-complications-data-source:1.2.1")
-    implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1")
+    implementation("androidx.wear.protolayout:protolayout:1.4.2")
+    implementation("androidx.wear.protolayout:protolayout-expression:1.4.2")
+    implementation("androidx.wear.protolayout:protolayout-material:1.4.2")
+    implementation("androidx.wear.watchface:watchface-complications-data-source:1.3.0")
+    implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.3.0")
 
     // Data Persistence
     implementation("androidx.datastore:datastore-preferences:1.1.1")
