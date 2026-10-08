@@ -36,7 +36,16 @@ class CounterInputIntegrationTest {
     private val clearStoredProgress = object : ExternalResource() {
         override fun before() {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
-            runBlocking { context.dataStore.edit { it.clear() } }
+            // Seed a visible marker so @Before can wait until the Activity has consumed its
+            // first DataStore emission. The counter surface itself renders before that load
+            // completes, which can otherwise make the first simulated input disappear.
+            runBlocking {
+                context.dataStore.edit {
+                    it.clear()
+                    it[MantraPreferences.KEY_COMPLETED_ROUNDS] = 1
+                    it[MantraPreferences.KEY_LAST_DATE] = LocalDate.now().toString()
+                }
+            }
         }
     }
 
@@ -51,6 +60,14 @@ class CounterInputIntegrationTest {
                     .assertIsDisplayed()
             }.isSuccess
         }
+
+        // Round 2 is the seeded marker; seeing it proves preferences have loaded. Clear it
+        // only then, and wait for the clean baseline before the test performs any input.
+        awaitRound("Round 2 of 16")
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        runBlocking { context.dataStore.edit { it.clear() } }
+        awaitRound("Round 1 of 16")
+        awaitBeadCount("0")
     }
 
     @Test
@@ -285,7 +302,7 @@ class CounterInputIntegrationTest {
         }
     }
 
-    private fun awaitBeadCount(expected: String, timeoutMillis: Long = 10_000) {
+    private fun awaitBeadCount(expected: String, timeoutMillis: Long = 5_000) {
         composeRule.waitUntil(timeoutMillis = timeoutMillis) {
             runCatching {
                 composeRule.onNodeWithTag("bead-count", useUnmergedTree = true)

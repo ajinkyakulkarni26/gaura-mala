@@ -1,6 +1,6 @@
 # Gaura Mala Agent Notes
 
-Last reviewed: 2026-10-07
+Last reviewed: 2026-10-08
 
 ## Project
 
@@ -74,6 +74,8 @@ From the repository root:
 ```
 
 Maintain 100% JaCoCo **line coverage** across the Android-independent core files: `MantraCounterStateMachine.kt`, `CounterHapticPolicy.kt`, `RotaryBeadInput.kt`, `MantraUiState.kt`, and `GauraMalaTileContent.kt`. `:app:verifyCoreLogicCoverage` is the CI gate; add or update unit tests whenever these behaviors change, and do not lower the threshold or exclude core files just to make the build pass. The complete unit-test coverage report is generated at `app/build/reports/coverage/test/debug/index.html`. Compose screens and Android services are tested through Wear OS integration/device tests but are not included in this JVM coverage percentage. CI compares executed Wear OS integration test IDs with `config/wear-os-integration-tests.txt`; every registered case must run, and every new case must be added to that inventory. There is no fixed test-count threshold.
+
+The counter screen renders before its asynchronous DataStore preferences load finishes. UI tests must wait for the loaded state before injecting input; `CounterInputIntegrationTest` seeds a visible round marker, waits until it appears, then clears it and waits for the clean baseline. Do not use the counter surface becoming visible as proof that preferences are ready, or increase timeouts to hide this startup race.
 
 Build outputs:
 
