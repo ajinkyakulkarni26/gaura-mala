@@ -18,7 +18,12 @@ fi
 echo "Wear OS test profile: ${WEAR_TEST_DEVICE_PROFILE:-unspecified}; font scale: ${font_scale}"
 
 wait_for_emulator() {
-  echo "Waiting for ${device_serial} to reconnect and finish booting..."
+  echo "Restarting ADB, then waiting for ${device_serial} to reconnect and finish booting..."
+  "${adb_path}" kill-server >/dev/null 2>&1 || true
+  if ! "${adb_path}" start-server; then
+    echo "Could not restart the ADB server." >&2
+    return 1
+  fi
   "${adb_path}" reconnect offline >/dev/null 2>&1 || true
   for ((attempt = 1; attempt <= 45; attempt++)); do
     local device_state
@@ -74,7 +79,7 @@ else
   test_status=$?
 fi
 
-if [[ "${test_status}" -ne 0 ]] && grep -Eiq 'adb: device offline|adb: device not found' "${test_log}"; then
+if grep -Eiq 'adb: device offline|adb: device .* not found' "${test_log}"; then
   echo "ADB lost the emulator during instrumentation; reconnecting and retrying once..." >&2
   if wait_for_emulator; then
     rm -rf "${test_results_dir}" "${test_reports_dir}"
