@@ -37,6 +37,7 @@ class GauraMalaTileService : TileService() {
         val prefs = MantraPreferences(this@GauraMalaTileService)
         prefs.resetIfNewDay()
         val userPrefs = prefs.userPreferencesFlow.first()
+        val tileContent = GauraMalaTileContent.from(userPrefs)
 
         val primaryLayout = PrimaryLayout.Builder(requestParams.deviceConfiguration)
             .setPrimaryLabelTextContent(
@@ -48,13 +49,13 @@ class GauraMalaTileService : TileService() {
             .setContent(
                 LayoutElementBuilders.Column.Builder()
                     .addContent(
-                        Text.Builder(this@GauraMalaTileService, "Round ${userPrefs.completedRounds} / ${userPrefs.dailyGoalRounds}")
+                        Text.Builder(this@GauraMalaTileService, tileContent.roundProgress)
                             .setColor(argb(0xFFFFFFFF.toInt()))
                             .setTypography(androidx.wear.protolayout.material.Typography.TYPOGRAPHY_TITLE2)
                             .build()
                     )
                     .addContent(
-                        Text.Builder(this@GauraMalaTileService, "${userPrefs.beadCount} / 108 Beads")
+                        Text.Builder(this@GauraMalaTileService, tileContent.beadProgress)
                             .setColor(argb(0xFFFFE082.toInt()))
                             .setTypography(androidx.wear.protolayout.material.Typography.TYPOGRAPHY_BODY2)
                             .build()
@@ -64,7 +65,7 @@ class GauraMalaTileService : TileService() {
             .setPrimaryChipContent(
                 CompactChip.Builder(
                     this@GauraMalaTileService,
-                    "Chant",
+                    tileContent.actionLabel,
                     ModifiersBuilders.Clickable.Builder()
                         .setOnClick(
                             ActionBuilders.LaunchAction.Builder()
