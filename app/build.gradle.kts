@@ -93,7 +93,7 @@ dependencies {
     implementation("androidx.wear.compose:compose-material3:1.7.0")
 
     // Wear Tiles & Complications
-    implementation("androidx.wear.tiles:tiles:1.5.0")
+    implementation("androidx.wear.tiles:tiles:1.6.2")
     implementation("androidx.wear.protolayout:protolayout:1.3.0")
     implementation("androidx.wear.protolayout:protolayout-expression:1.3.0")
     implementation("androidx.wear.protolayout:protolayout-material:1.3.0")
