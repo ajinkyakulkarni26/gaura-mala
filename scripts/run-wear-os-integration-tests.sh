@@ -20,7 +20,7 @@ echo "Wear OS test profile: ${WEAR_TEST_DEVICE_PROFILE:-unspecified}; font scale
 wait_for_emulator() {
   echo "Waiting for ${device_serial} to reconnect and finish booting..."
   "${adb_path}" reconnect offline >/dev/null 2>&1 || true
-  for attempt in {1..45}; do
+  for ((attempt = 1; attempt <= 45; attempt++)); do
     local device_state
     local boot_completed
     device_state="$("${adb_path}" -s "${device_serial}" get-state 2>/dev/null || true)"
