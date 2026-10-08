@@ -94,9 +94,9 @@ dependencies {
 
     // Wear Tiles & Complications
     implementation("androidx.wear.tiles:tiles:1.6.2")
-    implementation("androidx.wear.protolayout:protolayout:1.3.0")
-    implementation("androidx.wear.protolayout:protolayout-expression:1.3.0")
-    implementation("androidx.wear.protolayout:protolayout-material:1.3.0")
+    implementation("androidx.wear.protolayout:protolayout:1.4.2")
+    implementation("androidx.wear.protolayout:protolayout-expression:1.4.2")
+    implementation("androidx.wear.protolayout:protolayout-material:1.4.2")
     implementation("androidx.wear.watchface:watchface-complications-data-source:1.2.1")
     implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1")
 
