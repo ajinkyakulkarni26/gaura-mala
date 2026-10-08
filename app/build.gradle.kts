@@ -34,6 +34,9 @@ android {
         release {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -74,6 +77,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.wear.tiles:tiles-renderer:1.5.0")
 
     // AndroidX Core & Activity
     implementation("androidx.core:core-ktx:1.13.1")
@@ -126,10 +130,11 @@ tasks.register("verifyCoreLogicCoverage") {
         }
 
         val requiredSourceFiles = setOf(
-            "MantraCounterStateMachine.kt",
-            "CounterHapticPolicy.kt",
-            "RotaryBeadInput.kt",
-            "MantraUiState.kt"
+            "com/gauramala/wear/presentation/MantraCounterStateMachine.kt",
+            "com/gauramala/wear/presentation/CounterHapticPolicy.kt",
+            "com/gauramala/wear/presentation/RotaryBeadInput.kt",
+            "com/gauramala/wear/presentation/MantraUiState.kt",
+            "com/gauramala/wear/tile/GauraMalaTileContent.kt"
         )
         val documentFactory = javax.xml.parsers.DocumentBuilderFactory.newInstance().apply {
             setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
@@ -143,14 +148,16 @@ tasks.register("verifyCoreLogicCoverage") {
             .let { packages ->
                 (0 until packages.length)
                     .map { packages.item(it) as org.w3c.dom.Element }
-                    .filter { it.getAttribute("name") == "com/gauramala/wear/presentation" }
                     .flatMap { packageNode ->
                         val files = packageNode.getElementsByTagName("sourcefile")
-                        (0 until files.length).map { files.item(it) as org.w3c.dom.Element }
+                        (0 until files.length).map {
+                            val sourceFile = files.item(it) as org.w3c.dom.Element
+                            "${packageNode.getAttribute("name")}/${sourceFile.getAttribute("name")}" to sourceFile
+                        }
                     }
             }
-            .filter { it.getAttribute("name") in requiredSourceFiles }
-            .associateBy { it.getAttribute("name") }
+            .filter { (path, _) -> path in requiredSourceFiles }
+            .toMap()
 
         val missingFiles = requiredSourceFiles - sourceFiles.keys
         check(missingFiles.isEmpty()) {
@@ -159,7 +166,7 @@ tasks.register("verifyCoreLogicCoverage") {
 
         var coveredLines = 0
         var missedLines = 0
-        sourceFiles.forEach { (name, sourceFile) ->
+        sourceFiles.forEach { (path, sourceFile) ->
             val lineCounter = sourceFile.getElementsByTagName("counter")
                 .let { counters ->
                     (0 until counters.length)
@@ -170,7 +177,7 @@ tasks.register("verifyCoreLogicCoverage") {
             val missed = lineCounter.getAttribute("missed").toInt()
             coveredLines += covered
             missedLines += missed
-            logger.lifecycle("Core unit coverage: $name ${covered * 100 / (covered + missed)}% ($covered/${covered + missed} lines)")
+            logger.lifecycle("Core unit coverage: $path ${covered * 100 / (covered + missed)}% ($covered/${covered + missed} lines)")
         }
 
         val totalLines = coveredLines + missedLines

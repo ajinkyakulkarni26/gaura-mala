@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a reproducible problem in Gaura Mala.
+title: "Bug: "
+body:
+  - type: markdown
+    attributes:
+      value: Share only information needed to reproduce the issue. Do not include account details, tester email addresses, or other private data.
+  - type: input
+    id: app-version
+    attributes:
+      label: Gaura Mala version
+      description: Find the version in the watch app's system App info.
+      placeholder: "1.0.0 (version code)"
+    validations:
+      required: true
+  - type: input
+    id: watch-model
+    attributes:
+      label: Watch model
+      placeholder: "Pixel Watch 5"
+    validations:
+      required: true
+  - type: input
+    id: wear-version
+    attributes:
+      label: Wear OS version
+      placeholder: "Wear OS 6"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: List the steps that lead to the problem.
+      placeholder: 1. Open Gaura Mala...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Screenshots or logs
+      description: Remove personal information before attaching screenshots or logs.
+    validations:
+      required: false

@@ -7,8 +7,16 @@ cd "$repo_root"
 echo "Running the repository policy and integration-inventory tests..."
 python3 -m unittest discover -s scripts -p 'test_*.py' -v
 
+if command -v actionlint >/dev/null 2>&1 && command -v shellcheck >/dev/null 2>&1; then
+  echo "Linting GitHub Actions and shell scripts..."
+  ./scripts/lint-workflows.sh
+else
+  echo "Skipping workflow lint: install actionlint and shellcheck to run this local check."
+fi
+
 echo "Running JVM unit tests, the core coverage gate, and a debug build..."
 ./gradlew :app:verifyCoreLogicCoverage :app:assembleDebug
+bash scripts/check-native-abis.sh
 
 sdk_dir="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 if [[ -z "$sdk_dir" && -f local.properties ]]; then
