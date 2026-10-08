@@ -108,6 +108,8 @@ As of 2026-10-07, GitHub's dependency graph, Dependabot alerts, and Dependabot s
 
 The repository's `main` branch is protected: changes go through pull requests, and both Android CI jobs plus the contributor-approval job must pass before merge. Contributor PRs require approval from `ajinkyakulkarni26` on the current commit; owner-authored PRs are exempt from that approval check. New commits after approval require a fresh owner approval. `.github/CODEOWNERS` assigns the owner to CI workflows, coverage/build configuration, Gradle policy, and scripts; those files require an additional code-owner review even on owner-authored PRs. The main ruleset also requires CodeQL results at High or higher and blocks CodeQL error alerts. Update the GitHub ruleset's required checks and code-owner review setting when changing this policy. Do not push directly to `main`.
 
+Before starting any development or edits, fetch and inspect the latest `origin/main` so work is based on current repository code. This repository's default branch is `main` (not `master`). Create new work branches from the updated `origin/main`; when continuing an existing topic branch, incorporate the latest `main` first when it can be done safely. Preserve uncommitted user changes and never use a destructive reset just to synchronize.
+
 The contributor-approval workflow checks out the approval script from the target branch, so a PR cannot change the checker it is being evaluated by. During the initial policy bootstrap only, when that script is not on `main` yet, the workflow permits the repository owner to land the setup PR and rejects other authors.
 
 ## Release status and next work
