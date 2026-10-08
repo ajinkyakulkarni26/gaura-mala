@@ -45,7 +45,16 @@ fi
 # android-emulator-runner executes each script line in a separate shell, so call
 # this file as one command to keep the test and reporting exit codes together.
 test_log="$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/wear-os-tests.XXXXXX")"
-trap 'rm -f "${test_log}"' EXIT
+cleanup() {
+  "${adb_path}" -s "${device_serial}" shell dumpsys battery reset >/dev/null 2>&1 || true
+  rm -f "${test_log}"
+}
+trap cleanup EXIT
+# The Wear OS emulator runner leaves the AVD connected to AC. SysUI can then
+# show its charging activity after boot and pause the app under test. Make the
+# virtual watch behave like an unplugged device before launching instrumentation.
+"${adb_path}" -s "${device_serial}" shell dumpsys battery unplug
+
 test_results_dir="app/build/outputs/androidTest-results/connected"
 test_reports_dir="app/build/reports/androidTests/connected"
 
