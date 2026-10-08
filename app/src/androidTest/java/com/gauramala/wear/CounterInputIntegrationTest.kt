@@ -236,7 +236,10 @@ class CounterInputIntegrationTest {
 
     @Test
     fun confirmingResetTodayClearsRoundsAndBeads() {
-        setCompletedRounds(2)
+        setStoredProgress(beadCount = 5, completedRounds = 2)
+        awaitBeadCount("5")
+        awaitRound("Round 3 of 16")
+
         openSettings()
         composeRule.onNodeWithText("Reset Today").performScrollTo().performClick()
         composeRule.onNodeWithContentDescription("Confirm reset").performClick()
@@ -268,11 +271,15 @@ class CounterInputIntegrationTest {
     }
 
     private fun setBeadCount(count: Int) {
+        setStoredProgress(beadCount = count, completedRounds = 0)
+    }
+
+    private fun setStoredProgress(beadCount: Int, completedRounds: Int) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         runBlocking {
             context.dataStore.edit { preferences ->
-                preferences[MantraPreferences.KEY_BEAD_COUNT] = count
-                preferences[MantraPreferences.KEY_COMPLETED_ROUNDS] = 0
+                preferences[MantraPreferences.KEY_BEAD_COUNT] = beadCount
+                preferences[MantraPreferences.KEY_COMPLETED_ROUNDS] = completedRounds
                 preferences[MantraPreferences.KEY_LAST_DATE] = LocalDate.now().toString()
             }
         }
