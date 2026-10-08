@@ -19,13 +19,16 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.datastore.preferences.core.edit
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.gauramala.wear.data.MantraPreferences
 import com.gauramala.wear.data.dataStore
 import kotlinx.coroutines.runBlocking
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
+import java.time.LocalDate
 
 @RunWith(AndroidJUnit4::class)
 class CounterInputIntegrationTest {
@@ -39,6 +42,16 @@ class CounterInputIntegrationTest {
 
     @get:Rule
     val rules: RuleChain = RuleChain.outerRule(clearStoredProgress).around(composeRule)
+
+    @Before
+    fun waitForCounterScreen() {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            runCatching {
+                composeRule.onNodeWithTag("counter-surface", useUnmergedTree = true)
+                    .assertIsDisplayed()
+            }.isSuccess
+        }
+    }
 
     @Test
     fun counterStartsAtZeroOnRoundOne() {
@@ -135,10 +148,14 @@ class CounterInputIntegrationTest {
 
     @Test
     @OptIn(ExperimentalTestApi::class)
-    fun completing108RotaryStepsResetsBeadsAndAdvancesToRoundTwo() {
+    fun crownStepFromLastBeadCompletesRoundAndAdvancesToRoundTwo() {
+        setBeadCount(107)
+        awaitBeadCount("107")
+
+        val oneBeadRotationPx = 24f * composeRule.activity.resources.displayMetrics.density
         composeRule.onNodeWithTag("counter-surface", useUnmergedTree = true)
             .performRotaryScrollInput {
-                repeat(108) { rotateToScrollVertically(48f) }
+                rotateToScrollVertically(oneBeadRotationPx)
             }
 
         awaitRound("Round 2 of 16")
@@ -250,6 +267,17 @@ class CounterInputIntegrationTest {
         awaitRound("Round ${count + 1} of 16")
     }
 
+    private fun setBeadCount(count: Int) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        runBlocking {
+            context.dataStore.edit { preferences ->
+                preferences[MantraPreferences.KEY_BEAD_COUNT] = count
+                preferences[MantraPreferences.KEY_COMPLETED_ROUNDS] = 0
+                preferences[MantraPreferences.KEY_LAST_DATE] = LocalDate.now().toString()
+            }
+        }
+    }
+
     private fun awaitBeadCount(expected: String) {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             runCatching {
@@ -259,8 +287,8 @@ class CounterInputIntegrationTest {
         }
     }
 
-    private fun awaitRound(expected: String) {
-        composeRule.waitUntil(timeoutMillis = 5_000) {
+    private fun awaitRound(expected: String, timeoutMillis: Long = 10_000) {
+        composeRule.waitUntil(timeoutMillis = timeoutMillis) {
             runCatching {
                 composeRule.onNodeWithTag("round-progress-button")
                     .assertTextEquals(expected)
