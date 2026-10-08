@@ -18,7 +18,12 @@ fi
 echo "Wear OS test profile: ${WEAR_TEST_DEVICE_PROFILE:-unspecified}; font scale: ${font_scale}"
 
 wait_for_emulator() {
-  echo "Waiting for ${device_serial} to reconnect and finish booting..."
+  echo "Restarting ADB, then waiting for ${device_serial} to reconnect and finish booting..."
+  "${adb_path}" kill-server >/dev/null 2>&1 || true
+  if ! "${adb_path}" start-server; then
+    echo "Could not restart the ADB server." >&2
+    return 1
+  fi
   "${adb_path}" reconnect offline >/dev/null 2>&1 || true
   for ((attempt = 1; attempt <= 45; attempt++)); do
     local device_state
@@ -45,7 +50,15 @@ fi
 # android-emulator-runner executes each script line in a separate shell, so call
 # this file as one command to keep the test and reporting exit codes together.
 test_log="$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/wear-os-tests.XXXXXX")"
-trap 'rm -f "${test_log}"' EXIT
+trap '
+  "${adb_path}" -s "${device_serial}" shell dumpsys battery reset >/dev/null 2>&1 || true
+  rm -f "${test_log}"
+' EXIT
+# The Wear OS emulator runner leaves the AVD connected to AC. SysUI can then
+# show its charging activity after boot and pause the app under test. Make the
+# virtual watch behave like an unplugged device before launching instrumentation.
+"${adb_path}" -s "${device_serial}" shell dumpsys battery unplug
+
 test_results_dir="app/build/outputs/androidTest-results/connected"
 test_reports_dir="app/build/reports/androidTests/connected"
 
@@ -66,12 +79,8 @@ else
   test_status=$?
 fi
 
-has_test_cases() {
-  [[ -d "${test_results_dir}" ]] && grep -Rqs --include='*.xml' '<testcase' "${test_results_dir}"
-}
-
-if grep -Eiq 'adb: device offline|adb: device not found' "${test_log}" && ! has_test_cases; then
-  echo "ADB lost the emulator before instrumentation began; reconnecting and retrying once..." >&2
+if grep -Eiq 'adb: device offline|adb: device .* not found' "${test_log}"; then
+  echo "ADB lost the emulator during instrumentation; reconnecting and retrying once..." >&2
   if wait_for_emulator; then
     rm -rf "${test_results_dir}" "${test_reports_dir}"
     if run_instrumentation; then
