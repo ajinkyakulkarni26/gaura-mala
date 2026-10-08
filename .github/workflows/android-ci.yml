@@ -58,8 +58,15 @@ jobs:
       - name: Lint GitHub Actions and shell scripts
         shell: bash
         run: |
-          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
-          "$(go env GOPATH)/bin/actionlint" -color
+          actionlint_version=1.7.12
+          actionlint_archive="actionlint_${actionlint_version}_linux_amd64.tar.gz"
+          actionlint_path="${RUNNER_TEMP}/${actionlint_archive}"
+          curl --fail --location --silent --show-error \
+            "https://github.com/rhysd/actionlint/releases/download/v${actionlint_version}/${actionlint_archive}" \
+            --output "${actionlint_path}"
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  ${actionlint_path}" | sha256sum --check
+          tar -xzf "${actionlint_path}" -C "${RUNNER_TEMP}" actionlint
+          "${RUNNER_TEMP}/actionlint" -color
           if ! command -v shellcheck >/dev/null 2>&1; then
             echo "shellcheck is required for CI workflow shell validation" >&2
             exit 1
