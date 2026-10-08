@@ -1,5 +1,6 @@
 # Keep CI, test, and coverage policy changes under repository-owner review.
 /.github/workflows/** @ajinkyakulkarni26
+/.github/dependabot.yml @ajinkyakulkarni26
 /.github/CODEOWNERS @ajinkyakulkarni26
 /scripts/** @ajinkyakulkarni26
 /app/build.gradle.kts @ajinkyakulkarni26

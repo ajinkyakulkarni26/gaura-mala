@@ -1,0 +1,25 @@
+name: Submit pull request dependency graph
+
+on:
+  workflow_run:
+    workflows: ['Gradle Dependency Graph']
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  submit-pull-request-dependency-graph:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Submit uploaded dependency graph
+        uses: gradle/actions/dependency-submission@v6
+        with:
+          dependency-graph: download-and-submit
