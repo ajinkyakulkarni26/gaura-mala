@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -183,10 +184,12 @@ fun MantraCounterScreen(
         )
     }
 
-    Box(
+    BoxWithConstraints(
         modifier = containerModifier.testTag("counter-surface"),
         contentAlignment = Alignment.Center
     ) {
+        val compactCounterLayout = maxHeight < 220.dp || LocalDensity.current.fontScale > 1.15f
+
         // Outer Circular Bead & Round Progress Tracks
         BeadProgressRing(
             beadCount = state.beadCount,
@@ -199,7 +202,10 @@ fun MantraCounterScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+            modifier = Modifier.padding(
+                horizontal = 24.dp,
+                vertical = if (compactCounterLayout) 0.dp else 8.dp
+            )
         ) {
             // Round Header Indicator
             if (isAmbient) {
@@ -264,7 +270,8 @@ fun MantraCounterScreen(
                 modifier = Modifier.testTag("bead-count"),
                 style = MaterialTheme.typography.displayLarge,
                 color = if (isAmbient) Color.White else GauraGold,
-                fontSize = 46.sp,
+                fontSize = if (compactCounterLayout) 44.sp else 46.sp,
+                lineHeight = if (compactCounterLayout) 44.sp else 48.sp,
                 fontWeight = FontWeight.Bold
             )
 
@@ -273,7 +280,8 @@ fun MantraCounterScreen(
                 text = "/ 108",
                 style = MaterialTheme.typography.labelSmall,
                 color = if (isAmbient) Color.Gray else OnSurfaceMuted,
-                fontSize = 12.sp
+                fontSize = 12.sp,
+                lineHeight = if (compactCounterLayout) 12.sp else 14.sp
             )
 
             if (!isAmbient) {
@@ -294,7 +302,8 @@ fun MantraCounterScreen(
                             text = inputHint,
                             style = MaterialTheme.typography.labelSmall,
                             color = OnSurfaceMuted,
-                            fontSize = 10.sp
+                            fontSize = 10.sp,
+                            lineHeight = if (compactCounterLayout) 12.sp else 14.sp
                         )
                     }
                 } else {
@@ -302,14 +311,15 @@ fun MantraCounterScreen(
                         text = inputHint,
                         style = MaterialTheme.typography.labelSmall,
                         color = OnSurfaceMuted,
-                        fontSize = 10.sp
+                        fontSize = 10.sp,
+                        lineHeight = if (compactCounterLayout) 12.sp else 14.sp
                     )
                 }
             }
 
             // Bottom Control Action Row (Hidden during ambient mode)
             if (!isAmbient) {
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(if (compactCounterLayout) 0.dp else 6.dp))
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
