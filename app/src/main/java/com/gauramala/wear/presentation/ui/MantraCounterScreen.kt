@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -198,7 +199,7 @@ fun MantraCounterScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
         ) {
             // Round Header Indicator
             if (isAmbient) {
@@ -214,37 +215,44 @@ fun MantraCounterScreen(
                     fontWeight = FontWeight.SemiBold
                 )
             } else {
-                Row(
+                Box(
                     modifier = Modifier
+                        .heightIn(min = 48.dp)
                         .clip(CircleShape)
-                        .background(SurfaceDark)
                         .clickable(
                             onClickLabel = "Adjust rounds completed today",
                             role = Role.Button
                         ) { showRoundProgress = true }
-                        .height(32.dp)
-                        .padding(horizontal = 8.dp)
                         .testTag("round-progress-button"),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = if (state.isGoalAchieved) {
-                            "Daily goal reached"
-                        } else {
-                            "Round ${state.completedRounds + 1} of ${state.dailyGoalRounds}"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = GauraGoldLight,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = null,
-                        tint = GauraGoldLight,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(SurfaceDark)
+                            .height(32.dp)
+                            .padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (state.isGoalAchieved) {
+                                "Daily goal reached"
+                            } else {
+                                "Round ${state.completedRounds + 1} of ${state.dailyGoalRounds}"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = GauraGoldLight,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = null,
+                            tint = GauraGoldLight,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
 
@@ -313,6 +321,7 @@ fun MantraCounterScreen(
                         enabled = state.canUndo,
                         modifier = Modifier
                             .size(48.dp)
+                            .testTag("undo-button")
                             .alpha(if (state.canUndo) 1f else 0.3f),
                         colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
                     ) {
@@ -329,7 +338,7 @@ fun MantraCounterScreen(
                     // Settings Button
                     Button(
                         onClick = { showSettings = true },
-                        modifier = Modifier.size(48.dp),
+                        modifier = Modifier.size(48.dp).testTag("open-settings-button"),
                         colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
                     ) {
                         Icon(

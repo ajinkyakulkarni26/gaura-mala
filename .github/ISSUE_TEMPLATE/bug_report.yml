@@ -27,6 +27,21 @@ body:
       placeholder: "Wear OS 6"
     validations:
       required: true
+  - type: dropdown
+    id: input-method
+    attributes:
+      label: Input method or app surface
+      description: Choose the main input or surface where the issue happened.
+      options:
+        - Screen tap
+        - Rotary crown
+        - Double pinch
+        - Round adjustment
+        - Tile
+        - Watch face complication
+        - Other or not sure
+    validations:
+      required: true
   - type: textarea
     id: reproduce
     attributes:

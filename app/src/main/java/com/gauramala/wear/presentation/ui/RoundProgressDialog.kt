@@ -114,7 +114,7 @@ fun RoundProgressDialog(
             Button(
                 onClick = { adjustRoundsBy(-1) },
                 enabled = selectedRounds > 0,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(48.dp).testTag("round-picker-decrease"),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SurfaceDark,
                     contentColor = OnSurfaceWhite
@@ -136,7 +136,7 @@ fun RoundProgressDialog(
             Button(
                 onClick = { adjustRoundsBy(1) },
                 enabled = selectedRounds < maxRounds,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(48.dp).testTag("round-picker-increase"),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SurfaceDark,
                     contentColor = OnSurfaceWhite
@@ -174,7 +174,7 @@ fun RoundProgressDialog(
         ) {
             Button(
                 onClick = onDismiss,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(48.dp).testTag("round-picker-cancel"),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SurfaceDark,
                     contentColor = OnSurfaceWhite
@@ -184,7 +184,7 @@ fun RoundProgressDialog(
             }
             Button(
                 onClick = { onSetRounds(selectedRounds) },
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(48.dp).testTag("round-picker-confirm"),
                 colors = ButtonDefaults.buttonColors(containerColor = GauraGold)
             ) {
                 Icon(
