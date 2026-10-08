@@ -58,8 +58,15 @@ jobs:
       - name: Lint GitHub Actions and shell scripts
         shell: bash
         run: |
-          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
-          "$(go env GOPATH)/bin/actionlint" -color
+          actionlint_version=1.7.12
+          actionlint_archive="actionlint_${actionlint_version}_linux_amd64.tar.gz"
+          actionlint_path="${RUNNER_TEMP}/${actionlint_archive}"
+          curl --fail --location --silent --show-error \
+            "https://github.com/rhysd/actionlint/releases/download/v${actionlint_version}/${actionlint_archive}" \
+            --output "${actionlint_path}"
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  ${actionlint_path}" | sha256sum --check
+          tar -xzf "${actionlint_path}" -C "${RUNNER_TEMP}" actionlint
+          "${RUNNER_TEMP}/actionlint" -color
           if ! command -v shellcheck >/dev/null 2>&1; then
             echo "shellcheck is required for CI workflow shell validation" >&2
             exit 1
@@ -84,6 +91,28 @@ jobs:
 
       - name: Verify 64-bit native libraries are packaged
         run: bash scripts/check-native-abis.sh
+
+      - name: Build release AAB and check native ABIs and symbols
+        shell: bash
+        run: |
+          ci_keystore="${RUNNER_TEMP}/gaura-ci-upload.jks"
+          ci_password="$(openssl rand -hex 24)"
+          trap 'rm -f "$ci_keystore"' EXIT
+          keytool -genkeypair -noprompt \
+            -keystore "$ci_keystore" \
+            -storepass "$ci_password" \
+            -keypass "$ci_password" \
+            -alias gaura-ci \
+            -dname "CN=Gaura Mala CI" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 2
+          ./gradlew :app:bundleRelease \
+            -PGAURA_UPLOAD_STORE_FILE="$ci_keystore" \
+            -PGAURA_UPLOAD_STORE_PASSWORD="$ci_password" \
+            -PGAURA_UPLOAD_KEY_ALIAS=gaura-ci \
+            -PGAURA_UPLOAD_KEY_PASSWORD="$ci_password"
+          python3 scripts/check_release_aab.py app/build/outputs/bundle/release/app-release.aab
 
       - name: Analyze with CodeQL
         uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
