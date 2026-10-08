@@ -114,16 +114,6 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # GitHub's Ubuntu image names the API 37 platform android-37.0;
-      # this project asks Android Gradle Plugin for android-37.
-      - name: Add API 37 SDK platform alias when needed
-        shell: bash
-        run: |
-          sdk_platforms="${ANDROID_HOME}/platforms"
-          if [[ -d "${sdk_platforms}/android-37.0" && ! -e "${sdk_platforms}/android-37" ]]; then
-            ln -s android-37.0 "${sdk_platforms}/android-37"
-          fi
-
       - name: Run Wear OS UI integration tests
         uses: reactivecircus/android-emulator-runner@v2.38.0
         with:
@@ -135,6 +125,11 @@ jobs:
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: |
+            # Create the AGP alias only after the action has finished SDK manager setup.
+            sdk_platforms="${ANDROID_HOME}/platforms"
+            if [[ -d "${sdk_platforms}/android-37.0" && ! -e "${sdk_platforms}/android-37" ]]; then
+              ln -s android-37.0 "${sdk_platforms}/android-37"
+            fi
             set +e
             ./gradlew :app:connectedDebugAndroidTest
             test_status=$?
