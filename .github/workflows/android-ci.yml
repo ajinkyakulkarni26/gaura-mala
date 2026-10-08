@@ -85,7 +85,7 @@ jobs:
       - name: Verify 64-bit native libraries are packaged
         run: bash scripts/check-native-abis.sh
 
-      - name: Build release AAB and verify native ABIs and symbols
+      - name: Build release AAB and check native ABIs and symbols
         shell: bash
         run: |
           ci_keystore="${RUNNER_TEMP}/gaura-ci-upload.jks"

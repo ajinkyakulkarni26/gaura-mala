@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check a Wear OS release AAB's native ABIs and embedded symbol metadata."""
+"""Check required Wear OS ABIs and report embedded native debug symbols."""
 
 from __future__ import annotations
 
@@ -9,15 +9,16 @@ import sys
 from zipfile import BadZipFile, ZipFile
 
 
-def inspect_release_artifacts(aab_path: Path) -> list[str]:
-    """Return validation errors for the AAB and its embedded AGP symbols."""
+def inspect_release_artifacts(aab_path: Path) -> tuple[list[str], list[str]]:
+    """Return AAB validation errors and symbol-availability warnings."""
     errors: list[str] = []
+    warnings: list[str] = []
 
     try:
         with ZipFile(aab_path) as aab:
             members = aab.infolist()
     except (BadZipFile, OSError) as error:
-        return [f"Cannot read app bundle {aab_path}: {error}"]
+        return [f"Cannot read app bundle {aab_path}: {error}"], warnings
 
     native_abis = {
         parts[2]
@@ -44,14 +45,20 @@ def inspect_release_artifacts(aab_path: Path) -> list[str]:
         and member.file_size > 0
     ]
     if not symbol_members:
-        errors.append("The release AAB contains no embedded native debug symbols.")
+        warnings.append(
+            "The release AAB contains no embedded native debug symbols. "
+            "Confirm the native-symbol status in Play Console after upload."
+        )
     elif not any(
         f"{symbols_prefix}arm64-v8a/" in member.filename
         for member in symbol_members
     ):
-        errors.append("The release AAB has no embedded native debug symbols for arm64-v8a.")
+        warnings.append(
+            "The release AAB has no embedded native debug symbols for arm64-v8a. "
+            "Confirm the native-symbol status in Play Console after upload."
+        )
 
-    return errors
+    return errors, warnings
 
 
 def main() -> int:
@@ -64,14 +71,17 @@ def main() -> int:
         help="release App Bundle path",
     )
     args = parser.parse_args()
-    errors = inspect_release_artifacts(args.aab)
+    errors, warnings = inspect_release_artifacts(args.aab)
+    for warning in warnings:
+        print(f"WARNING: {warning}", file=sys.stderr)
     if errors:
         for error in errors:
             print(f"FAIL: {error}", file=sys.stderr)
         return 1
 
     print("Release AAB includes arm64-v8a native libraries and compatible 64-bit variants.")
-    print("Native debug symbols are embedded in the AAB for Play Console.")
+    if not warnings:
+        print("Native debug symbols are embedded in the AAB, including arm64-v8a.")
     return 0
 
 

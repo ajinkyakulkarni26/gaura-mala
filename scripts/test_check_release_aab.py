@@ -23,7 +23,9 @@ class ReleaseAabCheckTest(unittest.TestCase):
                 "BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libcounter.so.sym",
             ])
 
-            self.assertEqual([], inspect_release_artifacts(aab))
+            errors, warnings = inspect_release_artifacts(aab)
+            self.assertEqual([], errors)
+            self.assertEqual([], warnings)
 
     def test_rejects_bundle_missing_arm64_abi(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -33,7 +35,7 @@ class ReleaseAabCheckTest(unittest.TestCase):
                 "BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libcounter.so.sym",
             ])
 
-            errors = inspect_release_artifacts(aab)
+            errors, _ = inspect_release_artifacts(aab)
 
             self.assertTrue(any("missing required Wear OS ABI arm64-v8a" in error for error in errors))
 
@@ -46,20 +48,21 @@ class ReleaseAabCheckTest(unittest.TestCase):
                 "BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libcounter.so.sym",
             ])
 
-            errors = inspect_release_artifacts(aab)
+            errors, _ = inspect_release_artifacts(aab)
 
             self.assertTrue(any("without matching x86_64" in error for error in errors))
 
-    def test_rejects_bundle_without_embedded_native_symbols(self) -> None:
+    def test_warns_when_bundle_has_no_embedded_native_symbols(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             aab = Path(temp_dir) / "release.aab"
             self.write_aab(aab, ["base/lib/arm64-v8a/libcounter.so"])
 
-            errors = inspect_release_artifacts(aab)
+            errors, warnings = inspect_release_artifacts(aab)
 
-            self.assertTrue(any("no embedded native debug symbols" in error for error in errors))
+            self.assertEqual([], errors)
+            self.assertTrue(any("no embedded native debug symbols" in warning for warning in warnings))
 
-    def test_rejects_symbols_for_other_abis_without_arm64_symbols(self) -> None:
+    def test_warns_when_symbols_exist_only_for_other_abis(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             aab = Path(temp_dir) / "release.aab"
             self.write_aab(aab, [
@@ -67,11 +70,12 @@ class ReleaseAabCheckTest(unittest.TestCase):
                 "BUNDLE-METADATA/com.android.tools.build.debugsymbols/x86_64/libcounter.so.sym",
             ])
 
-            errors = inspect_release_artifacts(aab)
+            errors, warnings = inspect_release_artifacts(aab)
 
-            self.assertTrue(any("no embedded native debug symbols for arm64-v8a" in error for error in errors))
+            self.assertEqual([], errors)
+            self.assertTrue(any("no embedded native debug symbols for arm64-v8a" in warning for warning in warnings))
 
-    def test_rejects_empty_embedded_symbol_file(self) -> None:
+    def test_warns_when_embedded_symbol_file_is_empty(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             aab = Path(temp_dir) / "release.aab"
             with ZipFile(aab, "w") as archive:
@@ -81,9 +85,10 @@ class ReleaseAabCheckTest(unittest.TestCase):
                     b"",
                 )
 
-            errors = inspect_release_artifacts(aab)
+            errors, warnings = inspect_release_artifacts(aab)
 
-            self.assertTrue(any("no embedded native debug symbols" in error for error in errors))
+            self.assertEqual([], errors)
+            self.assertTrue(any("no embedded native debug symbols" in warning for warning in warnings))
 
 
 if __name__ == "__main__":

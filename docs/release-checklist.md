@@ -25,13 +25,14 @@ Run these checks on a compatible watch before a release that changes input, disp
 
 - [ ] Build the signed release AAB locally using the upload key stored outside the repository.
 - [ ] Confirm CI builds the release AAB with an isolated temporary signing key and verifies its `arm64-v8a` native libraries and matching 64-bit variants.
-- [ ] Confirm CI finds native debug symbol metadata embedded in the AAB under `BUNDLE-METADATA/com.android.tools.build.debugsymbols/`. The uploadable AAB should carry these symbols into Play Console.
+- [ ] Check CI's native-symbol report. The release build requests `SYMBOL_TABLE`; CI validates symbol files if Gradle packages them and warns if they are absent. Some prebuilt native libraries may not provide symbols to package.
 - [ ] Check the final AAB's package name, version code, Wear OS targeting, and signing certificate before upload.
 
 ## Google Play Console
 
 - [ ] Upload to the dedicated Wear OS testing track; this app bundle is not for phone-only tracks.
 - [ ] Review Play Console's validation messages and confirm whether the native-symbol warning clears for the uploaded AAB.
+- [ ] If Play Console still reports missing native debug symbols, record the warning and check whether the affected libraries provide symbol files; do not treat the CI warning as resolved until Play Console confirms it.
 - [ ] Review release notes, screenshots, privacy policy, Data safety answers, tester list, and country availability.
 - [ ] Start rollout only after the track and artifact are correct. For production access, confirm the account's current opted-in tester count and continuous testing period in Play Console before applying.
 
