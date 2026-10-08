@@ -101,8 +101,8 @@ dependencies {
     implementation("androidx.wear.protolayout:protolayout:1.3.0")
     implementation("androidx.wear.protolayout:protolayout-expression:1.3.0")
     implementation("androidx.wear.protolayout:protolayout-material:1.3.0")
-    implementation("androidx.wear.watchface:watchface-complications-data-source:1.2.1")
-    implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1")
+    implementation("androidx.wear.watchface:watchface-complications-data-source:1.3.0")
+    implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.3.0")
 
     // Data Persistence
     implementation("androidx.datastore:datastore-preferences:1.1.1")
