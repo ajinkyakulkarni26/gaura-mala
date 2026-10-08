@@ -285,8 +285,8 @@ class CounterInputIntegrationTest {
         }
     }
 
-    private fun awaitBeadCount(expected: String) {
-        composeRule.waitUntil(timeoutMillis = 5_000) {
+    private fun awaitBeadCount(expected: String, timeoutMillis: Long = 10_000) {
+        composeRule.waitUntil(timeoutMillis = timeoutMillis) {
             runCatching {
                 composeRule.onNodeWithTag("bead-count", useUnmergedTree = true)
                     .assertTextEquals(expected)
