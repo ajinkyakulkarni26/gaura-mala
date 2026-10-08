@@ -20,10 +20,21 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
+      wear-tiles-protolayout:
+        applies-to: version-updates
+        patterns:
+          - "androidx.wear.tiles:*"
+          - "androidx.wear.protolayout:*"
+        update-types:
+          - minor
+          - patch
       app-routine:
         applies-to: version-updates
         patterns:
           - "*"
+        exclude-patterns:
+          - "androidx.wear.tiles:*"
+          - "androidx.wear.protolayout:*"
         update-types:
           - minor
           - patch

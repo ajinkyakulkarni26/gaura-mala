@@ -1,6 +1,7 @@
 package com.gauramala.wear
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -23,6 +24,7 @@ import com.gauramala.wear.data.MantraPreferences
 import com.gauramala.wear.data.dataStore
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
@@ -224,6 +226,47 @@ class CounterInputIntegrationTest {
     }
 
     @Test
+    fun primaryCounterSettingsAndRoundPickerActionsHave48DpTargets() {
+        assertAtLeast48Dp(
+            "Counter surface",
+            composeRule.onNodeWithTag("counter-surface", useUnmergedTree = true)
+        )
+        assertAtLeast48Dp("Round progress", composeRule.onNodeWithTag("round-progress-button"))
+        assertAtLeast48Dp("Undo", composeRule.onNodeWithTag("undo-button"))
+        assertAtLeast48Dp("Open Settings", composeRule.onNodeWithTag("open-settings-button"))
+
+        openSettings()
+        assertAtLeast48Dp("Decrease daily goal", composeRule.onNodeWithTag("daily-goal-decrease"))
+        assertAtLeast48Dp("Increase daily goal", composeRule.onNodeWithTag("daily-goal-increase"))
+        listOf(
+            "settings-double-pinch",
+            "settings-screen-tap",
+            "settings-haptics",
+            "settings-milestones",
+            "settings-keep-awake"
+        ).forEach { tag ->
+            assertAtLeast48Dp(tag, composeRule.onNodeWithTag(tag).performScrollTo())
+        }
+
+        assertAtLeast48Dp("Reset Round", composeRule.onNodeWithText("Reset Round").performScrollTo())
+        assertAtLeast48Dp("Reset Today", composeRule.onNodeWithText("Reset Today").performScrollTo())
+        assertAtLeast48Dp("Privacy Policy", composeRule.onNodeWithText("Privacy Policy").performScrollTo())
+        composeRule.onNodeWithText("Reset Round").performScrollTo().performClick()
+        assertAtLeast48Dp("Cancel reset", composeRule.onNodeWithTag("reset-confirm-cancel"))
+        assertAtLeast48Dp("Confirm reset", composeRule.onNodeWithTag("reset-confirm-accept"))
+        composeRule.onNodeWithContentDescription("Cancel reset").performClick()
+        assertAtLeast48Dp("Done", composeRule.onNodeWithText("Done").performScrollTo())
+        composeRule.onNodeWithText("Done").performScrollTo().performClick()
+
+        openRoundAdjustment()
+        assertAtLeast48Dp("Decrease completed rounds", composeRule.onNodeWithTag("round-picker-decrease"))
+        assertAtLeast48Dp("Increase completed rounds", composeRule.onNodeWithTag("round-picker-increase"))
+        assertAtLeast48Dp("Cancel round adjustment", composeRule.onNodeWithTag("round-picker-cancel"))
+        assertAtLeast48Dp("Set completed rounds", composeRule.onNodeWithTag("round-picker-confirm"))
+        composeRule.onNodeWithContentDescription("Cancel round adjustment").performClick()
+    }
+
+    @Test
     fun cancellingResetRoundPreservesProgress() {
         tapCounter()
         awaitBeadCount("1")
@@ -276,6 +319,20 @@ class CounterInputIntegrationTest {
 
     private fun openSettings() {
         composeRule.onNodeWithContentDescription("Open Settings").performClick()
+    }
+
+    private fun assertAtLeast48Dp(label: String, target: SemanticsNodeInteraction) {
+        val bounds = target.fetchSemanticsNode().boundsInRoot
+        val density = composeRule.density.density
+        val minimumPixels = 48f * density
+        assertTrue(
+            "$label target width ${bounds.width}px (${bounds.width / density}dp) is below 48dp",
+            bounds.width + 0.5f >= minimumPixels
+        )
+        assertTrue(
+            "$label target height ${bounds.height}px (${bounds.height / density}dp) is below 48dp",
+            bounds.height + 0.5f >= minimumPixels
+        )
     }
 
     private fun setCompletedRounds(count: Int) {
