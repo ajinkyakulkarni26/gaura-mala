@@ -52,6 +52,6 @@ fi
 
 echo "Found Wear OS emulator $wear_emulator; running Wear OS UI integration tests..."
 test_exit_code=0
-./gradlew :app:connectedDebugAndroidTest || test_exit_code=$?
+ANDROID_SERIAL="$wear_emulator" ./gradlew :app:connectedDebugAndroidTest || test_exit_code=$?
 python3 scripts/print-android-test-results.py
 exit "$test_exit_code"

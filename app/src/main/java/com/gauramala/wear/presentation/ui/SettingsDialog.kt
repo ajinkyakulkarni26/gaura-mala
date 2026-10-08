@@ -97,7 +97,7 @@ fun SettingsDialog(
             ) {
                 Button(
                     onClick = { pendingReset = null },
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(48.dp).testTag("reset-confirm-cancel"),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = SurfaceDark,
                         contentColor = OnSurfaceWhite
@@ -115,7 +115,7 @@ fun SettingsDialog(
                         pendingReset = null
                         onDismiss()
                     },
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(48.dp).testTag("reset-confirm-accept"),
                     colors = ButtonDefaults.buttonColors(containerColor = AlertRed)
                 ) {
                     Icon(Icons.Default.Check, contentDescription = "Confirm reset", modifier = Modifier.size(22.dp))
@@ -182,7 +182,7 @@ fun SettingsDialog(
                 Button(
                     onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds - 1) },
                     enabled = state.dailyGoalRounds > 1,
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(48.dp).testTag("daily-goal-decrease"),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = SurfaceDark,
                         contentColor = OnSurfaceWhite
@@ -206,7 +206,7 @@ fun SettingsDialog(
                 Button(
                     onClick = { viewModel.updateDailyGoal(state.dailyGoalRounds + 1) },
                     enabled = state.dailyGoalRounds < 64,
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(48.dp).testTag("daily-goal-increase"),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = SurfaceDark,
                         contentColor = OnSurfaceWhite
