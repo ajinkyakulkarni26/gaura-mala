@@ -1,6 +1,6 @@
 # Gaura Mala Agent Notes
 
-Last reviewed: 2026-10-07
+Last reviewed: 2026-10-08
 
 ## Project
 
@@ -27,8 +27,9 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - `data/MantraPreferences.kt`: local DataStore preferences and daily progress.
 - `haptics/HapticHelper.kt`: vibration patterns.
 - `tile/GauraMalaTileService.kt`, `complication/GauraMalaComplicationService.kt`: Wear OS surfaces.
+- `tile/GauraMalaTileContent.kt`: pure mapping from saved progress to Tile text.
 - `app/src/test/`: unit tests for counter transitions, haptic policy, preference state, and rotary input.
-- `app/src/androidTest/`: Wear OS UI integration tests for the counter, tap/rotary input, undo, round completion and adjustment, settings, and reset flows.
+- `app/src/androidTest/`: Wear OS UI and TileService integration tests for the counter, tap/rotary input, undo, round completion and adjustment, settings, reset flows, Tile progress, and daily rollover.
 - `scripts/test-local.sh`: local pre-push checks with optional Wear OS emulator integration tests; `scripts/print-android-test-results.py` prints individual case names, descriptions, and outcomes.
 
 ## Product decisions to preserve
@@ -68,10 +69,13 @@ From the repository root:
 ./gradlew :app:verifyCoreLogicCoverage
 ./gradlew :app:connectedDebugAndroidTest
 ./scripts/test-local.sh
+./scripts/lint-workflows.sh
 ./gradlew :app:bundleRelease :app:assembleRelease
 ```
 
-Maintain 100% JaCoCo **line coverage** across the pure counter logic in `MantraCounterStateMachine.kt`, `CounterHapticPolicy.kt`, `RotaryBeadInput.kt`, and `MantraUiState.kt`. Current main covers all 127 lines. `:app:verifyCoreLogicCoverage` is the CI gate; add or update unit tests whenever these behaviors change, and do not lower the threshold or exclude core files just to make the build pass. The complete unit-test coverage report is generated at `app/build/reports/coverage/test/debug/index.html`. This metric is scoped to Android-independent counter logic; Compose screens and Android services are tested through Wear OS integration/device tests but are not included in the JVM coverage percentage. CI compares executed Wear OS integration test IDs with `config/wear-os-integration-tests.txt`; every registered case must run, and every new case must be added to that inventory. There is no fixed test-count threshold.
+Maintain 100% JaCoCo **line coverage** across the Android-independent core files: `MantraCounterStateMachine.kt`, `CounterHapticPolicy.kt`, `RotaryBeadInput.kt`, `MantraUiState.kt`, and `GauraMalaTileContent.kt`. `:app:verifyCoreLogicCoverage` is the CI gate; add or update unit tests whenever these behaviors change, and do not lower the threshold or exclude core files just to make the build pass. The complete unit-test coverage report is generated at `app/build/reports/coverage/test/debug/index.html`. Compose screens and Android services are tested through Wear OS integration/device tests but are not included in this JVM coverage percentage. CI compares executed Wear OS integration test IDs with `config/wear-os-integration-tests.txt`; every registered case must run, and every new case must be added to that inventory. There is no fixed test-count threshold.
+
+The counter screen renders before its asynchronous DataStore preferences load finishes. UI tests must wait for the loaded state before injecting input; `CounterInputIntegrationTest` seeds a visible round marker, waits until it appears, then clears it and waits for the clean baseline. Do not use the counter surface becoming visible as proof that preferences are ready, or increase timeouts to hide this startup race.
 
 Build outputs:
 
@@ -90,9 +94,11 @@ adb -s <watch-serial> shell am start -n com.gauramala.wear/.MainActivity
 
 Use a compatible physical Pixel Watch to verify double-pinch and real haptics. Generic Wear OS emulators may not expose gesture hardware or realistic vibration. Emulator testing can still check layout, navigation, and the no-phone Contact Developer fallback.
 
-Run `./scripts/test-local.sh` before pushing. It tests the repository policy scripts, runs unit tests, the 100% core-logic coverage gate, and a debug build; when it finds a running Wear OS emulator, it runs the UI integration suite and prints each test case's outcome. `.github/workflows/android-ci.yml` runs the same Android test layers in GitHub Actions on every branch push and pull request, with a Wear OS 5.1 (API 35) emulator. The workflow uses Gradle Enhanced Caching and publishes a Gradle Build Scan for each Gradle invocation; scans are build diagnostics, not vulnerability scans. CodeQL and Dependency Review run in the required Android CI check. The Wear OS emulator step prints each instrumentation case and outcome after execution, while also preserving test failures as a failed CI step. The current Android instrumentation suite runs on one emulator without sharding, so its cases execute sequentially. The integration report check compares test IDs against `config/wear-os-integration-tests.txt`, so suite growth does not require changing an arbitrary minimum count. The XML and HTML reports are uploaded as artifacts. Compose rotary injection checks the app's rotary event path, but it does not verify physical crown hardware, double-pinch detection, or real haptics. Keep those checks in the physical-watch release checklist.
+Run `./scripts/test-local.sh` before pushing. It tests repository policy scripts, runs unit tests, the 100% core-logic coverage gate, builds the debug app, and checks that `arm64-v8a` native libraries are packaged. If actionlint and shellcheck are installed, it also lints workflows and shell scripts. When a Wear OS emulator is running, it executes the UI integration suite and prints each test case's outcome. GitHub Actions runs the same tests on a large round API 35 emulator at default font scale and a small round emulator at 1.3x font scale. Tile integration cases request the real `GauraMalaTileService` response and check saved progress, its activity action, and local-day reset; visual Tile carousel rendering still needs a physical watch check. `.github/workflows/android-ci.yml` also uses Gradle Enhanced Caching and publishes Gradle Build Scans for build diagnostics; scans are not vulnerability scans. CodeQL and Dependency Review run in the required Android CI check. The report inventory compares executed test IDs with `config/wear-os-integration-tests.txt`; every case must be registered. XML and HTML reports from both emulator sizes are uploaded as artifacts. Compose rotary injection checks the app's rotary event path, but it does not verify physical crown hardware, double-pinch detection, or real haptics. Keep those checks in the physical-watch release checklist.
 
-Security gates are part of the repository CI. The existing required Android CI job runs CodeQL (`java-kotlin`, `security-extended`) and reviews pull-request dependency changes, failing for newly introduced moderate-or-higher vulnerabilities. A read-only pull-request workflow generates Gradle dependency snapshots; a trusted `workflow_run` workflow submits those snapshots, and pushes to `main` submit the current Gradle graph for Dependabot alerts. `.github/dependabot.yml` schedules updates for root Gradle files, app dependencies, and GitHub Actions. Keep workflow permissions narrow; never give write permissions to a workflow that executes untrusted pull-request code.
+Security gates are part of the repository CI. The existing required Android CI job runs CodeQL (`java-kotlin`, `security-extended`) and reviews pull-request dependency changes, failing for newly introduced moderate-or-higher vulnerabilities. A read-only pull-request workflow generates Gradle dependency snapshots; a trusted `workflow_run` workflow submits those snapshots, and pushes to `main` submit the current Gradle graph for Dependabot alerts. `.github/dependabot.yml` schedules updates for root Gradle files, app dependencies, and GitHub Actions. Minor/patch updates are grouped per ecosystem and directory; major and security updates remain separately reviewable. Workflow actions are pinned to verified full commit SHAs with release tags in comments. CI validates workflows with actionlint and shellcheck. Keep workflow permissions narrow; never give write permissions to a workflow that executes untrusted pull-request code.
+
+`SECURITY.md` directs vulnerability reports to GitHub's private advisory flow, and `.github/ISSUE_TEMPLATE/` contains structured bug and feature forms. GitHub private vulnerability reporting is enabled in repository settings as of 2026-10-07.
 
 As of 2026-10-07, GitHub's dependency graph, Dependabot alerts, and Dependabot security updates are enabled under **Settings → Security and quality → Code security and analysis**. The active `main` ruleset requires CodeQL results at **High or higher** for security alerts and blocks CodeQL error alerts; it also requires CI status checks and pull requests. Secret scanning and push protection were already enabled and remain on. Automatic dependency submission is disabled because repository workflows submit Gradle dependency snapshots. Dependency Review runs inside the existing Android CI required check. CodeQL analysis reports findings; the ruleset is what blocks merges at the configured severity. Scans reduce risk but do not prove the app is entirely secure.
 

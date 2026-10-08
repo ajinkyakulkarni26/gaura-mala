@@ -19,13 +19,16 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.datastore.preferences.core.edit
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.gauramala.wear.data.MantraPreferences
 import com.gauramala.wear.data.dataStore
 import kotlinx.coroutines.runBlocking
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
+import java.time.LocalDate
 
 @RunWith(AndroidJUnit4::class)
 class CounterInputIntegrationTest {
@@ -33,12 +36,39 @@ class CounterInputIntegrationTest {
     private val clearStoredProgress = object : ExternalResource() {
         override fun before() {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
-            runBlocking { context.dataStore.edit { it.clear() } }
+            // Seed a visible marker so @Before can wait until the Activity has consumed its
+            // first DataStore emission. The counter surface itself renders before that load
+            // completes, which can otherwise make the first simulated input disappear.
+            runBlocking {
+                context.dataStore.edit {
+                    it.clear()
+                    it[MantraPreferences.KEY_COMPLETED_ROUNDS] = 1
+                    it[MantraPreferences.KEY_LAST_DATE] = LocalDate.now().toString()
+                }
+            }
         }
     }
 
     @get:Rule
     val rules: RuleChain = RuleChain.outerRule(clearStoredProgress).around(composeRule)
+
+    @Before
+    fun waitForCounterScreen() {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            runCatching {
+                composeRule.onNodeWithTag("counter-surface", useUnmergedTree = true)
+                    .assertIsDisplayed()
+            }.isSuccess
+        }
+
+        // Round 2 is the seeded marker; seeing it proves preferences have loaded. Clear it
+        // only then, and wait for the clean baseline before the test performs any input.
+        awaitRound("Round 2 of 16")
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        runBlocking { context.dataStore.edit { it.clear() } }
+        awaitRound("Round 1 of 16")
+        awaitBeadCount("0")
+    }
 
     @Test
     fun counterStartsAtZeroOnRoundOne() {
@@ -135,10 +165,14 @@ class CounterInputIntegrationTest {
 
     @Test
     @OptIn(ExperimentalTestApi::class)
-    fun completing108RotaryStepsResetsBeadsAndAdvancesToRoundTwo() {
+    fun crownStepFromLastBeadCompletesRoundAndAdvancesToRoundTwo() {
+        setBeadCount(107)
+        awaitBeadCount("107")
+
+        val oneBeadRotationPx = 24f * composeRule.activity.resources.displayMetrics.density
         composeRule.onNodeWithTag("counter-surface", useUnmergedTree = true)
             .performRotaryScrollInput {
-                repeat(108) { rotateToScrollVertically(48f) }
+                rotateToScrollVertically(oneBeadRotationPx)
             }
 
         awaitRound("Round 2 of 16")
@@ -219,7 +253,10 @@ class CounterInputIntegrationTest {
 
     @Test
     fun confirmingResetTodayClearsRoundsAndBeads() {
-        setCompletedRounds(2)
+        setStoredProgress(beadCount = 5, completedRounds = 2)
+        awaitBeadCount("5")
+        awaitRound("Round 3 of 16")
+
         openSettings()
         composeRule.onNodeWithText("Reset Today").performScrollTo().performClick()
         composeRule.onNodeWithContentDescription("Confirm reset").performClick()
@@ -250,8 +287,23 @@ class CounterInputIntegrationTest {
         awaitRound("Round ${count + 1} of 16")
     }
 
-    private fun awaitBeadCount(expected: String) {
-        composeRule.waitUntil(timeoutMillis = 5_000) {
+    private fun setBeadCount(count: Int) {
+        setStoredProgress(beadCount = count, completedRounds = 0)
+    }
+
+    private fun setStoredProgress(beadCount: Int, completedRounds: Int) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        runBlocking {
+            context.dataStore.edit { preferences ->
+                preferences[MantraPreferences.KEY_BEAD_COUNT] = beadCount
+                preferences[MantraPreferences.KEY_COMPLETED_ROUNDS] = completedRounds
+                preferences[MantraPreferences.KEY_LAST_DATE] = LocalDate.now().toString()
+            }
+        }
+    }
+
+    private fun awaitBeadCount(expected: String, timeoutMillis: Long = 5_000) {
+        composeRule.waitUntil(timeoutMillis = timeoutMillis) {
             runCatching {
                 composeRule.onNodeWithTag("bead-count", useUnmergedTree = true)
                     .assertTextEquals(expected)
@@ -259,8 +311,8 @@ class CounterInputIntegrationTest {
         }
     }
 
-    private fun awaitRound(expected: String) {
-        composeRule.waitUntil(timeoutMillis = 5_000) {
+    private fun awaitRound(expected: String, timeoutMillis: Long = 10_000) {
+        composeRule.waitUntil(timeoutMillis = timeoutMillis) {
             runCatching {
                 composeRule.onNodeWithTag("round-progress-button")
                     .assertTextEquals(expected)

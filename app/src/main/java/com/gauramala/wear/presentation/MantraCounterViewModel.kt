@@ -6,13 +6,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gauramala.wear.data.MantraPreferences
 import com.gauramala.wear.haptics.HapticHelper
+import java.time.LocalDate
+import java.util.ArrayDeque
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 class MantraCounterViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -34,6 +35,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     private val debounceWindowMs: Long = 280L
     private var preferencesLoaded = false
     private var hasLocalProgressChanges = false
+    private val pendingBeadInputs = ArrayDeque<PendingBeadInput>()
     private val countSaveRequests = Channel<CountSnapshot>(Channel.CONFLATED)
 
     init {
@@ -53,7 +55,12 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
                         preserveLocalProgress = hasLocalProgressChanges
                     )
                 }
-                preferencesLoaded = true
+                if (!preferencesLoaded) {
+                    preferencesLoaded = true
+                    while (pendingBeadInputs.isNotEmpty()) {
+                        applyBeadInput(pendingBeadInputs.removeFirst())
+                    }
+                }
             }
         }
     }
@@ -73,14 +80,25 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         incrementBead(applyDebounce = false, source = BeadInputSource.ROTARY)
 
     private fun incrementBead(applyDebounce: Boolean, source: BeadInputSource) {
-        if (!preferencesLoaded) return
+        val input = PendingBeadInput(
+            applyDebounce = applyDebounce,
+            source = source,
+            timestampMs = SystemClock.elapsedRealtime()
+        )
+        if (!preferencesLoaded) {
+            pendingBeadInputs.addLast(input)
+            return
+        }
 
-        if (applyDebounce) {
-            val now = SystemClock.elapsedRealtime()
-            if (now - lastIncrementTimestamp < debounceWindowMs) {
+        applyBeadInput(input)
+    }
+
+    private fun applyBeadInput(input: PendingBeadInput) {
+        if (input.applyDebounce) {
+            if (input.timestampMs - lastIncrementTimestamp < debounceWindowMs) {
                 return
             }
-            lastIncrementTimestamp = now
+            lastIncrementTimestamp = input.timestampMs
         }
 
         hasLocalProgressChanges = true
@@ -91,7 +109,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         _uiState.value = nextState
         saveCounts(nextState.beadCount, nextState.completedRounds)
 
-        when (selectHapticCue(currentState, transition, source)) {
+        when (selectHapticCue(currentState, transition, input.source)) {
             HapticCue.BEAD -> hapticHelper.beadClick()
             HapticCue.MILESTONE -> hapticHelper.milestoneAlert()
             HapticCue.ROUND_COMPLETED -> hapticHelper.roundCompletedAlert()
@@ -228,4 +246,10 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     }
 
     private data class CountSnapshot(val beadCount: Int, val completedRounds: Int)
+
+    private data class PendingBeadInput(
+        val applyDebounce: Boolean,
+        val source: BeadInputSource,
+        val timestampMs: Long
+    )
 }

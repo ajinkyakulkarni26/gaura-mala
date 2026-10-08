@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest an improvement to the watch app.
+title: "Feature: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe when this would be useful while chanting.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Watch or accessibility context
+      description: Mention watch sizes, input methods, or font settings that matter.
+    validations:
+      required: false
