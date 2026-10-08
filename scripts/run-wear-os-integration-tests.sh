@@ -74,12 +74,8 @@ else
   test_status=$?
 fi
 
-has_test_cases() {
-  [[ -d "${test_results_dir}" ]] && grep -Rqs --include='*.xml' '<testcase' "${test_results_dir}"
-}
-
-if grep -Eiq 'adb: device offline|adb: device not found' "${test_log}" && ! has_test_cases; then
-  echo "ADB lost the emulator before instrumentation began; reconnecting and retrying once..." >&2
+if [[ "${test_status}" -ne 0 ]] && grep -Eiq 'adb: device offline|adb: device not found' "${test_log}"; then
+  echo "ADB lost the emulator during instrumentation; reconnecting and retrying once..." >&2
   if wait_for_emulator; then
     rm -rf "${test_results_dir}" "${test_reports_dir}"
     if run_instrumentation; then
