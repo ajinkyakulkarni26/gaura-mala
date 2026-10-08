@@ -124,21 +124,7 @@ jobs:
           profile: wearos_large_round
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          script: |
-            # Create the AGP alias only after the action has finished SDK manager setup.
-            sdk_platforms="${ANDROID_HOME}/platforms"
-            if [[ -d "${sdk_platforms}/android-37.0" && ! -e "${sdk_platforms}/android-37" ]]; then
-              ln -s android-37.0 "${sdk_platforms}/android-37"
-            fi
-            set +e
-            ./gradlew :app:connectedDebugAndroidTest
-            test_status=$?
-            python3 scripts/print-android-test-results.py
-            report_status=$?
-            if [ "$test_status" -ne 0 ]; then
-              exit "$test_status"
-            fi
-            exit "$report_status"
+          script: bash scripts/run-wear-os-integration-tests.sh
 
       - name: Save Wear OS instrumentation results
         if: always()
