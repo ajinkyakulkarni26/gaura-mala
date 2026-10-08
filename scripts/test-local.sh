@@ -52,10 +52,9 @@ fi
 
 echo "Found Wear OS emulator $wear_emulator; running Wear OS UI integration tests..."
 # Avoid the Wear OS charging activity taking focus from the app during tests.
-restore_emulator_battery() {
+trap '
   "$adb_path" -s "$wear_emulator" shell dumpsys battery reset >/dev/null 2>&1 || true
-}
-trap restore_emulator_battery EXIT
+' EXIT
 "$adb_path" -s "$wear_emulator" shell dumpsys battery unplug
 test_exit_code=0
 ANDROID_SERIAL="$wear_emulator" ./gradlew :app:connectedDebugAndroidTest || test_exit_code=$?
