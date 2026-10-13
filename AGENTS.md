@@ -1,16 +1,17 @@
 # Gaura Mala Agent Notes
 
-Last reviewed: 2026-10-08
+Last reviewed: 2026-10-12
 
 ## Project
 
 Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It is a watch-only app with a circular 108-bead progress ring, daily round goal (16 by default), haptics, a Tile, and a watch-face complication.
 
 - Application ID: `com.gauramala.wear`
-- Current local version: `versionCode 13`, `versionName 1.0.0`
+- Current main Android version: `versionCode 13`, `versionName 1.0.0` (Play upload status is unconfirmed)
 - Main stack: Kotlin, Jetpack Compose for Wear OS Material 3, DataStore, Wearable Services
 - Minimum SDK 30; target and compile SDK 37; JDK 17
 - The app is declared standalone in `AndroidManifest.xml`; core counting does not require a phone app.
+- A separate standalone Apple Watch implementation is being added under `watchos/`; it does not require an iPhone companion app.
 
 ## Source map
 
@@ -28,6 +29,10 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - `haptics/HapticHelper.kt`: vibration patterns.
 - `tile/GauraMalaTileService.kt`, `complication/GauraMalaComplicationService.kt`: Wear OS surfaces.
 - `tile/GauraMalaTileContent.kt`: pure mapping from saved progress to Tile text.
+- `watchos/GauraMala.xcodeproj/`: native standalone watchOS SwiftUI app project.
+- `watchos/GauraMalaWatch/`: SwiftUI counter, round adjustment, settings, privacy view, local persistence, crown handling, and haptics.
+- `watchos/GauraMalaWidget/`: WidgetKit accessory complication families and Smart Stack surface.
+- `watchos/GauraMalaCore/`: Swift counter state machine and unit tests runnable on macOS.
 - `app/src/test/`: unit tests for counter transitions, haptic policy, preference state, and rotary input.
 - `app/src/androidTest/`: Wear OS UI and TileService integration tests for the counter, tap/rotary input, undo, round completion and adjustment, settings, reset flows, Tile progress, and daily rollover.
 - `scripts/test-local.sh`: local pre-push checks with optional Wear OS emulator integration tests; `scripts/print-android-test-results.py` prints individual case names, descriptions, and outcomes.
@@ -51,6 +56,8 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - Progress and preferences are stored locally on the watch. Counts roll over on the local calendar date; preferences remain. The app does not send this data to a server, and Android backup is disabled. Do not describe the app as storing no data at all.
 - The launcher uses a black adaptive-icon background and a bead-mala foreground with no text. Keep the artwork centered and sized to avoid clipping in the circular mask.
 - Contact Developer opens the GitHub Issues page on the paired phone through `RemoteActivityHelper`. If the phone is unavailable, the policy screen displays the URL. There is no email sent automatically and no phone companion app is required.
+- The Apple Watch port is standalone. It uses the primary hand-gesture shortcut for Double Tap where watchOS and hardware support it; tap and Digital Crown remain available. The Digital Crown and haptics use native SwiftUI/WatchKit APIs.
+- Keep the Apple Watch implementation in `watchos/` and its build/test workflow separate from Android. Core behavior is ported to Swift and is not source-shared with Kotlin; keep transition behavior aligned with the Android app and add tests for every changed rule.
 
 ## Privacy and store listing
 
@@ -71,6 +78,8 @@ From the repository root:
 ./scripts/test-local.sh
 ./scripts/lint-workflows.sh
 ./gradlew :app:bundleRelease :app:assembleRelease
+swift test --package-path watchos/GauraMalaCore
+xcodebuild -project watchos/GauraMala.xcodeproj -scheme GauraMalaWatch -sdk watchsimulator -destination 'generic/platform=watchOS Simulator' CODE_SIGNING_ALLOWED=NO build
 ```
 
 Maintain 100% JaCoCo **line coverage** across the Android-independent core files: `MantraCounterStateMachine.kt`, `CounterHapticPolicy.kt`, `RotaryBeadInput.kt`, `MantraUiState.kt`, and `GauraMalaTileContent.kt`. `:app:verifyCoreLogicCoverage` is the CI gate; add or update unit tests whenever these behaviors change, and do not lower the threshold or exclude core files just to make the build pass. The complete unit-test coverage report is generated at `app/build/reports/coverage/test/debug/index.html`. Compose screens and Android services are tested through Wear OS integration/device tests but are not included in this JVM coverage percentage. CI compares executed Wear OS integration test IDs with `config/wear-os-integration-tests.txt`; every registered case must run, and every new case must be added to that inventory. There is no fixed test-count threshold.
@@ -107,6 +116,8 @@ Security gates are part of the repository CI. The existing required Android CI j
 As of 2026-10-07, GitHub's dependency graph, Dependabot alerts, and Dependabot security updates are enabled under **Settings → Security and quality → Code security and analysis**. The active `main` ruleset requires CodeQL results at **High or higher** for security alerts and blocks CodeQL error alerts; it also requires CI status checks and pull requests. Secret scanning and push protection were already enabled and remain on. Automatic dependency submission is disabled because repository workflows submit Gradle dependency snapshots. Dependency Review runs inside the existing Android CI required check. CodeQL analysis reports findings; the ruleset is what blocks merges at the configured severity. Scans reduce risk but do not prove the app is entirely secure.
 
 The repository's `main` branch is protected: changes go through pull requests, and both Android CI jobs plus the contributor-approval job must pass before merge. Contributor PRs require approval from `ajinkyakulkarni26` on the current commit; owner-authored PRs are exempt from that approval check. New commits after approval require a fresh owner approval. `.github/CODEOWNERS` assigns the owner to CI workflows, coverage/build configuration, Gradle policy, and scripts; those files require an additional code-owner review even on owner-authored PRs. The main ruleset also requires CodeQL results at High or higher and blocks CodeQL error alerts. Update the GitHub ruleset's required checks and code-owner review setting when changing this policy. Do not push directly to `main`.
+
+The Apple Watch project targets watchOS 10 or later and uses app bundle ID `com.gauramala.watchos.watchkitapp` and widget extension ID `com.gauramala.watchos.watchkitapp.widget`. The WidgetKit extension provides accessory complication families and reads the app's progress from the `group.com.gauramala.watchos` App Group; register this App Group with the Apple Developer account before distribution signing. The Swift core test suite runs with `swift test --package-path watchos/GauraMalaCore`; a generic simulator build uses the `xcodebuild` command above. Xcode and the watchOS SDK are required; a watchOS simulator runtime is needed to boot the simulator. Apple Watch UI automation, App Store assets, TestFlight setup, and release signing are not yet configured. Verify real Digital Crown feel, Taptic feedback, Double Tap, and screen-size/font behavior on a physical watch before release. The new watchOS workflow runs Swift CodeQL, counter tests, and a simulator build on pushes and pull requests; add its status check to the `main` ruleset after its first successful GitHub run. Keep Apple App Store versioning independent from Android Play version codes.
 
 Before starting any development or edits, fetch and inspect the latest `origin/main` so work is based on current repository code. This repository's default branch is `main` (not `master`). Create new work branches from the updated `origin/main`; when continuing an existing topic branch, incorporate the latest `main` first when it can be done safely. Preserve uncommitted user changes and never use a destructive reset just to synchronize.
 
