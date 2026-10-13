@@ -1,5 +1,5 @@
 # 📿 Gaura Mala (`gaura-mala`)
-### Native Wear OS Maha-Mantra Counter & Digital Japa Mala
+### Native Wear OS and Apple Watch Maha-Mantra Counter
 
 > *"harer nāma harer nāma harer nāmaiva kevalam*  
 > *kalau nāsty eva nāsty eva nāsty eva gatir anyathā"*  
@@ -9,7 +9,7 @@
 
 ## 🌟 Overview
 
-**Gaura Mala** is a native **Wear OS** application designed specifically for chanting the **Hare Krishna Maha-mantra**. Named in honor of **Sri Chaitanya Mahaprabhu (Gaura)**, who inaugurated the congregational chanting of the Holy Names, the app transforms your smartwatch into an ergonomic, eyes-closed digital *japa mala*.
+**Gaura Mala** is a native smartwatch application for **Wear OS** and **Apple Watch**, designed for chanting the **Hare Krishna Maha-mantra**. Named in honor of **Sri Chaitanya Mahaprabhu (Gaura)**, who inaugurated the congregational chanting of the Holy Names, the app transforms your watch into an ergonomic digital *japa mala*.
 
 It addresses the fundamental limitation of traditional smartwatch counters: **requiring two hands** (one wearing the watch, the other tapping the screen). On compatible Wear OS devices, chanters can advance the counter with the system's **double-pinch gesture**. Screen tap and crown input remain available on other watches.
 
@@ -90,10 +90,32 @@ gaura-mala/
 │   │           └── GauraMalaComplicationService.kt# Watch face complication provider
 │   ├── build.gradle.kts
 │   └── proguard-rules.pro
+├── watchos/
+│   ├── GauraMala.xcodeproj/                     # Standalone Apple Watch app
+│   ├── GauraMalaWatch/                          # SwiftUI screens, icon, and watchOS services
+│   ├── GauraMalaWidget/                         # Watch face complications and Smart Stack widget
+│   └── GauraMalaCore/                           # Platform-independent Swift counter + tests
 ├── build.gradle.kts
 ├── settings.gradle.kts
 └── gradle.properties
 ```
+
+## 🍎 Apple Watch app
+
+The standalone watchOS implementation is in `watchos/`. It uses SwiftUI, the Digital Crown, WatchKit haptics, local watch storage, and a WidgetKit extension for watch-face complications and Smart Stack surfaces. The first port includes bead and round counting, undo, manual round adjustment for physical-bead chanting, daily goals, reset controls, settings, and an on-watch privacy screen. Double Tap is assigned to the counter's system primary action on supported watches. App and widget share progress through an App Group (`group.com.gauramala.watchos`); register this identifier in the Apple Developer account before signing for distribution. Apple platform code is separate from the Android app; the counter rules are implemented and tested in Swift.
+
+Open `watchos/GauraMala.xcodeproj` in Xcode and select a watchOS Simulator or paired Apple Watch run destination. If Xcode has no watchOS simulator runtime installed, add one under **Xcode → Settings → Components**. A generic simulator build can be checked without booting a simulator:
+
+```bash
+swift test --package-path watchos/GauraMalaCore
+xcodebuild -project watchos/GauraMala.xcodeproj \
+  -scheme GauraMalaWatch \
+  -sdk watchsimulator \
+  -destination 'generic/platform=watchOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO build
+```
+
+The Swift package contains 21 platform-independent counter tests and runs on macOS, so it does not require a simulator runtime. `.github/workflows/watchos-ci.yml` runs these tests and a generic simulator build on pull requests and pushes. The current build was installed and visually checked on 40 mm, 42 mm, and 49 mm simulators; automated watch UI tests are not configured yet. A physical watch is still needed to check real Taptic feedback and system Double Tap behavior. App Store metadata, TestFlight setup, and release signing are not yet configured; follow the [Apple Watch release checklist](docs/watchos-release-checklist.md) before distribution. Treat this as an in-progress native port, not a release candidate.
 
 Additional source files: `presentation/CounterHapticPolicy.kt` selects input-specific feedback, `presentation/RotaryBeadInput.kt` turns crown motion into bead steps, `tile/GauraMalaTileContent.kt` maps saved progress to Tile labels, and `presentation/ui/PrivacyPolicyScreen.kt` contains the on-watch policy and Contact Developer action. JVM tests for the counter, haptics, saved state, crown input, and Tile label mapping are under `app/src/test/`.
 
