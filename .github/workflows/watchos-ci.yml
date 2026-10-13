@@ -2,7 +2,11 @@ name: Apple Watch CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -31,16 +35,28 @@ jobs:
           languages: swift
           build-mode: manual
 
-      - name: Build standalone watchOS app for Simulator
-        run: >-
-          xcodebuild
-          -project watchos/GauraMala.xcodeproj
-          -scheme GauraMalaWatch
-          -sdk watchsimulator
-          -destination 'generic/platform=watchOS Simulator'
-          -derivedDataPath "$RUNNER_TEMP/GauraMalaDerived"
-          CODE_SIGNING_ALLOWED=NO
-          build
+      - name: Build and validate watch-only distribution archive
+        shell: bash
+        run: |
+          archive="$RUNNER_TEMP/GauraMala.xcarchive"
+          xcodebuild \
+            -project watchos/GauraMala.xcodeproj \
+            -scheme GauraMala \
+            -destination 'generic/platform=watchOS' \
+            -derivedDataPath "$RUNNER_TEMP/GauraMalaArchiveDerived" \
+            -archivePath "$archive" \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+          container_app="$archive/Products/Applications/GauraMala.app"
+          watch_app="$container_app/Watch/GauraMalaWatch.app"
+          widget="$watch_app/PlugIns/GauraMalaWidgetExtension.appex"
+          test -d "$container_app"
+          test -d "$watch_app"
+          test -d "$widget"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$container_app/Info.plist")" = "com.gauramala.watchos"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$watch_app/Info.plist")" = "com.gauramala.watchos.watchkitapp"
+          echo "Validated watch-only container, watch app, and widget extension in archive."
 
       - name: Analyze Swift with CodeQL
         uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4

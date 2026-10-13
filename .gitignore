@@ -1,6 +1,7 @@
 # Android/Gradle build output
 .gradle/
 **/build/
+watchos/GauraMalaCore/.build/
 
 # Local machine configuration
 local.properties
