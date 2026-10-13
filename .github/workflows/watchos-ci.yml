@@ -31,20 +31,7 @@ jobs:
           languages: swift
           build-mode: manual
 
-      - name: Build standalone watchOS app for Simulator
-        run: >-
-          xcodebuild
-          -project watchos/GauraMala.xcodeproj
-          -scheme GauraMalaWatch
-          -sdk watchsimulator
-          -destination 'generic/platform=watchOS Simulator'
-          -derivedDataPath "$RUNNER_TEMP/GauraMalaDerived"
-          ARCHS=arm64
-          ONLY_ACTIVE_ARCH=YES
-          CODE_SIGNING_ALLOWED=NO
-          build
-
-      - name: Validate watch-only distribution archive
+      - name: Build and validate watch-only distribution archive
         shell: bash
         run: |
           archive="$RUNNER_TEMP/GauraMala.xcarchive"
