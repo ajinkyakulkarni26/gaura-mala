@@ -38,8 +38,9 @@ jobs:
           -scheme GauraMalaWatch
           -sdk watchsimulator
           -destination 'generic/platform=watchOS Simulator'
-          -arch arm64
           -derivedDataPath "$RUNNER_TEMP/GauraMalaDerived"
+          ARCHS=arm64
+          ONLY_ACTIVE_ARCH=YES
           CODE_SIGNING_ALLOWED=NO
           build
 
