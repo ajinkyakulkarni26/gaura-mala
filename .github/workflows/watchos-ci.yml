@@ -16,7 +16,7 @@ jobs:
   build-and-test:
     name: Swift counter tests and watchOS build
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 45
     permissions:
       contents: read
       security-events: write
@@ -42,7 +42,7 @@ jobs:
           -scheme GauraMalaWatch
           -sdk watchsimulator
           -destination 'generic/platform=watchOS Simulator'
-          -derivedDataPath "$RUNNER_TEMP/GauraMalaSimulatorDerived"
+          -derivedDataPath "$RUNNER_TEMP/GauraMalaDerived"
           CODE_SIGNING_ALLOWED=NO
           build
 
@@ -54,7 +54,7 @@ jobs:
             -project watchos/GauraMala.xcodeproj \
             -scheme GauraMala \
             -destination 'generic/platform=watchOS' \
-            -derivedDataPath "$RUNNER_TEMP/GauraMalaArchiveDerived" \
+            -derivedDataPath "$RUNNER_TEMP/GauraMalaDerived" \
             -archivePath "$archive" \
             CODE_SIGNING_ALLOWED=NO \
             archive
