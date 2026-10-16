@@ -133,6 +133,7 @@ tasks.register("verifyCoreLogicCoverage") {
             "com/gauramala/wear/presentation/MantraCounterStateMachine.kt",
             "com/gauramala/wear/presentation/CounterHapticPolicy.kt",
             "com/gauramala/wear/presentation/RotaryBeadInput.kt",
+            "com/gauramala/wear/presentation/AutoChantPacer.kt",
             "com/gauramala/wear/presentation/MantraUiState.kt",
             "com/gauramala/wear/tile/GauraMalaTileContent.kt"
         )
