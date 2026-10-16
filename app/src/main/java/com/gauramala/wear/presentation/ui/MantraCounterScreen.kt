@@ -19,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -76,6 +78,7 @@ fun MantraCounterScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val canUsePinchGesture = state.isPinchGestureEnabled && state.supportsOneHandedGestures
     var showSettings by remember { mutableStateOf(false) }
+    var showAutoChantSetup by remember { mutableStateOf(false) }
     var showRoundProgress by remember { mutableStateOf(false) }
     val isAmbient = LocalAmbientModeManager.current?.currentAmbientMode is AmbientMode.Ambient
     val gestureConfiguration = rememberOneHandedGestureConfiguration(
@@ -102,6 +105,9 @@ fun MantraCounterScreen(
     BackHandler(enabled = showRoundProgress && !isAmbient) {
         showRoundProgress = false
     }
+    BackHandler(enabled = showAutoChantSetup && !isAmbient) {
+        showAutoChantSetup = false
+    }
     BackHandler(enabled = state.showGoalAchievedDialog && !isAmbient) {
         viewModel.dismissGoalDialog()
     }
@@ -111,7 +117,21 @@ fun MantraCounterScreen(
         SettingsDialog(
             state = state,
             viewModel = viewModel,
-            onDismiss = { showSettings = false }
+            onDismiss = { showSettings = false },
+            onAutoChant = {
+                showSettings = false
+                showAutoChantSetup = true
+            }
+        )
+        return
+    }
+
+    if (showAutoChantSetup && !isAmbient) {
+        AutoChantSetupScreen(
+            state = state,
+            viewModel = viewModel,
+            onBack = { showAutoChantSetup = false },
+            onStartCount = { showAutoChantSetup = false }
         )
         return
     }
@@ -142,9 +162,9 @@ fun MantraCounterScreen(
         .fillMaxSize()
         .onRotaryScrollEvent { event ->
             // Keep raw pixel accumulation out of Compose state to avoid redrawing for tiny deltas.
-            if (isAmbient) {
+            if (isAmbient || state.autoCountRunning) {
                 rotaryBeadInput.reset()
-                false
+                state.autoCountRunning
             } else {
                 val steps = rotaryBeadInput.consume(
                     deltaPx = event.verticalScrollPixels,
@@ -157,7 +177,7 @@ fun MantraCounterScreen(
         .focusRequester(focusRequester)
         .focusable()
 
-    if (state.isScreenTapEnabled && !isAmbient) {
+    if (state.isScreenTapEnabled && !isAmbient && !state.autoCountRunning) {
         containerModifier = containerModifier.clickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null // Silent indication for battery preservation
@@ -166,7 +186,7 @@ fun MantraCounterScreen(
         }
     }
 
-    if (canUsePinchGesture) {
+    if (canUsePinchGesture && !state.autoCountRunning) {
         containerModifier = containerModifier.oneHandedGesture(
             gestureConfiguration = gestureConfiguration,
             onGestureLabel = "count a bead",
@@ -286,12 +306,16 @@ fun MantraCounterScreen(
 
             if (!isAmbient) {
                 val inputHint = when {
+                    state.autoCountRunning && state.autoCountUsesVoiceGuide -> "Following your chant"
+                    state.autoCountRunning -> state.autoChantPaceMillis?.let {
+                        "Auto count · ${String.format(java.util.Locale.US, "%.1f", it / 1000f)} sec"
+                    } ?: "Auto count running"
                     canUsePinchGesture && state.isScreenTapEnabled -> "Tap or double pinch to count"
                     canUsePinchGesture -> "Double pinch to count"
                     state.isScreenTapEnabled -> "Tap to count"
                     else -> "Turn the crown to count"
                 }
-                if (canUsePinchGesture) {
+                if (canUsePinchGesture && !state.autoCountRunning) {
                     OneHandedGestureClickIndicator(
                         gestureConfiguration = gestureConfiguration,
                         state = gestureIndicatorState,
@@ -325,22 +349,39 @@ fun MantraCounterScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Undo Button
-                    Button(
-                        onClick = { viewModel.undoLastBead() },
-                        enabled = state.canUndo,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .testTag("undo-button")
-                            .alpha(if (state.canUndo) 1f else 0.3f),
-                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Undo,
-                            contentDescription = "Undo Bead",
-                            tint = if (state.canUndo) GauraGold else OnSurfaceMuted,
-                            modifier = Modifier.size(24.dp)
-                        )
+                    if (state.autoCountActive) {
+                        Button(
+                            onClick = {
+                                if (state.autoCountRunning) viewModel.pauseAutoCount()
+                                else viewModel.resumeAutoCount()
+                            },
+                            modifier = Modifier.size(48.dp).testTag("auto-count-toggle"),
+                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
+                        ) {
+                            Icon(
+                                imageVector = if (state.autoCountRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = if (state.autoCountRunning) "Pause auto count" else "Resume auto count",
+                                tint = GauraGold,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    } else {
+                        Button(
+                            onClick = { viewModel.undoLastBead() },
+                            enabled = state.canUndo,
+                            modifier = Modifier
+                                .size(48.dp)
+                                .testTag("undo-button")
+                                .alpha(if (state.canUndo) 1f else 0.3f),
+                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Undo,
+                                contentDescription = "Undo Bead",
+                                tint = if (state.canUndo) GauraGold else OnSurfaceMuted,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.padding(horizontal = 6.dp))

@@ -24,6 +24,12 @@ class MainActivity : ComponentActivity() {
         viewModel.refreshDailySession()
     }
 
+    override fun onStop() {
+        viewModel.pauseAutoCount()
+        viewModel.cancelVoiceRecording()
+        super.onStop()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

@@ -72,13 +72,13 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
         item {
             PolicySection(
                 "Daily reset and deletion",
-                "Counts reset each new day. Settings remain until you clear app storage or uninstall. Backups are off."
+                "Counts reset each new day. Settings remain until you clear app storage or uninstall. A recorded chant stays here until you delete it or uninstall. Backups are off."
             )
         }
         item {
             PolicySection(
                 "Sharing and permissions",
-                "We don't share local data. Vibration access is used for haptics. The app doesn't access location, contacts, microphone, camera, or health data."
+                "Microphone access is requested only if you choose Record a chant. That short recording stays in this app's private storage on this watch, is not uploaded, shared, or backed up, and can be deleted in Auto Count settings. Record only a voice you have permission to record and use. Vibration access is used for haptics."
             )
         }
         item {

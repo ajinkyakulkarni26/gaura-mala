@@ -29,7 +29,8 @@ data class UserPreferences(
     val hapticFeedbackEnabled: Boolean = true,
     val milestoneVibrationsEnabled: Boolean = true,
     val keepScreenOn: Boolean = false,
-    val lastRecordedDate: String = ""
+    val lastRecordedDate: String = "",
+    val autoChantPaceMillis: Int? = null
 )
 
 class MantraPreferences(private val context: Context) {
@@ -44,6 +45,7 @@ class MantraPreferences(private val context: Context) {
         val KEY_MILESTONE_ENABLED = booleanPreferencesKey("key_milestone_enabled")
         val KEY_KEEP_SCREEN_ON = booleanPreferencesKey("key_keep_screen_on")
         val KEY_LAST_DATE = stringPreferencesKey("key_last_date")
+        val KEY_AUTO_CHANT_PACE_MILLIS = intPreferencesKey("key_auto_chant_pace_millis")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data.map { preferences ->
@@ -56,7 +58,8 @@ class MantraPreferences(private val context: Context) {
             hapticFeedbackEnabled = preferences[KEY_HAPTIC_ENABLED] ?: true,
             milestoneVibrationsEnabled = preferences[KEY_MILESTONE_ENABLED] ?: true,
             keepScreenOn = preferences[KEY_KEEP_SCREEN_ON] ?: false,
-            lastRecordedDate = preferences[KEY_LAST_DATE] ?: ""
+            lastRecordedDate = preferences[KEY_LAST_DATE] ?: "",
+            autoChantPaceMillis = preferences[KEY_AUTO_CHANT_PACE_MILLIS]?.takeIf { it > 0 }
         )
     }
 
@@ -92,6 +95,16 @@ class MantraPreferences(private val context: Context) {
             prefs[KEY_DAILY_GOAL] = goal
         }
         WearSurfaceUpdater.requestUpdate(context)
+    }
+
+    suspend fun updateAutoChantPace(paceMillis: Int?) {
+        context.dataStore.edit { prefs ->
+            if (paceMillis == null) {
+                prefs.remove(KEY_AUTO_CHANT_PACE_MILLIS)
+            } else {
+                prefs[KEY_AUTO_CHANT_PACE_MILLIS] = paceMillis
+            }
+        }
     }
 
     suspend fun toggleGesturePinch(enabled: Boolean) {

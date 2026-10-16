@@ -1,6 +1,6 @@
 # Gaura Mala Agent Notes
 
-Last reviewed: 2026-10-12
+Last reviewed: 2026-10-15
 
 ## Project
 
@@ -18,13 +18,16 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - `MainActivity.kt`: activity, screen-on preference, and Compose setup.
 - `presentation/MantraCounterViewModel.kt`: counter behavior, day rollover, debouncing, persistence coordination, and haptic dispatch.
 - `presentation/MantraCounterStateMachine.kt`: pure counter transitions and undo history.
+- `presentation/AutoChantPacer.kt`: validated user pace calibration and one-at-a-time timer scheduling.
 - `presentation/CounterHapticPolicy.kt`: input-specific haptic selection.
 - `presentation/RotaryBeadInput.kt`: crown delta accumulation and idle reset.
 - `presentation/ui/MantraCounterScreen.kt`: counter screen, tap/crown/double-pinch input, and the one-time pinch cue.
 - `presentation/ui/RoundProgressDialog.kt`: manual completed-round adjustment for rounds chanted with physical beads.
 - `presentation/ui/BeadProgressRing.kt`: 108-bead circular progress UI.
 - `presentation/ui/SettingsDialog.kt`: settings, resets, and privacy policy entry.
+- `presentation/ui/AutoChantSetupScreen.kt`: pace calibration, optional recording disclosure, playback, and hands-free controls.
 - `presentation/ui/PrivacyPolicyScreen.kt`: on-watch policy and Contact Developer action.
+- `media/VoiceChantAudio.kt`, `media/VoiceChantFiles.kt`: optional microphone capture and playback, stored only in app-private no-backup files.
 - `data/MantraPreferences.kt`: local DataStore preferences and daily progress.
 - `haptics/HapticHelper.kt`: vibration patterns.
 - `tile/GauraMalaTileService.kt`, `complication/GauraMalaComplicationService.kt`: Wear OS surfaces.
@@ -43,6 +46,9 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - The system gesture indicator is deliberately shown at most once per counter-screen visit. Do not show the help cue after every tap, crown movement, or pinch, and do not let it shift the counter text layout.
 - Crown movement is converted from accumulated rotary pixels to discrete bead steps. The accumulator resets after idle time to prevent counts continuing after crown rotation stops.
 - Tap and crown use app haptics for bead progress and special milestone/round cues. Double-pinch relies on the system's ordinary gesture feedback while retaining the app's special milestone, round-completion, and daily-goal cues.
+- Hands-free Auto Count calibrates one mantra at the user's chosen pace, waits one interval before the first bead, then emits one ordinary bead haptic per chant plus the same milestone, round, and daily-goal cues as manual counting. Timer delays must never cause catch-up bursts. Pause/stop are always available, and ordinary manual inputs are disabled while auto count is running.
+- The optional voice guide is user-recorded and local-only. It is opt-in, limited to a short foreground recording, loops the saved chant and increments once at the end of each playback, and can be previewed or deleted. Request microphone permission only after the on-screen disclosure and explicit user action. Keep saved audio under `noBackupFilesDir`; never import, upload, share, or back up user recordings. Stop playback and discard unfinished recordings when the app leaves the foreground.
+- The recording disclosure must tell users to record only a voice they have permission to record and use. Do not market the feature as a way to capture or replay famous people's recordings; do not bundle third-party chant audio.
 - Milestones are beads 27, 54, and 81; one round completes at 108. The daily-goal completion cue takes priority when the last bead also reaches the daily goal.
 - The counter's round label opens a manual adjustment for completed rounds today, so users can reconcile progress after chanting with physical beads. The picker supports plus/minus buttons and crown rotation, with a subtle selection tick when haptics are enabled; use a short title and check/cross actions to fit the round display. Saving starts the next watch round at bead 0, clears the previous bead's undo history, and does not play chanting haptics or show the goal celebration.
 - Reset confirmation actions use accessible check/cross icon buttons to avoid clipped labels on round displays.
@@ -53,7 +59,7 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - Wear OS screens must adapt to round displays with different usable diameters and system font scales. Let labels wrap where needed, keep important controls within the curved safe area, and preserve at least 48dp touch targets for primary actions.
 - The Settings list is a short, regular `Column` with continuous `verticalScroll` and `rotaryScrollable` attached to the same scroll state. The user confirmed this feels smooth on the Pixel Watch 5. Keep this implementation; `TransformingLazyColumn` free scrolling felt rough, and its snap-and-fling experiment felt slow and stepped like an elevator.
 - Wrist-flick dismissal is standard Wear OS behavior. Do not try to intercept system navigation to keep the app open.
-- Progress and preferences are stored locally on the watch. Counts roll over on the local calendar date; preferences remain. The app does not send this data to a server, and Android backup is disabled. Do not describe the app as storing no data at all.
+- Progress, preferences, and an optional chant recording are stored locally on the watch. Counts roll over on the local calendar date; preferences and any recording remain until cleared or uninstalled. The app does not send this data to a server, and Android backup is disabled. Do not describe the app as storing no data at all.
 - The launcher uses a black adaptive-icon background and a bead-mala foreground with no text. Keep the artwork centered and sized to avoid clipping in the circular mask.
 - Contact Developer opens the GitHub Issues page on the paired phone through `RemoteActivityHelper`. If the phone is unavailable, the policy screen displays the URL. There is no email sent automatically and no phone companion app is required.
 - The Apple Watch port is standalone. It uses the primary hand-gesture shortcut for Double Tap where watchOS and hardware support it; tap and Digital Crown remain available. The Digital Crown and haptics use native SwiftUI/WatchKit APIs.
@@ -63,7 +69,7 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 
 - The on-watch policy is implemented in `PrivacyPolicyScreen.kt`; its sections are stacked to fit a round display.
 - The hosted policy is `https://ajinkyakulkarni26.github.io/gaura-mala/privacy-policy.html`.
-- The app requests vibration access. It has no account, ads, analytics, or server-side user data collection.
+- The app requests vibration access and requests microphone permission only when the user opts into recording a chant. Update the in-app policy, hosted policy, and Play Console Data safety form together when audio behavior changes. The voice recording is local-only, non-backed-up, and user-deletable. The app has no account, ads, analytics, or server-side user data collection.
 - Google Play requires a dedicated Wear OS track for this watch bundle. Do not upload the Wear OS-only AAB to a phone-oriented track.
 
 ## Build, test, and install
@@ -82,7 +88,7 @@ swift test --package-path watchos/GauraMalaCore
 xcodebuild -project watchos/GauraMala.xcodeproj -scheme GauraMalaWatch -sdk watchsimulator -destination 'generic/platform=watchOS Simulator' CODE_SIGNING_ALLOWED=NO build
 ```
 
-Maintain 100% JaCoCo **line coverage** across the Android-independent core files: `MantraCounterStateMachine.kt`, `CounterHapticPolicy.kt`, `RotaryBeadInput.kt`, `MantraUiState.kt`, and `GauraMalaTileContent.kt`. `:app:verifyCoreLogicCoverage` is the CI gate; add or update unit tests whenever these behaviors change, and do not lower the threshold or exclude core files just to make the build pass. The complete unit-test coverage report is generated at `app/build/reports/coverage/test/debug/index.html`. Compose screens and Android services are tested through Wear OS integration/device tests but are not included in this JVM coverage percentage. CI compares executed Wear OS integration test IDs with `config/wear-os-integration-tests.txt`; every registered case must run, and every new case must be added to that inventory. There is no fixed test-count threshold.
+Maintain 100% JaCoCo **line coverage** across the Android-independent core files: `MantraCounterStateMachine.kt`, `AutoChantPacer.kt`, `CounterHapticPolicy.kt`, `RotaryBeadInput.kt`, `MantraUiState.kt`, and `GauraMalaTileContent.kt`. `:app:verifyCoreLogicCoverage` is the CI gate; add or update unit tests whenever these behaviors change, and do not lower the threshold or exclude core files just to make the build pass. The complete unit-test coverage report is generated at `app/build/reports/coverage/test/debug/index.html`. Compose screens and Android services are tested through Wear OS integration/device tests but are not included in this JVM coverage percentage. CI compares executed Wear OS integration test IDs with `config/wear-os-integration-tests.txt`; every registered case must run, and every new case must be added to that inventory. There is no fixed test-count threshold.
 
 The counter screen renders before its asynchronous DataStore preferences load finishes. UI tests must wait for the loaded state before injecting input; `CounterInputIntegrationTest` seeds a visible round marker, waits until it appears, then clears it and waits for the clean baseline. Do not use the counter surface becoming visible as proof that preferences are ready, or increase timeouts to hide this startup race.
 

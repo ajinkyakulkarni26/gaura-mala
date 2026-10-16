@@ -16,6 +16,8 @@ Run these checks on a compatible watch before a release that changes input, disp
 
 - [ ] **Crown:** Count several beads, stop and resume turning, complete a round, and verify crown input still works after closing Settings and the round picker.
 - [ ] **Haptics:** Verify ordinary bead feedback, milestone feedback, round completion, and picker selection ticks. Turn haptics off and confirm the watch stays quiet for ordinary counting.
+- [ ] **Auto Count:** Calibrate pace, confirm the start cue and one bead/haptic per interval, pause/resume/stop, cross a quarter and round boundary, and ensure a delayed screen/app resume never produces catch-up counts.
+- [ ] **Voice guide:** Confirm the recording disclosure appears before the microphone permission prompt, record and preview a short chant, verify auto count advances at playback completion, delete the recording, and confirm playback stops when the app leaves the foreground. Do not record another person's voice unless you have permission to record and use it.
 - [ ] **Double pinch:** On a watch that supports it, confirm one pinch counts once in active and dim/ambient modes. Confirm tap and crown still work and the help cue does not repeat after counting.
 - [ ] **Ambient display:** Let the watch enter ambient mode. Confirm the displayed round and bead progress match the active screen, then count once by pinch if supported and confirm progress remains correct after waking.
 - [ ] **Battery and inactivity:** With Keep Awake off, confirm the screen dims and the app follows normal Wear OS inactivity dismissal; reopen it and verify progress was saved. If Keep Awake changed, verify it holds the screen only while enabled and compare battery use during a short, recorded session.
@@ -34,6 +36,7 @@ Run these checks on a compatible watch before a release that changes input, disp
 - [ ] Review Play Console's validation messages and confirm whether the native-symbol warning clears for the uploaded AAB.
 - [ ] If Play Console still reports missing native debug symbols, record the warning and check whether the affected libraries provide symbol files; do not treat the CI warning as resolved until Play Console confirms it.
 - [ ] Review release notes, screenshots, privacy policy, Data safety answers, tester list, and country availability.
+- [ ] If the microphone feature is included, make sure the in-app disclosure, hosted privacy policy, and Play Console Data safety answers accurately describe microphone access and local-only audio storage before upload.
 - [ ] Start rollout only after the track and artifact are correct. For production access, confirm the account's current opted-in tester count and continuous testing period in Play Console before applying.
 
 ## After rollout

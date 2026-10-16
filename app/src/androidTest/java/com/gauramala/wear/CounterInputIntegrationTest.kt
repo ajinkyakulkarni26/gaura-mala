@@ -226,6 +226,35 @@ class CounterInputIntegrationTest {
     }
 
     @Test
+    fun autoChantSetupShowsPaceCalibrationAndVoicePrivacyBeforePermission() {
+        openSettings()
+        composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
+
+        composeRule.onNodeWithText("Set your pace").assertIsDisplayed()
+        composeRule.onNodeWithTag("auto-chant-start-timing").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("voice-recording-disclosure").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("voice-recording-start").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun autoCountAdvancesAtSavedPaceAndCanBePaused() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        runBlocking {
+            context.dataStore.edit {
+                it[MantraPreferences.KEY_AUTO_CHANT_PACE_MILLIS] = 1_200
+            }
+        }
+        openSettings()
+        composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
+        composeRule.onNodeWithTag("auto-chant-saved-pace").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("auto-chant-start-count").performScrollTo().performClick()
+
+        awaitBeadCount("1", timeoutMillis = 5_000)
+        composeRule.onNodeWithContentDescription("Pause auto count").performClick()
+        composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+    }
+
+    @Test
     fun primaryCounterSettingsAndRoundPickerActionsHave48DpTargets() {
         assertAtLeast48Dp(
             "Counter surface",
@@ -236,8 +265,14 @@ class CounterInputIntegrationTest {
         assertAtLeast48Dp("Open Settings", composeRule.onNodeWithTag("open-settings-button"))
 
         openSettings()
-        assertAtLeast48Dp("Decrease daily goal", composeRule.onNodeWithTag("daily-goal-decrease"))
-        assertAtLeast48Dp("Increase daily goal", composeRule.onNodeWithTag("daily-goal-increase"))
+        assertAtLeast48Dp(
+            "Decrease daily goal",
+            composeRule.onNodeWithTag("daily-goal-decrease").performScrollTo()
+        )
+        assertAtLeast48Dp(
+            "Increase daily goal",
+            composeRule.onNodeWithTag("daily-goal-increase").performScrollTo()
+        )
         listOf(
             "settings-double-pinch",
             "settings-screen-tap",

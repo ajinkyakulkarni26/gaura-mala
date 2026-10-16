@@ -14,7 +14,15 @@ data class MantraUiState(
     val keepScreenOn: Boolean = false,
     val lastRecordedDate: String = "",
     val canUndo: Boolean = false,
-    val showGoalAchievedDialog: Boolean = false
+    val showGoalAchievedDialog: Boolean = false,
+    val autoChantPaceMillis: Int? = null,
+    val autoCountActive: Boolean = false,
+    val autoCountRunning: Boolean = false,
+    val autoCountUsesVoiceGuide: Boolean = false,
+    val hasVoiceChantRecording: Boolean = false,
+    val isVoiceChantRecording: Boolean = false,
+    val isVoiceChantPreviewing: Boolean = false,
+    val voiceChantMessage: String? = null
 ) {
     val totalMantrasChanted: Int
         get() = (completedRounds * 108) + beadCount
@@ -49,6 +57,7 @@ internal fun MantraUiState.withPreferences(
         isHapticsEnabled = preferences.hapticFeedbackEnabled,
         isMilestonesEnabled = preferences.milestoneVibrationsEnabled,
         keepScreenOn = preferences.keepScreenOn,
+        autoChantPaceMillis = preferences.autoChantPaceMillis,
         lastRecordedDate = preferences.lastRecordedDate,
         canUndo = if (isNewDay) false else canUndo,
         showGoalAchievedDialog = if (isNewDay) false else showGoalAchievedDialog

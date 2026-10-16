@@ -6,29 +6,37 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gauramala.wear.data.MantraPreferences
 import com.gauramala.wear.haptics.HapticHelper
+import com.gauramala.wear.media.VoiceChantAudio
 import java.time.LocalDate
 import java.util.ArrayDeque
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 
 class MantraCounterViewModel(application: Application) : AndroidViewModel(application) {
 
     private val preferences = MantraPreferences(application)
     private val hapticHelper = HapticHelper(application)
+    private val voiceChantAudio = VoiceChantAudio(application)
 
     private val _uiState = MutableStateFlow(
         MantraUiState(
             supportsOneHandedGestures = application.packageManager.hasSystemFeature(
                 FEATURE_WEAR_GESTURE_DETECTION
-            )
+            ),
+            hasVoiceChantRecording = voiceChantAudio.hasRecording()
         )
     )
     val uiState: StateFlow<MantraUiState> = _uiState.asStateFlow()
     private val counterStateMachine = MantraCounterStateMachine()
+    private val autoChantPacer = AutoChantPacer()
+    private var autoCountJob: Job? = null
 
     // Debounce timestamp to prevent accidental double-pinches or jitter
     private var lastIncrementTimestamp: Long = 0L
@@ -140,6 +148,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     fun resetCurrentRound() {
         if (!preferencesLoaded) return
 
+        stopAutoCount()
         hasLocalProgressChanges = true
         resetMemoryForNewDayIfNeeded()
         val nextState = counterStateMachine.resetCurrentRound(_uiState.value)
@@ -154,6 +163,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     fun setCompletedRounds(completedRounds: Int) {
         if (!preferencesLoaded || completedRounds !in 0..MAX_COMPLETED_ROUNDS) return
 
+        stopAutoCount()
         resetMemoryForNewDayIfNeeded()
         hasLocalProgressChanges = true
         val nextState = counterStateMachine.setCompletedRounds(_uiState.value, completedRounds)
@@ -165,9 +175,192 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         hapticHelper.selectionTick(enabled = _uiState.value.isHapticsEnabled)
     }
 
+    fun saveAutoChantPace(paceMillis: Long) {
+        if (!preferencesLoaded || !autoChantPacer.configure(paceMillis)) return
+        val savedPace = paceMillis.toInt()
+        stopAutoCount()
+        _uiState.update { it.copy(autoChantPaceMillis = savedPace) }
+        viewModelScope.launch { preferences.updateAutoChantPace(savedPace) }
+    }
+
+    fun startAutoCount(useVoiceGuide: Boolean = false) {
+        val state = _uiState.value
+        if (!preferencesLoaded) return
+        if (useVoiceGuide) {
+            if (!state.hasVoiceChantRecording || voiceChantAudio.recordingDurationMillis() == null) return
+        } else {
+            val paceMillis = state.autoChantPaceMillis?.toLong() ?: return
+            if (!autoChantPacer.configure(paceMillis)) return
+        }
+        autoCountJob?.cancel()
+        if (!useVoiceGuide && !autoChantPacer.start(SystemClock.elapsedRealtime())) return
+
+        _uiState.update {
+            it.copy(
+                autoCountActive = true,
+                autoCountRunning = true,
+                autoCountUsesVoiceGuide = useVoiceGuide,
+                isVoiceChantPreviewing = false
+            )
+        }
+        hapticHelper.autoCountStarted(enabled = state.isHapticsEnabled)
+        if (useVoiceGuide) {
+            if (!voiceChantAudio.playLoop(::onVoiceChantCompleted)) {
+                stopAutoCount()
+                _uiState.update {
+                    it.copy(voiceChantMessage = "Couldn't play the recording. Record it again.")
+                }
+            }
+            return
+        }
+
+        autoCountJob = viewModelScope.launch {
+            while (isActive && _uiState.value.autoCountRunning) {
+                val waitMillis = autoChantPacer.timeUntilNextCount(SystemClock.elapsedRealtime()) ?: break
+                delay(waitMillis.coerceAtLeast(1L))
+                if (_uiState.value.autoCountRunning &&
+                    autoChantPacer.consumeDueCount(SystemClock.elapsedRealtime()) &&
+                    !incrementBeadFromAutoCount()
+                ) {
+                    stopAutoCount()
+                    break
+                }
+            }
+        }
+    }
+
+    fun pauseAutoCount() {
+        if (!_uiState.value.autoCountActive || !_uiState.value.autoCountRunning) return
+        autoCountJob?.cancel()
+        autoCountJob = null
+        autoChantPacer.pause()
+        voiceChantAudio.stopPlayback()
+        _uiState.update { it.copy(autoCountRunning = false) }
+    }
+
+    fun resumeAutoCount() {
+        if (!_uiState.value.autoCountActive || _uiState.value.autoCountRunning) return
+        startAutoCount(useVoiceGuide = _uiState.value.autoCountUsesVoiceGuide)
+    }
+
+    fun stopAutoCount() {
+        autoCountJob?.cancel()
+        autoCountJob = null
+        autoChantPacer.pause()
+        voiceChantAudio.stopPlayback()
+        _uiState.update {
+            it.copy(
+                autoCountActive = false,
+                autoCountRunning = false,
+                autoCountUsesVoiceGuide = false
+            )
+        }
+    }
+
+    private fun incrementBeadFromAutoCount(): Boolean {
+        if (!preferencesLoaded) return false
+
+        hasLocalProgressChanges = true
+        resetMemoryForNewDayIfNeeded()
+        val currentState = _uiState.value
+        val transition = counterStateMachine.increment(currentState)
+        val nextState = transition.state
+        _uiState.value = nextState
+        saveCounts(nextState.beadCount, nextState.completedRounds)
+
+        when (selectHapticCue(currentState, transition, BeadInputSource.AUTO)) {
+            HapticCue.BEAD -> hapticHelper.beadClick()
+            HapticCue.MILESTONE -> hapticHelper.milestoneAlert()
+            HapticCue.ROUND_COMPLETED -> hapticHelper.roundCompletedAlert()
+            HapticCue.DAILY_GOAL_ACHIEVED -> hapticHelper.dailyGoalAchievedAlert()
+            null -> Unit
+        }
+        return !nextState.showGoalAchievedDialog
+    }
+
+    fun startVoiceRecording() {
+        if (!preferencesLoaded || _uiState.value.isVoiceChantRecording) return
+        _uiState.update { it.copy(voiceChantMessage = null, isVoiceChantPreviewing = false) }
+        val started = voiceChantAudio.startRecording(onLimitReached = ::finishVoiceRecording)
+        _uiState.update { it.copy(isVoiceChantRecording = started) }
+        if (!started) {
+            _uiState.update {
+                it.copy(voiceChantMessage = "Recording couldn't start. Check microphone access and try again.")
+            }
+        }
+    }
+
+    fun finishVoiceRecording() {
+        val saved = voiceChantAudio.finishRecording()
+        val duration = if (saved) voiceChantAudio.recordingDurationMillis() else null
+        _uiState.update {
+            it.copy(
+                isVoiceChantRecording = false,
+                hasVoiceChantRecording = saved,
+                voiceChantMessage = if (saved && duration != null) {
+                    "Recording saved on this watch."
+                } else {
+                    "Couldn't save that recording. Please record it again."
+                }
+            )
+        }
+        if (saved && duration != null) saveAutoChantPace(duration)
+    }
+
+    /** Discards an unfinished take; any previous saved recording remains available. */
+    fun cancelVoiceRecording() {
+        voiceChantAudio.cancelRecording()
+        if (_uiState.value.isVoiceChantPreviewing) voiceChantAudio.stopPlayback()
+        _uiState.update { it.copy(isVoiceChantRecording = false, isVoiceChantPreviewing = false) }
+    }
+
+    fun previewVoiceChant() {
+        if (!_uiState.value.hasVoiceChantRecording) return
+        _uiState.update { it.copy(voiceChantMessage = null, isVoiceChantPreviewing = true) }
+        val started = voiceChantAudio.preview {
+            _uiState.update { it.copy(isVoiceChantPreviewing = false) }
+        }
+        if (!started) {
+            _uiState.update {
+                it.copy(
+                    isVoiceChantPreviewing = false,
+                    voiceChantMessage = "Couldn't play the recording. Record it again."
+                )
+            }
+        }
+    }
+
+    fun stopVoiceChantPreview() {
+        if (!_uiState.value.isVoiceChantPreviewing) return
+        voiceChantAudio.stopPlayback()
+        _uiState.update { it.copy(isVoiceChantPreviewing = false) }
+    }
+
+    fun deleteVoiceChantRecording() {
+        if (_uiState.value.autoCountUsesVoiceGuide) stopAutoCount()
+        voiceChantAudio.deleteRecording()
+        _uiState.update {
+            it.copy(
+                hasVoiceChantRecording = false,
+                isVoiceChantRecording = false,
+                isVoiceChantPreviewing = false,
+                voiceChantMessage = "Recording deleted from this watch."
+            )
+        }
+    }
+
+    private fun onVoiceChantCompleted(): Boolean {
+        val shouldContinue = incrementBeadFromAutoCount() && _uiState.value.autoCountRunning
+        if (!shouldContinue) {
+            _uiState.update { it.copy(autoCountRunning = false, autoCountActive = false) }
+        }
+        return shouldContinue
+    }
+
     fun resetDailyCount() {
         if (!preferencesLoaded) return
 
+        stopAutoCount()
         hasLocalProgressChanges = true
         val nextState = counterStateMachine.resetDailyCount(
             state = _uiState.value,
@@ -220,6 +413,12 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
 
     private fun saveCounts(beads: Int, rounds: Int) {
         countSaveRequests.trySend(CountSnapshot(beads, rounds))
+    }
+
+    override fun onCleared() {
+        stopAutoCount()
+        voiceChantAudio.release()
+        super.onCleared()
     }
 
     private fun resetMemoryForNewDayIfNeeded() {
