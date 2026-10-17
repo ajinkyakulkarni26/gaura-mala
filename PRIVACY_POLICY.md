@@ -1,23 +1,28 @@
 # Privacy Policy
 
-**Gaura Mala**  
-**Effective date: September 30, 2026**
+**Gaura Mala**<br>
+**Applies to app version 14**<br>
+**Effective date: October 17, 2026**
 
 ## Information and storage
 
-Gaura Mala does not collect or send personal information to a server. The app has no account, ads, or analytics. It stores your bead count, completed rounds, daily goal, and app settings locally on your watch so your progress and preferences are available when you reopen the app.
+Gaura Mala has no account, ads, analytics, or developer-operated server. It stores your bead count, completed rounds, daily goal, and settings on your watch. The app does not send this information to a server.
 
 ## Daily reset and deletion
 
-The daily bead and round count resets when the local date changes. Your preferences remain on the watch until you clear the app's storage or uninstall Gaura Mala. You can also reset today's count in Settings. Android app backup is disabled for Gaura Mala.
+Your bead count and completed rounds reset when the date changes on your watch. Settings remain until you clear the app's storage or uninstall Gaura Mala. You can reset today's count in Settings. Gaura Mala data is excluded from Android backup.
 
 ## Sharing and permissions
 
-The app does not share this locally stored information with the developer or other companies. The app requests vibration access for haptic feedback. It does not request access to your location, contacts, microphone, camera, or health data.
+Gaura Mala does not share your locally stored information with the developer or other companies. Vibration access is used for haptic feedback. Version 14 does not request access to your microphone, location, contacts, camera, or health data.
 
-## Children and changes
+## Children
 
-Gaura Mala does not knowingly collect personal information from children or adults. If the app's data practices change, this policy will be updated before the change takes effect.
+Gaura Mala does not ask children for personal information. Counting progress and settings stay on the watch and are not sent to a server.
+
+## Policy updates
+
+If Gaura Mala's privacy practices change, we will update this policy and its effective date before those changes take effect.
 
 ## Contact
 
