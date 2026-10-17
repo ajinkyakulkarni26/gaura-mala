@@ -58,4 +58,42 @@ class CounterHapticPolicyTest {
 
         assertNull(selectHapticCue(state, transition, BeadInputSource.GESTURE))
     }
+
+    @Test
+    fun automaticCountsUseOrdinaryBeadAndExistingMilestoneCues() {
+        val ordinaryState = MantraUiState(beadCount = 10)
+        assertEquals(
+            HapticCue.BEAD,
+            selectHapticCue(
+                ordinaryState,
+                stateMachine.increment(ordinaryState),
+                BeadInputSource.AUTO
+            )
+        )
+
+        val milestoneState = MantraUiState(beadCount = 26)
+        assertEquals(
+            HapticCue.MILESTONE,
+            selectHapticCue(
+                milestoneState,
+                stateMachine.increment(milestoneState),
+                BeadInputSource.AUTO
+            )
+        )
+    }
+
+    @Test
+    fun automaticCountsKeepRoundAndDailyGoalPriorityCues() {
+        val roundState = MantraUiState(beadCount = 107, completedRounds = 2)
+        assertEquals(
+            HapticCue.ROUND_COMPLETED,
+            selectHapticCue(roundState, stateMachine.increment(roundState), BeadInputSource.AUTO)
+        )
+
+        val goalState = MantraUiState(beadCount = 107, dailyGoalRounds = 1)
+        assertEquals(
+            HapticCue.DAILY_GOAL_ACHIEVED,
+            selectHapticCue(goalState, stateMachine.increment(goalState), BeadInputSource.AUTO)
+        )
+    }
 }

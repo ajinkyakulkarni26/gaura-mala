@@ -36,18 +36,20 @@ It addresses the fundamental limitation of traditional smartwatch counters: **re
 - **Full-Screen Tap:** Tap anywhere on the watch display to advance.
 - **Rotary Crown Support:** Rotate the physical watch crown downwards to advance beads.
 - **Physical Mala Progress:** Tap the round label to set completed rounds after chanting with a physical mala. Adjust the value with the crown or +/- buttons; saving starts the next watch round at bead 0 and clears any partial bead progress.
+- **Hands-free Auto Count:** Set your natural pace through three short guided trials; the middle time smooths out one unusually fast or slow chant. A countdown and haptic cue tell you when to begin each trial. Gaura Mala then advances one bead per interval with the usual milestone and round-completion cues.
+- **Optional chant recording:** Record one short chant on the watch to use as a looped Auto Count guide. Preview it, adjust watch media volume, record again, or delete it. The recording stays in app-private, non-backed-up storage and is not uploaded or shared. Microphone access is requested only when the user chooses to record. Record only a voice you have permission to record and use.
 - **Fatigue Mitigation:** Enable or disable gesture and screen-tap input independently in Settings.
 - **Accidental Tap Protection:** Quick Undo button and confirmation dialogs before resetting current-round or daily progress; reset confirmations use check/cross icons that fit round displays.
 - **Daily Goal:** Adjust the target from 1 to 64 rounds in Settings.
 - **Daily Rollover:** Progress resets for a new local calendar day when you return to or use the app; preferences and daily progress persist across app restarts.
-- **Local data:** Counts and preferences stay on the watch, roll over by local calendar day, and are excluded from Android backup. The app has no account, ads, analytics, or server-side user-data collection; see the [privacy policy](https://ajinkyakulkarni26.github.io/gaura-mala/privacy-policy.html).
+- **Local data:** Counts, preferences, and an optional voice guide stay on the watch, roll over by local calendar day where applicable, and are excluded from Android backup. The voice guide is stored only when the user opts in, can be deleted in the app, and is never transmitted. The app has no account, ads, analytics, or server-side user-data collection; see the [privacy policy](https://ajinkyakulkarni26.github.io/gaura-mala/privacy-policy.html).
 - **Intermittent use:** Wear OS may dim the display and return to the watch face after its configured idle timeout. This is expected system behavior, not a counter reset; saved progress remains available when you reopen Gaura Mala.
-- **Keep Awake:** An optional setting prevents dimming and uses more battery. It remains off by default. There is no persistent activity notification pinning Gaura Mala to the watch face, so the app can leave the foreground during a chanting break.
+- **Keep Awake:** An optional setting prevents dimming and uses more battery. It remains off by default. During an active Auto Count session, a low-priority Ongoing Activity keeps Gaura Mala available while the display stays dim; notification permission is requested when the user starts Auto Count. Stopping the session removes the activity.
 
 ### 4. 🎨 Sacred Aesthetic & Battery Efficiency
 - **Golden Gaura Theme:** Inspired by Lord Chaitanya’s golden complexion (deep saffron `#FFB300`, amber `#FF8F00`, and sacred gold `#FFE082`).
 - **OLED Pure Black:** Built on true `#000000` AMOLED canvas for maximum battery longevity during multi-hour chanting sessions.
-- **Ambient Mode Support:** Shows the time, counter, and 108-bead progress ring while removing controls when the watch enters low-power ambient mode. The pinch handler opts into ambient mode on supported devices, so Keep Awake can remain off by default.
+- **Ambient Mode Support:** Shows the time, counter, and 108-bead progress ring while removing controls when the watch enters low-power ambient mode. Double pinch and active Auto Count haptics work while dim, so Keep Awake can remain off by default.
 - **Consistent Round Display:** Active and ambient screens show the current round; ambient mode shows “Goal” after the daily target is complete.
 - **Privacy Policy:** Read the policy on the watch. Contact Developer opens the project's GitHub Issues page on a paired phone, with the URL shown on the watch if no phone is available.
 
@@ -69,12 +71,16 @@ gaura-mala/
 │   │   │   └── drawable/ (ic_launcher.xml)
 │   │   └── java/com/gauramala/wear/
 │   │       ├── MainActivity.kt
+│   │       ├── AutoCountOngoingActivity.kt        # Low-power active-session notification
 │   │       ├── WearSurfaceUpdater.kt              # Tile and complication refresh requests
 │   │       ├── data/
 │   │       │   └── MantraPreferences.kt          # DataStore persistence
 │   │       ├── haptics/
 │   │       │   └── HapticHelper.kt               # Vibrator waveform controller
+│   │       ├── media/
+│   │       │   └── VoiceChantAudio.kt             # Optional on-device chant recording and playback
 │   │       ├── presentation/
+│   │       │   ├── AutoChantPacer.kt              # Pace calibration and timed count scheduling
 │   │       │   ├── MantraUiState.kt              # Immutable state container
 │   │       │   ├── MantraCounterViewModel.kt     # State & debouncing business logic
 │   │       │   ├── theme/                        # Wear Material3 typography & colors
@@ -82,7 +88,8 @@ gaura-mala/
 │   │       │       ├── MantraCounterScreen.kt    # Main circular counter UI
 │   │       │       ├── BeadProgressRing.kt       # Canvas 108-bead circular track
 │   │       │       ├── RoundProgressDialog.kt    # Manual completed-round adjustment
-│   │       │       ├── SettingsDialog.kt         # Toggles for pinch, tap, haptics
+│   │       │       ├── SettingsDialog.kt         # Counter settings and Auto Count entry point
+│   │       │       ├── AutoChantSetupScreen.kt   # Pace calibration, recording consent, and controls
 │   │       │       └── SummaryDialog.kt          # 16-round completion celebration
 │   │       ├── tile/
 │   │       │   └── GauraMalaTileService.kt       # Wear OS Tile provider
@@ -117,7 +124,7 @@ Build the debug app from the repository root with `./gradlew :app:assembleDebug`
 
 ### Continuous Integration
 
-GitHub Actions runs JVM tests, enforces 100% JaCoCo line coverage for the pure counter logic and Tile label mapping, builds a debug APK, and checks that 64-bit native libraries are packaged. It validates workflows with actionlint and shellcheck. The Wear OS instrumentation suite runs on both a large round API 35 emulator at default font scale and a small round emulator at 1.3x font scale. It covers the counter, tap/rotary input, undo, round completion and adjustment, settings, resets, and actual TileService responses. CI compares executed case IDs with `config/wear-os-integration-tests.txt`: every registered case must run, and newly added tests must be registered. It prints case outcomes and uploads reports from both emulator configurations. Gradle Enhanced Caching is enabled, and each Gradle invocation publishes an optional Build Scan for build diagnostics. CodeQL scans Kotlin/Java code with the `security-extended` query set, and Dependency Review fails PRs that introduce moderate-or-higher vulnerable dependencies; both run in the existing required Android CI check. A separate read-only workflow generates dependency snapshots for PRs, which a trusted follow-up workflow submits to GitHub; pushes to `main` also submit the Gradle dependency graph. Dependabot checks Gradle and GitHub Actions weekly, grouping minor and patch version updates by ecosystem/directory while leaving major and security updates separately reviewable. Workflow actions are pinned to full commit SHAs with their release tags in comments. Build Scans remain build diagnostics, not security scans. As of 2026-10-07, GitHub's dependency graph, Dependabot alerts, and Dependabot security updates are enabled. The active `main` ruleset requires CodeQL results and blocks high-or-higher security alerts (and CodeQL error alerts); secret scanning and push protection were already enabled. Automatic dependency submission is disabled because the repository submits Gradle snapshots through its workflows. You can start a run manually from the repository's **Actions** tab by selecting **Android CI** and choosing **Run workflow**. Compose tests inject rotary events through the app's input handler; double-pinch hardware detection and real vibration still need a compatible physical watch.
+GitHub Actions runs JVM tests, enforces 100% JaCoCo line coverage for the pure counter logic and Tile label mapping, builds a debug APK, and checks that 64-bit native libraries are packaged. It validates workflows with actionlint and shellcheck. The Wear OS instrumentation suite runs on both a large round API 35 emulator at default font scale and a small round emulator at 1.3x font scale. It covers the counter, tap/rotary input, undo, round completion and adjustment, settings, resets, pace-based Auto Count and pause, voice-recording disclosure, and actual TileService responses. CI compares executed case IDs with `config/wear-os-integration-tests.txt`: every registered case must run, and newly added tests must be registered. It prints case outcomes and uploads reports from both emulator configurations. Microphone capture, audio playback quality, real crown feel, double-pinch hardware detection, and real vibration still need a compatible physical watch. Gradle Enhanced Caching is enabled, and each Gradle invocation publishes an optional Build Scan for build diagnostics. CodeQL scans Kotlin/Java code with the `security-extended` query set, and Dependency Review fails PRs that introduce moderate-or-higher vulnerable dependencies; both run in the existing required Android CI check. A separate read-only workflow generates dependency snapshots for PRs, which a trusted follow-up workflow submits to GitHub; pushes to `main` also submit the Gradle dependency graph. Dependabot checks Gradle and GitHub Actions weekly, grouping minor and patch version updates by ecosystem/directory while leaving major and security updates separately reviewable. Workflow actions are pinned to full commit SHAs with their release tags in comments. Build Scans remain build diagnostics, not security scans. As of 2026-10-07, GitHub's dependency graph, Dependabot alerts, and Dependabot security updates are enabled. The active `main` ruleset requires CodeQL results and blocks high-or-higher security alerts (and CodeQL error alerts); secret scanning and push protection were already enabled. Automatic dependency submission is disabled because the repository submits Gradle snapshots through its workflows. You can start a run manually from the repository's **Actions** tab by selecting **Android CI** and choosing **Run workflow**. Compose tests inject rotary events through the app's input handler.
 
 The emulator suite also asserts that the counter, round adjustment, settings, and primary actions keep at least 48dp semantic touch targets. CI builds a release AAB using a temporary signing key and checks required 64-bit native ABIs. It also reports whether Gradle embedded native debug symbols and validates them when present; symbol availability is confirmed after upload in Play Console. CI never exposes or uses the Play upload key.
 

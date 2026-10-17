@@ -53,7 +53,8 @@ import com.gauramala.wear.presentation.theme.SurfaceDark
 fun SettingsDialog(
     state: MantraUiState,
     viewModel: MantraCounterViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onAutoChant: () -> Unit
 ) {
     var pendingReset by remember { mutableStateOf<ResetTarget?>(null) }
     var showPrivacyPolicy by remember { mutableStateOf(false) }
@@ -165,6 +166,23 @@ fun SettingsDialog(
             color = GauraGold,
             modifier = Modifier.padding(bottom = 6.dp)
         )
+
+        Button(
+            onClick = onAutoChant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp)
+                .testTag("settings-auto-chant"),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = SurfaceDark,
+                contentColor = OnSurfaceWhite
+            )
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Auto Count", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text("Set pace or record a chant", fontSize = 10.sp, color = OnSurfaceMuted)
+            }
+        }
 
         Column(
             modifier = Modifier

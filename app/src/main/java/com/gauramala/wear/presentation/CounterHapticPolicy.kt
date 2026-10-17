@@ -3,7 +3,8 @@ package com.gauramala.wear.presentation
 internal enum class BeadInputSource {
     TAP,
     ROTARY,
-    GESTURE
+    GESTURE,
+    AUTO
 }
 
 internal enum class HapticCue {

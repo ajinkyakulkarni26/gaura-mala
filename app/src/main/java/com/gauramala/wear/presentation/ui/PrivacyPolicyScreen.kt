@@ -62,7 +62,7 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
                 fontWeight = FontWeight.Bold
             )
         }
-        item { PolicySection("Gaura Mala", "Effective: Sep 30, 2026") }
+        item { PolicySection("Gaura Mala", "Effective: Oct 16, 2026") }
         item {
             PolicySection(
                 "Information and storage",
@@ -72,19 +72,19 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
         item {
             PolicySection(
                 "Daily reset and deletion",
-                "Counts reset each new day. Settings remain until you clear app storage or uninstall. Backups are off."
+                "Counts reset each new day. Settings remain until you clear app storage or uninstall. Your chant stays here until you delete it or uninstall. An unfinished recording is discarded if you leave setup. Backups are off."
             )
         }
         item {
             PolicySection(
                 "Sharing and permissions",
-                "We don't share local data. Vibration access is used for haptics. The app doesn't access location, contacts, microphone, camera, or health data."
+                "Microphone access is requested only if you choose Record a chant. One short chant is saved in private app storage on this watch. It is not uploaded, shared, or backed up, and you can delete it in Auto Count settings. A new valid recording replaces the previous one. Record only a voice you have permission to record and use. Vibration access is used for haptics."
             )
         }
         item {
             PolicySection(
                 "Children and changes",
-                "We don't knowingly collect personal information from children or adults. If data practices change, this policy will be updated first."
+                "Optional chant recordings contain a speaker's voice. They stay in this watch's private app storage until deleted or the app is uninstalled. A parent or guardian should help a child decide whether to record and manage deletion."
             )
         }
         item {

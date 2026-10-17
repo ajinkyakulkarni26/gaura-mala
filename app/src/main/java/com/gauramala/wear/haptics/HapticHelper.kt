@@ -113,4 +113,16 @@ class HapticHelper(context: Context) {
 
     /** Subtle tick confirming a round-selection change in the manual progress picker. */
     fun undoAlert(enabled: Boolean = true) = selectionTick(enabled)
+
+    /** A short start cue before hands-free counting begins. */
+    fun autoCountStarted(enabled: Boolean = true) {
+        if (!enabled) return
+        val deviceVibrator = activeVibrator() ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            deviceVibrator.vibrate(VibrationEffect.createOneShot(90, 150))
+        } else {
+            @Suppress("DEPRECATION")
+            deviceVibrator.vibrate(90)
+        }
+    }
 }
