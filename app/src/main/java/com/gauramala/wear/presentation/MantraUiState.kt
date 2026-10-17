@@ -22,6 +22,7 @@ data class MantraUiState(
     val hasVoiceChantRecording: Boolean = false,
     val isVoiceChantRecording: Boolean = false,
     val isVoiceChantPreviewing: Boolean = false,
+    val voiceRecordingFinished: Boolean? = null,
     val voiceChantMessage: String? = null
 ) {
     val totalMantrasChanted: Int

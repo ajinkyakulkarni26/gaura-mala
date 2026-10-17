@@ -76,6 +76,7 @@ dependencies {
     androidTestImplementation(platform("androidx.compose:compose-bom:2026.09.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test:rules:1.7.0")
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.wear.tiles:tiles-renderer:1.6.2")
 
@@ -109,6 +110,7 @@ dependencies {
 
     // Wearable Services
     implementation("com.google.android.gms:play-services-wearable:20.0.1")
+    implementation("androidx.wear:wear-ongoing:1.1.0")
     implementation("androidx.wear:wear-remote-interactions:1.2.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")

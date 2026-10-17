@@ -1,13 +1,13 @@
 # Gaura Mala Agent Notes
 
-Last reviewed: 2026-10-15
+Last reviewed: 2026-10-16
 
 ## Project
 
 Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It is a watch-only app with a circular 108-bead progress ring, daily round goal (16 by default), haptics, a Tile, and a watch-face complication.
 
 - Application ID: `com.gauramala.wear`
-- Current main Android version: `versionCode 13`, `versionName 1.0.0` (Play upload status is unconfirmed)
+- Current working-branch Android version: `versionCode 15`, `versionName 1.0.0`; Play release `versionCode 14` was submitted to Production, but current review/rollout status has not been rechecked.
 - Main stack: Kotlin, Jetpack Compose for Wear OS Material 3, DataStore, Wearable Services
 - Minimum SDK 30; target and compile SDK 37; JDK 17
 - The app is declared standalone in `AndroidManifest.xml`; core counting does not require a phone app.
@@ -16,6 +16,7 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 ## Source map
 
 - `MainActivity.kt`: activity, screen-on preference, and Compose setup.
+- `AutoCountOngoingActivity.kt`: low-power session notification that keeps active Auto Count reachable through ambient timeout.
 - `presentation/MantraCounterViewModel.kt`: counter behavior, day rollover, debouncing, persistence coordination, and haptic dispatch.
 - `presentation/MantraCounterStateMachine.kt`: pure counter transitions and undo history.
 - `presentation/AutoChantPacer.kt`: validated user pace calibration and one-at-a-time timer scheduling.
@@ -46,15 +47,15 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - The system gesture indicator is deliberately shown at most once per counter-screen visit. Do not show the help cue after every tap, crown movement, or pinch, and do not let it shift the counter text layout.
 - Crown movement is converted from accumulated rotary pixels to discrete bead steps. The accumulator resets after idle time to prevent counts continuing after crown rotation stops.
 - Tap and crown use app haptics for bead progress and special milestone/round cues. Double-pinch relies on the system's ordinary gesture feedback while retaining the app's special milestone, round-completion, and daily-goal cues.
-- Hands-free Auto Count calibrates one mantra at the user's chosen pace, waits one interval before the first bead, then emits one ordinary bead haptic per chant plus the same milestone, round, and daily-goal cues as manual counting. Timer delays must never cause catch-up bursts. Pause/stop are always available, and ordinary manual inputs are disabled while auto count is running.
-- The optional voice guide is user-recorded and local-only. It is opt-in, limited to a short foreground recording, loops the saved chant and increments once at the end of each playback, and can be previewed or deleted. Request microphone permission only after the on-screen disclosure and explicit user action. Keep saved audio under `noBackupFilesDir`; never import, upload, share, or back up user recordings. Stop playback and discard unfinished recordings when the app leaves the foreground.
+- Hands-free Auto Count uses a guided three-trial pace calibration and saves the middle duration to reduce the effect of one unusually fast or slow chant. Each trial has a visible 3-2-1 and a haptic start cue. It waits one interval before the first bead, then emits one ordinary bead haptic per chant plus the same milestone, round, and daily-goal cues as manual counting. Timer delays must never cause catch-up bursts. Pause/stop are always available, and ordinary manual inputs are disabled while auto count is running. Keep the display dim in ambient mode; do not use `FLAG_KEEP_SCREEN_ON` for Auto Count. Post an Ongoing Activity notification only while a session is active, so Wear OS can keep it available through the ambient timeout and offer a one-tap return. Ask for notification permission in context before starting.
+- The optional voice guide is user-recorded and local-only. The guided setup records three short takes after the same visible countdown and haptic cue, keeps the middle-length take as the looped guide, and deletes the temporary alternatives. The selected chant increments once at the end of each playback and can be previewed or deleted. Request microphone permission only after the on-screen disclosure and explicit user action. Keep saved audio under `noBackupFilesDir`; never import, upload, share, or back up user recordings. Stop playback and discard unfinished recordings when the app leaves the foreground.
 - The recording disclosure must tell users to record only a voice they have permission to record and use. Do not market the feature as a way to capture or replay famous people's recordings; do not bundle third-party chant audio.
 - Milestones are beads 27, 54, and 81; one round completes at 108. The daily-goal completion cue takes priority when the last bead also reaches the daily goal.
 - The counter's round label opens a manual adjustment for completed rounds today, so users can reconcile progress after chanting with physical beads. The picker supports plus/minus buttons and crown rotation, with a subtle selection tick when haptics are enabled; use a short title and check/cross actions to fit the round display. Saving starts the next watch round at bead 0, clears the previous bead's undo history, and does not play chanting haptics or show the goal celebration.
 - Reset confirmation actions use accessible check/cross icon buttons to avoid clipped labels on round displays.
 - When a modal screen takes focus for crown input, restore focus to the counter after it closes so crown counting continues without requiring a tap.
 - The ambient counter header shows the current round (`completedRounds + 1`) to match the active display, and shows `Goal` when the daily goal is complete.
-- Keep Awake is optional and defaults off. The double-pinch path supports ambient mode; do not force the display to remain fully awake to make counting work.
+- Keep Awake is optional and defaults off. The double-pinch path and Auto Count haptics work in ambient mode; do not force the display to remain fully awake to make counting work. Auto Count uses an Ongoing Activity notification during its explicit session to avoid an automatic return to the watch face while preserving the dim display.
 - Preserve the current centered round bead ring. Earlier circle redesigns looked disoriented to the user; the requested adjustment was text placement, not a different ring.
 - Wear OS screens must adapt to round displays with different usable diameters and system font scales. Let labels wrap where needed, keep important controls within the curved safe area, and preserve at least 48dp touch targets for primary actions.
 - The Settings list is a short, regular `Column` with continuous `verticalScroll` and `rotaryScrollable` attached to the same scroll state. The user confirmed this feels smooth on the Pixel Watch 5. Keep this implementation; `TransformingLazyColumn` free scrolling felt rough, and its snap-and-fling experiment felt slow and stepped like an elevator.
@@ -65,11 +66,21 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - The Apple Watch port is standalone. It uses the primary hand-gesture shortcut for Double Tap where watchOS and hardware support it; tap and Digital Crown remain available. The Digital Crown and haptics use native SwiftUI/WatchKit APIs.
 - Keep the Apple Watch implementation in `watchos/` and its build/test workflow separate from Android. Core behavior is ported to Swift and is not source-shared with Kotlin; keep transition behavior aligned with the Android app and add tests for every changed rule.
 
+## UI conventions
+
+- Treat peer choices equally: use the same size, visual weight, color treatment, and spacing unless one action is clearly primary or destructive. Do not preselect or visually favor one setup option without a product reason.
+- Keep a consistent gap of about 10dp between a page heading and its first action. Center labels inside pill buttons; center sparse page content on round screens.
+- Keep primary touch targets at least 48dp and provide clear TalkBack labels for icon-only controls. Use the centered bottom arrow consistently for back/cancel; make the accessible and visible meaning clear when it is also the opt-out action.
+- Prefer one obvious action per step and short, child-readable instructions. When an action changes state, show the next cue or the matching stop control in place rather than adding a redundant confirmation screen.
+- The pace-calibration microphone icon is only a start control. Keep the adjacent disclosure explicit that pace mode times the chant and records no audio. For actual voice capture, explain that the microphone records three short takes, how the selected take is used/stored/deleted, and require an affirmative action before the Android permission request.
+- See `docs/ui-guidelines.md` for the fuller checklist and `docs/privacy-and-audio-review.md` for the current microphone/child-privacy assessment.
+
 ## Privacy and store listing
 
 - The on-watch policy is implemented in `PrivacyPolicyScreen.kt`; its sections are stacked to fit a round display.
 - The hosted policy is `https://ajinkyakulkarni26.github.io/gaura-mala/privacy-policy.html`.
 - The app requests vibration access and requests microphone permission only when the user opts into recording a chant. Update the in-app policy, hosted policy, and Play Console Data safety form together when audio behavior changes. The voice recording is local-only, non-backed-up, and user-deletable. The app has no account, ads, analytics, or server-side user data collection.
+- The hosted and in-app policies must describe local voice storage accurately; do not say the app stores no personal information. Recheck Google Play Target Audience, Families, Data safety, and SDK disclosures before release. See `docs/privacy-and-audio-review.md`; this code review is not a legal compliance determination.
 - Google Play requires a dedicated Wear OS track for this watch bundle. Do not upload the Wear OS-only AAB to a phone-oriented track.
 
 ## Build, test, and install
@@ -131,7 +142,7 @@ The contributor-approval workflow checks out the approval script from the target
 
 ## Release status and next work
 
-Last known Play Console status (2026-10-06): the user has two active Wear OS closed-testing tracks. The “Closed testing Round 2” track shows release 10 (1.0.0), last updated Oct 2, 2026. The earlier “Closed Testing Gaura Mala” track shows release 4 (1.0.0), last updated Sep 30, 2026. The user had passed the initial 12 opted-in tester gate; production access still requires at least 12 testers opted in continuously for 14 days, then an application for production access. Confirm live tester counts and dates before advising; do not assume the 14-day period is complete.
+As of 2026-10-16, the user reports submitting Play release `versionCode 14` to Production. Its current review and rollout status have not been checked. The working `feature/auto-chant` branch has `versionCode 15` for development; it is not a production artifact. Confirm the live Play Console state before release advice.
 
 Version 9 was built and installed on the user's Pixel Watch 5; the user confirmed its gesture and privacy-screen fixes work. Version 10 increases Daily Goal +/- controls to 48dp, raises small helper text to 10sp and the round label to 12sp, and permits settings copy to wrap. The version 10 debug build passed emulator layout checks at simulated 192dp and 227dp round sizes with reduced (0.85x) and enlarged (1.3x) system font scales. The current Settings implementation uses a regular `Column` with continuous touch scrolling and direct rotary scrolling; the user confirmed it feels smooth on the Pixel Watch 5.
 
@@ -139,14 +150,14 @@ Version 11 is a dependency maintenance release. `app/build.gradle.kts` now uses 
 
 Version 12's signed AAB was built on 2026-10-06; Play Console upload is not confirmed. The user confirmed its crown counting and picker haptics work on the Pixel Watch 5. Version 13 shortens on-watch confirmation, settings, summary, and privacy text. Its signed AAB and debug APK built successfully on 2026-10-06. An earlier v13 debug build was installed on the Pixel Watch 5 and the round-reset message was checked; reinstalling the final copy update is pending because the watch disconnected from ADB. Play Console upload is not confirmed. Its English, Hindi, and Marathi release notes are in `RELEASE_NOTES_v13.txt`.
 
+The user reports that version code 14 was submitted to Production on 2026-10-16. This was not independently rechecked in Play Console. The current feature branch sets version code 15; its debug APK compiles, but the latest Auto Count redesign has not been installed on a watch or run through instrumentation tests.
+
 Next steps:
 
-1. Manually check the new round adjustment on the watch, including crown increments/decrements with selection haptics, crown counting after dismissing the picker, and a save with partial bead progress; then check smaller and larger system font sizes on the counter, settings, and privacy policy screens.
-2. Upload `app/build/outputs/bundle/release/app-release.aab` (version code 13) to a Wear OS closed-testing track, then check whether Play Console clears the Tile and protobuf notices for that artifact.
-3. Verify Tile updates on a Wear OS 5/API 34 device if available; also check the Tile and complication after the dependency update on the Pixel Watch 5.
-4. Verify the Contact Developer handoff with the watch paired to the user's phone; the emulator only verified the no-phone fallback.
-5. Keep at least 12 testers opted in for the full 14-day closed-test period, gather feedback, then complete the Play Console production-access application.
-6. Continue checking the Play listing, privacy/data declarations, screenshots, and required store assets before production review.
+1. Reconnect a physical Wear OS watch and review the revised pace and voice setup layouts, including icon accessibility, “Not now,” permission denial, countdown, stop, and small-round text fit.
+2. Publish the updated privacy policy and verify its public URL; reconcile the in-app policy, Play Console Data safety, Target Audience and Content, Families, and SDK declarations. Resolve the child voice recording assessment before the next rollout.
+3. Run the registered Wear OS integration suite after the current UI test expectation is updated; do not loosen coverage or omit registered cases to mask failures.
+4. Merge the feature through the protected PR process, then build and inspect the version 15 release artifact only after the branch and Play version state are confirmed.
 
 ## Workspace hygiene
 

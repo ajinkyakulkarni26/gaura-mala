@@ -29,6 +29,18 @@ class AutoChantPacerTest {
     }
 
     @Test
+    fun threeTrialCalibrationUsesTheMiddlePaceAndRejectsIncompleteOrInvalidSamples() {
+        assertTrue(AutoChantTiming.isValidPace(AutoChantTiming.MIN_PACE_MILLIS))
+        assertTrue(AutoChantTiming.isValidPace(AutoChantTiming.MAX_PACE_MILLIS))
+        assertFalse(AutoChantTiming.isValidPace(AutoChantTiming.MIN_PACE_MILLIS - 1))
+        assertFalse(AutoChantTiming.isValidPace(AutoChantTiming.MAX_PACE_MILLIS + 1))
+
+        assertEquals(6_000L, AutoChantTiming.medianPaceMillis(listOf(9_000L, 6_000L, 3_000L)))
+        assertNull(AutoChantTiming.medianPaceMillis(listOf(3_000L, 6_000L)))
+        assertNull(AutoChantTiming.medianPaceMillis(listOf(3_000L, 6_000L, 16_000L)))
+    }
+
+    @Test
     fun pacerRequiresAValidConfiguredPace() {
         val pacer = AutoChantPacer()
 

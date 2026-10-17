@@ -36,20 +36,20 @@ It addresses the fundamental limitation of traditional smartwatch counters: **re
 - **Full-Screen Tap:** Tap anywhere on the watch display to advance.
 - **Rotary Crown Support:** Rotate the physical watch crown downwards to advance beads.
 - **Physical Mala Progress:** Tap the round label to set completed rounds after chanting with a physical mala. Adjust the value with the crown or +/- buttons; saving starts the next watch round at bead 0 and clears any partial bead progress.
-- **Hands-free Auto Count:** Measure one mantra at your natural pace, then let Gaura Mala advance a bead on that interval with haptic cues. Pause or stop at any time; milestone and round-completion cues continue to apply.
-- **Optional recorded chant guide:** Record a short chant with the watch microphone and optionally loop it as the auto-count guide. The recording stays in app-private, non-backed-up storage on the watch; it is never uploaded or shared and can be previewed or deleted in Auto Count settings. Microphone access is requested only when the user chooses to record. Record only a voice you have permission to record and use.
+- **Hands-free Auto Count:** Set your natural pace through three short guided trials; the middle time smooths out one unusually fast or slow chant. A countdown and haptic cue tell you when to begin each trial. Gaura Mala then advances one bead per interval with the usual milestone and round-completion cues.
+- **Optional recorded chant guide:** Record three short takes with the watch microphone; the middle-length take becomes the looped auto-count guide. Temporary alternatives are deleted after selection. The chosen recording stays in app-private, non-backed-up storage on the watch; it is never uploaded or shared and can be previewed or deleted in Auto Count settings. Microphone access is requested only when the user chooses to record. Record only a voice you have permission to record and use.
 - **Fatigue Mitigation:** Enable or disable gesture and screen-tap input independently in Settings.
 - **Accidental Tap Protection:** Quick Undo button and confirmation dialogs before resetting current-round or daily progress; reset confirmations use check/cross icons that fit round displays.
 - **Daily Goal:** Adjust the target from 1 to 64 rounds in Settings.
 - **Daily Rollover:** Progress resets for a new local calendar day when you return to or use the app; preferences and daily progress persist across app restarts.
 - **Local data:** Counts, preferences, and an optional voice guide stay on the watch, roll over by local calendar day where applicable, and are excluded from Android backup. The voice guide is stored only when the user opts in, can be deleted in the app, and is never transmitted. The app has no account, ads, analytics, or server-side user-data collection; see the [privacy policy](https://ajinkyakulkarni26.github.io/gaura-mala/privacy-policy.html).
 - **Intermittent use:** Wear OS may dim the display and return to the watch face after its configured idle timeout. This is expected system behavior, not a counter reset; saved progress remains available when you reopen Gaura Mala.
-- **Keep Awake:** An optional setting prevents dimming and uses more battery. It remains off by default. There is no persistent activity notification pinning Gaura Mala to the watch face, so the app can leave the foreground during a chanting break.
+- **Keep Awake:** An optional setting prevents dimming and uses more battery. It remains off by default. During an active Auto Count session, a low-priority Ongoing Activity keeps Gaura Mala available while the display stays dim; notification permission is requested when the user starts Auto Count. Stopping the session removes the activity.
 
 ### 4. 🎨 Sacred Aesthetic & Battery Efficiency
 - **Golden Gaura Theme:** Inspired by Lord Chaitanya’s golden complexion (deep saffron `#FFB300`, amber `#FF8F00`, and sacred gold `#FFE082`).
 - **OLED Pure Black:** Built on true `#000000` AMOLED canvas for maximum battery longevity during multi-hour chanting sessions.
-- **Ambient Mode Support:** Shows the time, counter, and 108-bead progress ring while removing controls when the watch enters low-power ambient mode. The pinch handler opts into ambient mode on supported devices, so Keep Awake can remain off by default.
+- **Ambient Mode Support:** Shows the time, counter, and 108-bead progress ring while removing controls when the watch enters low-power ambient mode. Double pinch and active Auto Count haptics work while dim, so Keep Awake can remain off by default.
 - **Consistent Round Display:** Active and ambient screens show the current round; ambient mode shows “Goal” after the daily target is complete.
 - **Privacy Policy:** Read the policy on the watch. Contact Developer opens the project's GitHub Issues page on a paired phone, with the URL shown on the watch if no phone is available.
 
@@ -71,6 +71,7 @@ gaura-mala/
 │   │   │   └── drawable/ (ic_launcher.xml)
 │   │   └── java/com/gauramala/wear/
 │   │       ├── MainActivity.kt
+│   │       ├── AutoCountOngoingActivity.kt        # Low-power active-session notification
 │   │       ├── WearSurfaceUpdater.kt              # Tile and complication refresh requests
 │   │       ├── data/
 │   │       │   └── MantraPreferences.kt          # DataStore persistence

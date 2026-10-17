@@ -4,6 +4,16 @@ package com.gauramala.wear.presentation
 internal object AutoChantTiming {
     const val MIN_PACE_MILLIS = 750L
     const val MAX_PACE_MILLIS = 15_000L
+    const val CALIBRATION_TRIALS = 3
+
+    fun isValidPace(paceMillis: Long): Boolean =
+        paceMillis in MIN_PACE_MILLIS..MAX_PACE_MILLIS
+
+    /** Uses the middle of three measured chants so one unusually fast or slow take has less effect. */
+    fun medianPaceMillis(trials: List<Long>): Long? {
+        if (trials.size != CALIBRATION_TRIALS || trials.any { !isValidPace(it) }) return null
+        return trials.sorted()[CALIBRATION_TRIALS / 2]
+    }
 
     fun averagePaceMillis(totalElapsedMillis: Long, chantCount: Int): Long? {
         if (totalElapsedMillis <= 0L || chantCount !in 1..10) return null

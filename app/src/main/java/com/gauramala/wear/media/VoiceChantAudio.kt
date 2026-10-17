@@ -13,13 +13,27 @@ internal class VoiceChantAudio(context: Context) {
     private var recorder: MediaRecorder? = null
     private var player: MediaPlayer? = null
 
+    init {
+        files.clearPendingTakes()
+    }
+
     fun hasRecording(): Boolean = files.hasRecording()
 
     fun recordingDurationMillis(): Long? {
         if (!files.hasRecording()) return null
+        return durationMillis(files.recordingFile.absolutePath)
+    }
+
+    fun temporaryRecordingDurationMillis(): Long? {
+        val temporaryFile = files.temporaryRecordingFile()
+        if (!temporaryFile.isFile || temporaryFile.length() == 0L) return null
+        return durationMillis(temporaryFile.absolutePath)
+    }
+
+    private fun durationMillis(path: String): Long? {
         val retriever = MediaMetadataRetriever()
         val duration = try {
-            retriever.setDataSource(files.recordingFile.absolutePath)
+            retriever.setDataSource(path)
             retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
         } catch (_: Exception) {
             null
@@ -48,7 +62,6 @@ internal class VoiceChantAudio(context: Context) {
                 setOutputFile(temporaryFile.absolutePath)
                 setOnInfoListener { _, what, _ ->
                     if (what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
-                        finishRecording()
                         onLimitReached()
                     }
                 }
@@ -76,11 +89,15 @@ internal class VoiceChantAudio(context: Context) {
         runCatching { activeRecorder.release() }
 
         if (!stopped) {
-            files.temporaryRecordingFile().delete()
+            files.discardTemporaryRecording()
             return false
         }
-        return files.publishTemporaryRecording()
+        return true
     }
+
+    fun publishTemporaryRecording(): Boolean = files.publishTemporaryRecording()
+
+    fun discardTemporaryRecording() = files.discardTemporaryRecording()
 
     fun cancelRecording() {
         val activeRecorder = recorder
@@ -121,6 +138,10 @@ internal class VoiceChantAudio(context: Context) {
 
     private fun play(onCompletion: () -> Boolean): Boolean {
         if (!files.hasRecording()) return false
+        return playFile(files.recordingFile.absolutePath, onCompletion)
+    }
+
+    private fun playFile(path: String, onCompletion: () -> Boolean): Boolean {
         stopPlayback()
         var activePlayer: MediaPlayer? = null
         return try {
@@ -132,7 +153,7 @@ internal class VoiceChantAudio(context: Context) {
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build()
                 )
-                setDataSource(files.recordingFile.absolutePath)
+                setDataSource(path)
                 setOnCompletionListener { completedPlayer ->
                     if (onCompletion()) {
                         runCatching {

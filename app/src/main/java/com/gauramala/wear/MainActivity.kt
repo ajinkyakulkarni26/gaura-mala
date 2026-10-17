@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MantraCounterViewModel by viewModels()
+    private val autoCountOngoingActivity by lazy { AutoCountOngoingActivity(this) }
 
     override fun onResume() {
         super.onResume()
@@ -41,6 +42,10 @@ class MainActivity : ComponentActivity() {
                 } else {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
+                autoCountOngoingActivity.update(
+                    isActive = state.autoCountActive,
+                    isRunning = state.autoCountRunning
+                )
             }
         }
 

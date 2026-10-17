@@ -175,12 +175,21 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         hapticHelper.selectionTick(enabled = _uiState.value.isHapticsEnabled)
     }
 
+    /** Gives a clear start cue during guided pace and voice trials. */
+    fun autoChantCalibrationCue() {
+        hapticHelper.autoCountStarted(enabled = _uiState.value.isHapticsEnabled)
+    }
+
     fun saveAutoChantPace(paceMillis: Long) {
         if (!preferencesLoaded || !autoChantPacer.configure(paceMillis)) return
         val savedPace = paceMillis.toInt()
         stopAutoCount()
         _uiState.update { it.copy(autoChantPaceMillis = savedPace) }
         viewModelScope.launch { preferences.updateAutoChantPace(savedPace) }
+    }
+
+    fun prepareVoiceChantSetup() {
+        _uiState.update { it.copy(voiceRecordingFinished = null, voiceChantMessage = null) }
     }
 
     fun startAutoCount(useVoiceGuide: Boolean = false) {
@@ -278,33 +287,54 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         return !nextState.showGoalAchievedDialog
     }
 
-    fun startVoiceRecording() {
-        if (!preferencesLoaded || _uiState.value.isVoiceChantRecording) return
-        _uiState.update { it.copy(voiceChantMessage = null, isVoiceChantPreviewing = false) }
-        val started = voiceChantAudio.startRecording(onLimitReached = ::finishVoiceRecording)
+    fun startVoiceRecording(): Boolean {
+        if (!preferencesLoaded || _uiState.value.isVoiceChantRecording) return false
+        _uiState.update {
+            it.copy(
+                voiceChantMessage = null,
+                voiceRecordingFinished = null,
+                isVoiceChantPreviewing = false
+            )
+        }
+        val started = voiceChantAudio.startRecording {
+            finishVoiceRecording()
+        }
         _uiState.update { it.copy(isVoiceChantRecording = started) }
         if (!started) {
             _uiState.update {
                 it.copy(voiceChantMessage = "Recording couldn't start. Check microphone access and try again.")
             }
         }
+        return started
     }
 
     fun finishVoiceRecording() {
-        val saved = voiceChantAudio.finishRecording()
-        val duration = if (saved) voiceChantAudio.recordingDurationMillis() else null
+        val stopped = voiceChantAudio.finishRecording()
+        val duration = if (stopped) voiceChantAudio.temporaryRecordingDurationMillis() else null
+        val validDuration = duration?.takeIf(AutoChantTiming::isValidPace)
+        val saved = validDuration != null && voiceChantAudio.publishTemporaryRecording()
+        if (!saved) voiceChantAudio.discardTemporaryRecording()
+        if (saved) saveAutoChantPace(validDuration)
         _uiState.update {
             it.copy(
                 isVoiceChantRecording = false,
-                hasVoiceChantRecording = saved,
-                voiceChantMessage = if (saved && duration != null) {
-                    "Recording saved on this watch."
+                voiceRecordingFinished = saved,
+                hasVoiceChantRecording = it.hasVoiceChantRecording || saved,
+                voiceChantMessage = if (saved) {
+                    "Chant saved on this watch."
+                } else if (duration != null) {
+                    "Try a chant between 1 and 15 seconds."
                 } else {
-                    "Couldn't save that recording. Please record it again."
+                    "Couldn't save that chant. Please try again."
                 }
             )
         }
-        if (saved && duration != null) saveAutoChantPace(duration)
+    }
+
+    /** Discards only an unfinished take; an older saved chant remains intact. */
+    fun cancelVoiceChantSetup() {
+        cancelVoiceRecording()
+        _uiState.update { it.copy(voiceRecordingFinished = null, voiceChantMessage = null) }
     }
 
     /** Discards an unfinished take; any previous saved recording remains available. */
@@ -344,6 +374,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
                 hasVoiceChantRecording = false,
                 isVoiceChantRecording = false,
                 isVoiceChantPreviewing = false,
+                voiceRecordingFinished = null,
                 voiceChantMessage = "Recording deleted from this watch."
             )
         }

@@ -28,13 +28,24 @@ internal class VoiceChantFiles(private val directory: File) {
         }
     }
 
-    fun deleteAll() {
+    fun discardTemporaryRecording() = temporaryRecordingFile().delete()
+
+    /** Drops interrupted recordings and trial files from older app versions. */
+    fun clearPendingTakes() {
         temporaryRecordingFile().delete()
+        File(directory, SELECTING_NAME).delete()
+        (1..LEGACY_TRIAL_COUNT).forEach { File(directory, "chant-guide-trial-$it.m4a").delete() }
+    }
+
+    fun deleteAll() {
+        clearPendingTakes()
         recordingFile.delete()
     }
 
     private companion object {
+        const val LEGACY_TRIAL_COUNT = 3
         const val RECORDING_NAME = "chant-guide.m4a"
         const val TEMP_RECORDING_NAME = "chant-guide-recording.tmp"
+        const val SELECTING_NAME = "chant-guide-selecting.tmp"
     }
 }
