@@ -62,29 +62,35 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
                 fontWeight = FontWeight.Bold
             )
         }
-        item { PolicySection("Gaura Mala", "Effective: Oct 16, 2026") }
+        item { PolicySection("Gaura Mala", "Effective: Oct 17, 2026") }
         item {
             PolicySection(
                 "Information and storage",
-                "Gaura Mala has no account, ads, or analytics and sends no personal data to a server. Your bead count, rounds, daily goal, and settings stay on this watch."
+                "Gaura Mala has no account, ads, analytics, or developer-operated server. Your counts, goal, settings, and optional chant recording stay on this watch and are not sent to a server."
             )
         }
         item {
             PolicySection(
                 "Daily reset and deletion",
-                "Counts reset each new day. Settings remain until you clear app storage or uninstall. Your chant stays here until you delete it or uninstall. An unfinished recording is discarded if you leave setup. Backups are off."
+                "Counts reset each day. Settings stay until you clear app storage or uninstall. Delete a saved chant in Auto Count settings; it is also removed when you uninstall. Canceling setup deletes an unfinished take. App data is excluded from Android backup."
             )
         }
         item {
             PolicySection(
                 "Sharing and permissions",
-                "Microphone access is requested only if you choose Record a chant. One short chant is saved in private app storage on this watch. It is not uploaded, shared, or backed up, and you can delete it in Auto Count settings. A new valid recording replaces the previous one. Record only a voice you have permission to record and use. Vibration access is used for haptics."
+                "Microphone access is requested only if you choose Record a chant; pace counting uses no microphone. The recording stays in private app storage, is not uploaded, shared, or backed up, and can be deleted in Auto Count settings. A new valid take replaces the previous one. Record only a voice you have permission to record and use. Vibration access supports haptics."
             )
         }
         item {
             PolicySection(
-                "Children and changes",
-                "Optional chant recordings contain a speaker's voice. They stay in this watch's private app storage until deleted or the app is uninstalled. A parent or guardian should help a child decide whether to record and manage deletion."
+                "Children and voice recordings",
+                "A chant recording contains the recorded person's voice. If a child records a chant, a parent or guardian should help decide whether to record and manage deletion. The recording stays on this watch until deleted or the app is uninstalled."
+            )
+        }
+        item {
+            PolicySection(
+                "Policy updates",
+                "If Gaura Mala's privacy practices change, we will update this policy and its date before those changes take effect."
             )
         }
         item {
