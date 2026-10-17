@@ -7,6 +7,7 @@ Use these rules when adding or revising screens. They capture the design decisio
 - Center sparse content on round displays. Center button labels so they remain balanced inside wide pill controls.
 - Leave about 10dp between a page heading and its first action. Keep related title and helper text visually grouped.
 - Keep primary touch targets at least 48dp and inside the round display's safe area. Give icon-only controls meaningful TalkBack descriptions.
+- On entry and setup screens, keep the next action and bottom Back arrow visible together at default text size on a 192dp round display. Let secondary details scroll when needed.
 - Give peer options equal size, spacing, color, and visual weight. Do not make one option look recommended unless the product intentionally recommends it. A destructive action may use a warning color.
 - Use the gold accent for a single clear primary action or key information, not as an arbitrary selected state. Keep secondary and alternative options visually legible.
 - Use one clear action per step. When a control changes state, update it in place where possible (for example, microphone to stop square) instead of adding a redundant confirmation screen.
