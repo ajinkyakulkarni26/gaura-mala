@@ -148,7 +148,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     fun resetCurrentRound() {
         if (!preferencesLoaded) return
 
-        stopAutoCount()
+        pauseAutoCount()
         hasLocalProgressChanges = true
         resetMemoryForNewDayIfNeeded()
         val nextState = counterStateMachine.resetCurrentRound(_uiState.value)

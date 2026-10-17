@@ -330,6 +330,37 @@ class CounterInputIntegrationTest {
     }
 
     @Test
+    fun confirmingResetRoundPausesAutoCountAndLeavesResumeAction() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        runBlocking {
+            context.dataStore.edit {
+                it[MantraPreferences.KEY_AUTO_CHANT_PACE_MILLIS] = 15_000
+            }
+        }
+        setStoredProgress(beadCount = 5, completedRounds = 2)
+        awaitBeadCount("5")
+        awaitRound("Round 3 of 16")
+
+        openSettings()
+        composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
+        composeRule.onNodeWithTag("auto-chant-start-count").performScrollTo().performClick()
+        composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
+
+        openSettings()
+        composeRule.onNodeWithText("Reset Round").performScrollTo().performClick()
+        composeRule.onNodeWithContentDescription("Confirm reset").performClick()
+
+        awaitBeadCount("0")
+        awaitRound("Round 3 of 16")
+        composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription("Resume auto count").performClick()
+        composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Pause auto count").performClick()
+        composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+    }
+
+    @Test
     fun confirmingResetTodayClearsRoundsAndBeads() {
         setStoredProgress(beadCount = 5, completedRounds = 2)
         awaitBeadCount("5")
