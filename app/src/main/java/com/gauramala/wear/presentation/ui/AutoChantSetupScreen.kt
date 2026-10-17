@@ -100,6 +100,10 @@ fun AutoChantSetupScreen(
     var pendingVoiceGuide by remember { mutableStateOf<Boolean?>(null) }
     val scrollState = rememberScrollState()
     val focusRequester = remember { FocusRequester() }
+    val compactPaceIntro = page == AutoChantPage.PACE && paceStep == GuidedStep.INTRO
+    val compactGuideChooser = page == AutoChantPage.CHOOSE &&
+        state.autoChantPaceMillis == null && !state.hasVoiceChantRecording
+    val compactNavigationPage = compactPaceIntro || compactGuideChooser
 
     fun startCount(useVoiceGuide: Boolean) {
         notificationMessage = null
@@ -267,9 +271,20 @@ fun AutoChantSetupScreen(
                 focusRequester = focusRequester
             )
             .verticalScroll(scrollState)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .padding(
+                start = 12.dp,
+                end = 12.dp,
+                top = if (compactPaceIntro) 16.dp else 12.dp,
+                bottom = if (compactNavigationPage) 4.dp else 12.dp
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(
+            when {
+                compactPaceIntro -> 4.dp
+                compactGuideChooser -> 2.dp
+                else -> 8.dp
+            }
+        )
     ) {
         if (state.autoCountActive) {
             SessionPage(
@@ -287,9 +302,9 @@ fun AutoChantSetupScreen(
             when (page) {
                 AutoChantPage.CHOOSE -> {
                     PageTitle("Auto Count")
-                    Spacer(Modifier.height(10.dp))
                     val hasPace = state.autoChantPaceMillis != null
                     val hasGuide = state.hasVoiceChantRecording
+                    if (hasPace || hasGuide) Spacer(Modifier.height(10.dp))
 
                     if (hasPace || hasGuide) {
                         if (hasPace) {
@@ -361,15 +376,15 @@ fun AutoChantSetupScreen(
                     GuidedStep.INTRO -> {
                         PageTitle(
                             if (paceTrials.isEmpty()) "Set your pace" else "Chant ${paceTrials.size + 1} of ${AutoChantTiming.CALIBRATION_TRIALS}",
-                            "Tap to begin. Chant after the cue."
+                            "Tap timer. Chant on cue.",
+                            compact = true
                         )
                         Text(
-                            "We only time it. No audio is recorded.",
+                            "Timing only · no audio.",
                             color = OnSurfaceMuted,
                             fontSize = 10.sp,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(Modifier.height(4.dp))
                         IconActionButton(
                             icon = Icons.Filled.Timer,
                             description = "Start pace timing; no audio is recorded",
@@ -591,25 +606,26 @@ private fun CountdownPage(countdown: Int) {
 }
 
 @Composable
-private fun PageTitle(title: String, hint: String? = null) {
+private fun PageTitle(title: String, hint: String? = null, compact: Boolean = false) {
     Text(
         title,
-        modifier = Modifier.fillMaxWidth(0.72f).padding(horizontal = 4.dp),
-        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.fillMaxWidth(if (compact) 0.9f else 0.72f).padding(horizontal = 4.dp),
+        style = if (compact) MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp)
+        else MaterialTheme.typography.titleMedium,
         color = GauraGold,
         fontWeight = FontWeight.Bold,
         textAlign = TextAlign.Center,
-        maxLines = 2
+        maxLines = if (compact) 1 else 2
     )
     if (!hint.isNullOrBlank()) {
         Text(
             hint,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = if (compact) 4.dp else 12.dp),
             color = OnSurfaceMuted,
             fontSize = 10.sp,
             textAlign = TextAlign.Center,
             lineHeight = 12.sp,
-            maxLines = 2
+            maxLines = if (compact) 1 else 2
         )
     }
 }
