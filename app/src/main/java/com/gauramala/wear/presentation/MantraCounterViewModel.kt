@@ -1,6 +1,7 @@
 package com.gauramala.wear.presentation
 
 import android.app.Application
+import android.os.PowerManager
 import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,6 +25,13 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     private val preferences = MantraPreferences(application)
     private val hapticHelper = HapticHelper(application)
     private val voiceChantAudio = VoiceChantAudio(application)
+    private val autoCountWakeLock = application
+        .getSystemService(PowerManager::class.java)
+        .newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "${application.packageName}:auto_count"
+        )
+        .apply { setReferenceCounted(false) }
 
     private val _uiState = MutableStateFlow(
         MantraUiState(
@@ -202,7 +210,9 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
             if (!autoChantPacer.configure(paceMillis)) return
         }
         autoCountJob?.cancel()
+        releaseAutoCountWakeLock()
         if (!useVoiceGuide && !autoChantPacer.start(SystemClock.elapsedRealtime())) return
+        if (!useVoiceGuide) acquireAutoCountWakeLock()
 
         _uiState.update {
             it.copy(
@@ -244,6 +254,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         autoCountJob = null
         autoChantPacer.pause()
         voiceChantAudio.stopPlayback()
+        releaseAutoCountWakeLock()
         _uiState.update { it.copy(autoCountRunning = false) }
     }
 
@@ -257,6 +268,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         autoCountJob = null
         autoChantPacer.pause()
         voiceChantAudio.stopPlayback()
+        releaseAutoCountWakeLock()
         _uiState.update {
             it.copy(
                 autoCountActive = false,
@@ -285,6 +297,14 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
             null -> Unit
         }
         return !nextState.showGoalAchievedDialog
+    }
+
+    private fun acquireAutoCountWakeLock() {
+        if (!autoCountWakeLock.isHeld) autoCountWakeLock.acquire()
+    }
+
+    private fun releaseAutoCountWakeLock() {
+        if (autoCountWakeLock.isHeld) autoCountWakeLock.release()
     }
 
     fun startVoiceRecording(): Boolean {
