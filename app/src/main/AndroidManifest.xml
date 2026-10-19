@@ -5,6 +5,8 @@
 
     <!-- Haptic feedback for beads and round completion -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Keeps self-paced Auto Count timing reliable while the display is dim. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Requested in context so Auto Count can remain available while the screen dims. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Requested only after the user chooses the optional voice guide. -->
