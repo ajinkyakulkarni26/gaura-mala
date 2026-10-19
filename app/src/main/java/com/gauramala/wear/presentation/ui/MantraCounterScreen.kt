@@ -93,8 +93,21 @@ fun MantraCounterScreen(
     val rotaryThreshold = with(LocalDensity.current) { 24.dp.toPx() }
     val rotaryBeadInput = remember(rotaryThreshold) { RotaryBeadInput(rotaryThreshold) }
 
-    LaunchedEffect(focusRequester, showSettings, showRoundProgress, state.showGoalAchievedDialog) {
-        if (!showSettings && !showRoundProgress && !state.showGoalAchievedDialog) {
+    LaunchedEffect(
+        focusRequester,
+        showSettings,
+        showAutoChantSetup,
+        showRoundProgress,
+        state.showGoalAchievedDialog,
+        state.autoCountActive,
+        state.autoCountRunning
+    ) {
+        if (
+            !showSettings &&
+            !showAutoChantSetup &&
+            !showRoundProgress &&
+            !state.showGoalAchievedDialog
+        ) {
             focusRequester.requestFocus()
         }
     }
