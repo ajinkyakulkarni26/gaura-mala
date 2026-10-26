@@ -334,7 +334,11 @@ class CounterInputIntegrationTest {
             awaitDurationAtLeast("voice-recording-duration", minimumSeconds = 1.0)
             composeRule.onNodeWithTag("voice-recording-stop").performClick()
 
-            composeRule.onNodeWithText("Chant ready").assertIsDisplayed()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                runCatching {
+                    composeRule.onNodeWithText("Chant ready").assertIsDisplayed()
+                }.isSuccess
+            }
             composeRule.onNodeWithTag("voice-recording-preview").performScrollTo().assertIsDisplayed()
             composeRule.onNodeWithTag("auto-chant-start-voice-count").performScrollTo().assertIsDisplayed()
             composeRule.onNodeWithTag("voice-recording-again").performScrollTo().assertIsDisplayed()
