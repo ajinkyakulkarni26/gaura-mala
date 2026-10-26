@@ -127,11 +127,23 @@ jobs:
           path: app/build/reports/coverage/test/debug/
           if-no-files-found: ignore
 
-  wear-os-integration:
-    name: Wear OS emulator input tests
+  wear-os-integration-profiles:
+    name: Wear OS emulator input tests (${{ matrix.profile }})
     needs: test-and-build
     runs-on: ubuntu-24.04
     timeout-minutes: 40
+    # Give each profile its own runner so ADB/emulator state from one profile's
+    # shutdown cannot leave the next profile's emulator offline.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: wearos_large_round
+            font_scale: "1.0"
+            run_label: large-round-default-font
+          - profile: wearos_small_round
+            font_scale: "1.3"
+            run_label: small-round-large-font
 
     steps:
       - name: Check out repository
@@ -164,35 +176,34 @@ jobs:
           system-image-api-level: 35-ext15
           target: android-wear
           arch: x86_64
-          profile: wearos_large_round
+          profile: ${{ matrix.profile }}
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: bash scripts/run-wear-os-integration-tests.sh
         env:
-          WEAR_TEST_DEVICE_PROFILE: wearos_large_round
-          WEAR_TEST_FONT_SCALE: "1.0"
-          WEAR_TEST_RUN_LABEL: large-round-default-font
-
-      - name: Run Wear OS UI integration tests (small round, enlarged font)
-        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
-        with:
-          api-level: 35
-          system-image-api-level: 35-ext15
-          target: android-wear
-          arch: x86_64
-          profile: wearos_small_round
-          emulator-boot-timeout: 600
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
-          script: bash scripts/run-wear-os-integration-tests.sh
-        env:
-          WEAR_TEST_DEVICE_PROFILE: wearos_small_round
-          WEAR_TEST_FONT_SCALE: "1.3"
-          WEAR_TEST_RUN_LABEL: small-round-large-font
+          WEAR_TEST_DEVICE_PROFILE: ${{ matrix.profile }}
+          WEAR_TEST_FONT_SCALE: ${{ matrix.font_scale }}
+          WEAR_TEST_RUN_LABEL: ${{ matrix.run_label }}
 
       - name: Save Wear OS instrumentation results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: wear-os-instrumentation-results
+          name: wear-os-instrumentation-results-${{ matrix.run_label }}
           path: ${{ runner.temp }}/wear-os-test-results/
           if-no-files-found: ignore
+
+  wear-os-integration:
+    name: Wear OS emulator input tests
+    if: always() && !cancelled()
+    needs: wear-os-integration-profiles
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify both Wear OS profiles passed
+        env:
+          profiles_result: ${{ needs.wear-os-integration-profiles.result }}
+        run: |
+          if [[ "${profiles_result}" != "success" ]]; then
+            echo "Wear OS emulator profile jobs did not all pass (${profiles_result})." >&2
+            exit 1
+          fi
