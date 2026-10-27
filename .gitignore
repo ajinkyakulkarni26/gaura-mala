@@ -17,5 +17,8 @@ local.properties
 __pycache__/
 *.py[cod]
 
+# Emulator screenshots generated during local instrumentation runs
+/test-artifacts/emulator-screenshots/
+
 # OS files
 .DS_Store

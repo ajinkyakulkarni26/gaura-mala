@@ -53,6 +53,8 @@ import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
+import androidx.wear.compose.material3.TimeTextDefaults
+import androidx.wear.compose.material3.timeTextCurvedText
 import androidx.wear.compose.foundation.AmbientMode
 import androidx.wear.compose.foundation.LocalAmbientModeManager
 import androidx.wear.compose.material3.onehandedgesture.OneHandedGestureAction
@@ -222,6 +224,7 @@ fun MantraCounterScreen(
         contentAlignment = Alignment.Center
     ) {
         val compactCounterLayout = maxHeight < 220.dp || LocalDensity.current.fontScale > 1.15f
+        val largeSystemFont = LocalDensity.current.fontScale > 1.15f
 
         // Outer Circular Bead & Round Progress Tracks
         BeadProgressRing(
@@ -323,6 +326,7 @@ fun MantraCounterScreen(
                     state.autoCountRunning -> state.autoChantPaceMillis?.let {
                         "Auto count · ${String.format(java.util.Locale.US, "%.1f", it / 1000f)} sec"
                     } ?: "Auto count running"
+                    state.autoCountActive -> "Auto count paused"
                     canUsePinchGesture && state.isScreenTapEnabled -> "Tap or double pinch to count"
                     canUsePinchGesture -> "Double pinch to count"
                     state.isScreenTapEnabled -> "Tap to count"
@@ -416,10 +420,19 @@ fun MantraCounterScreen(
             }
         }
 
+        val timeTextStyle = if (largeSystemFont) {
+            TimeTextDefaults.timeTextStyle(fontSize = 10.sp)
+        } else {
+            null
+        }
         TimeText(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .zIndex(1f)
+                .testTag("counter-time-text")
+                .zIndex(1f),
+            content = { time ->
+                timeTextCurvedText(time, style = timeTextStyle)
+            }
         )
     }
 }

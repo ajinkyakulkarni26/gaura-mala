@@ -1,6 +1,6 @@
 # Microphone and child-privacy review
 
-**Reviewed:** October 16, 2026
+**Reviewed:** October 26, 2026
 
 **Scope:** Android/Wear OS source and the Google Play and U.S. COPPA guidance linked below. This is a technical policy review, not a legal opinion or Play Console verification.
 
@@ -11,6 +11,8 @@ The optional recording path has good local privacy controls: it is started by th
 The simplified UI records one voice take. It discloses the purpose as a chant guide, local storage, non-transmission, and deletion before the microphone permission request. The user must tap “Agree & begin”; the bottom “Not now” action cancels. The user can listen, adjust watch media volume, re-record, or proceed. Pace calibration uses a timer icon and explicitly says that it times the chant without recording audio.
 
 **Current status: technically privacy-conscious, but not fully cleared for a child-directed release.** Play Console screenshots dated October 16, 2026 show target ages 6–8, 9–12, 13–15, 16–17, and 18+, a commitment to the Families policy, no data collection/sharing, and the statement “Data isn’t encrypted.” Families requirements therefore apply; verify the chosen ages and full policy answers. The final release artifact's merged manifest and SDK behavior, the deployed privacy-policy URL, and the legal treatment of child voice recordings have not been verified here. Do not treat the code review alone as proof of compliance.
+
+The policy copy in this branch is a draft for Android version 15 (1.1.0). Release 14's public policy should remain in place while that release is under review. Publish the version 15 policy with the next release and verify the public URL after deployment.
 
 ## What the source does
 
@@ -37,7 +39,7 @@ The supplied Google Play link (`answer/6223646`) covers requirements for distrib
 2. **Child voice and consent assessment:** obtain a jurisdiction-specific answer on whether local capture/storage is covered by COPPA or other child privacy laws for this product. If prior parent consent or a neutral age screen is required, add a compliant flow before enabling recording for children. A parent-supervision sentence is not itself verifiable parental consent.
 3. **SDK and artifact audit:** inspect the final release AAB's merged permissions and dependency/SDK inventory; confirm no component transmits audio or other child data. Revisit this after any dependency or manifest change.
 4. **Retention choice:** today the selected recording stays until the user deletes it or uninstalls the app. Decide whether that user-controlled retention is acceptable for the intended child audience and applicable law; document the policy and keep deletion easy to find.
-5. **Policy deployment:** publish the updated `docs/privacy-policy.html` to the hosted policy URL and verify the Play Console privacy-policy URL points to the updated public page. The in-app policy has also been updated; keep both copies aligned.
+5. **Policy deployment:** after Release 14's review is complete and version 15 is ready, publish the updated `docs/privacy-policy.html` to the hosted policy URL and verify the Play Console privacy-policy URL points to it. The in-app policy draft is updated for version 15; keep both copies aligned. Google Play requires accurate Data safety answers and a valid policy, while the app's in-flow disclosure and affirmative consent remain necessary before microphone access.
 6. **Device verification:** on a watch, verify disclosure before the Android prompt, “Not now” cancellation, permission denial/retry, recording indicator, stop action, 20-second limit, listen/volume controls, re-record and delete behavior, and that pace-only timing never requests the microphone.
 
 ## References

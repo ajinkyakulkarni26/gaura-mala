@@ -1,7 +1,11 @@
 package com.gauramala.wear
 
 import android.Manifest
+import android.content.ContentValues
+import android.graphics.Bitmap
 import android.media.AudioManager
+import android.provider.MediaStore
+import android.view.WindowManager
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -10,17 +14,22 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.preferences.core.edit
+import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -29,6 +38,7 @@ import com.gauramala.wear.data.dataStore
 import com.gauramala.wear.media.VoiceChantFiles
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -39,6 +49,7 @@ import org.junit.runner.RunWith
 import java.time.LocalDate
 
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalTestApi::class)
 class CounterInputIntegrationTest {
     private val composeRule = createAndroidComposeRule<MainActivity>()
     private val clearStoredProgress = object : ExternalResource() {
@@ -95,6 +106,7 @@ class CounterInputIntegrationTest {
         awaitBeadCount("0")
         composeRule.onNodeWithText("/ 108").assertIsDisplayed()
         awaitRound("Round 1 of 16")
+        saveScreenshot("counter-home")
     }
 
     @Test
@@ -247,6 +259,7 @@ class CounterInputIntegrationTest {
     fun autoChantSetupShowsPaceCalibrationAndRecordingPrivacyDisclosure() {
         openSettings()
         composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
+        saveScreenshot("auto-count-entry")
 
         composeRule.onNodeWithText("Auto Count").assertIsDisplayed()
         composeRule.onNodeWithTag("auto-chant-open-pace").assertIsDisplayed()
@@ -254,11 +267,13 @@ class CounterInputIntegrationTest {
         composeRule.onNodeWithTag("auto-chant-back").assertIsDisplayed()
         composeRule.onNodeWithTag("auto-chant-open-pace").performClick()
         composeRule.onNodeWithText("Set your pace").assertIsDisplayed()
+        saveScreenshot("pace-setup")
         composeRule.onNodeWithText("Tap timer. Chant on cue.").assertIsDisplayed()
         composeRule.onNodeWithText("Timing only · no audio.").assertIsDisplayed()
         composeRule.onNodeWithTag("auto-chant-start-timing").assertIsDisplayed()
         composeRule.onNodeWithTag("auto-chant-back").assertIsDisplayed().performClick()
         composeRule.onNodeWithTag("auto-chant-open-voice").performClick()
+        saveScreenshot("auto-count-voice-disclosure")
         composeRule.onNodeWithTag("voice-recording-disclosure").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Only record a voice you have permission to record and use.")
             .performScrollTo().assertIsDisplayed()
@@ -285,6 +300,9 @@ class CounterInputIntegrationTest {
         composeRule.onNodeWithText("Auto Count").assertIsDisplayed()
         composeRule.onNodeWithText("Choose or change a guide").assertIsDisplayed()
         composeRule.onNodeWithTag("auto-chant-open-pace").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("auto-chant-open-voice").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Record a chant").performScrollTo().assertIsDisplayed()
+        saveScreenshot("auto-count-options")
     }
 
     @Test
@@ -297,8 +315,10 @@ class CounterInputIntegrationTest {
         composeRule.onNodeWithTag("auto-chant-start-timing").assertIsDisplayed()
         composeRule.onNodeWithTag("auto-chant-back").assertIsDisplayed()
         composeRule.onNodeWithTag("auto-chant-start-timing").performClick()
-        awaitNodeDisplayed("auto-chant-finish-trial")
+        awaitPaceTrialStarted()
+        saveScreenshot("pace-countdown")
         awaitDurationAtLeast("auto-chant-calibration-status", minimumSeconds = 0.8)
+        saveScreenshot("pace-timing")
 
         composeRule.onNodeWithText("Tap stop to finish.").assertIsDisplayed()
         composeRule.onNodeWithTag("auto-chant-finish-trial").performClick()
@@ -306,12 +326,24 @@ class CounterInputIntegrationTest {
         composeRule.onNodeWithTag("auto-chant-next-trial").assertIsDisplayed().performClick()
 
         composeRule.onNodeWithText("Get ready").assertIsDisplayed()
-        awaitNodeDisplayed("auto-chant-finish-trial")
+        saveScreenshot("pace-next-trial-cue")
+        awaitPaceTrialStarted()
+        awaitDurationAtLeast("auto-chant-calibration-status", minimumSeconds = 0.8)
+        composeRule.onNodeWithTag("auto-chant-finish-trial").performClick()
+        composeRule.onNodeWithText("Chant saved").assertIsDisplayed()
+        composeRule.onNodeWithTag("auto-chant-next-trial").performClick()
+
+        awaitPaceTrialStarted()
+        awaitDurationAtLeast("auto-chant-calibration-status", minimumSeconds = 0.8)
+        composeRule.onNodeWithTag("auto-chant-finish-trial").performClick()
+        composeRule.onNodeWithText("Pace ready").assertIsDisplayed()
+        composeRule.onNodeWithTag("auto-chant-start-count").assertIsDisplayed()
+        saveScreenshot("pace-ready")
         composeRule.onNodeWithTag("auto-chant-back").performClick()
     }
 
     @Test
-    fun voiceGuideRecordsOneTakeAndOffersPreviewVolumeAndRetakeActions() {
+    fun voiceGuideCanBeRetakenPreviewedUsedAndDeleted() {
         val audioManager = composeRule.activity.getSystemService(AudioManager::class.java)
         val stream = AudioManager.STREAM_MUSIC
         val originalVolume = audioManager.getStreamVolume(stream)
@@ -327,11 +359,13 @@ class CounterInputIntegrationTest {
             composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
             composeRule.onNodeWithTag("auto-chant-open-voice").performClick()
             composeRule.onNodeWithTag("voice-recording-disclosure").assertIsDisplayed()
+            saveScreenshot("voice-recording-disclosure")
             composeRule.onNodeWithTag("voice-recording-start").performScrollTo().performClick()
 
-            awaitNodeDisplayed("voice-recording-stop", timeoutMillis = 10_000)
+            awaitVoiceRecordingStarted()
             composeRule.onNodeWithText("Tap stop to finish.").assertIsDisplayed()
-            awaitDurationAtLeast("voice-recording-duration", minimumSeconds = 1.0)
+            saveScreenshot("voice-recording-active")
+            awaitDurationAtLeast("voice-recording-duration", minimumSeconds = 3.0)
             composeRule.onNodeWithTag("voice-recording-stop").performClick()
 
             composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -342,6 +376,8 @@ class CounterInputIntegrationTest {
             composeRule.onNodeWithTag("voice-recording-preview").performScrollTo().assertIsDisplayed()
             composeRule.onNodeWithTag("auto-chant-start-voice-count").performScrollTo().assertIsDisplayed()
             composeRule.onNodeWithTag("voice-recording-again").performScrollTo().assertIsDisplayed()
+            composeRule.onNodeWithText("Chant ready").performScrollTo().assertIsDisplayed()
+            saveScreenshot("voice-guide-ready")
             assertAtLeast48Dp(
                 "Lower watch media volume",
                 composeRule.onNodeWithTag("voice-volume-down").performScrollTo()
@@ -366,12 +402,41 @@ class CounterInputIntegrationTest {
             }
 
             composeRule.onNodeWithTag("voice-recording-again").performScrollTo().performClick()
-            awaitNodeDisplayed("voice-recording-stop", timeoutMillis = 10_000)
-            awaitDurationAtLeast("voice-recording-duration", minimumSeconds = 1.0)
+            awaitVoiceRecordingStarted("voice-recording-retake-countdown")
+            awaitDurationAtLeast("voice-recording-duration", minimumSeconds = 3.0)
+            composeRule.onNodeWithTag("voice-recording-stop").performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                runCatching {
+                    composeRule.onNodeWithText("Chant ready").assertIsDisplayed()
+                }.isSuccess
+            }
+
             composeRule.onNodeWithTag("auto-chant-back").performScrollTo().performClick()
             composeRule.onNodeWithTag("auto-chant-start-voice-count").performScrollTo().assertIsDisplayed()
+            composeRule.onNodeWithTag("auto-chant-start-voice-count").performScrollTo().performClick()
+            awaitBeadCount("1", timeoutMillis = 10_000)
+            awaitAutoCountNotification(true)
+            saveScreenshot("voice-guide-running")
+            composeRule.onNodeWithContentDescription("Pause auto count").performClick()
+            composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+            awaitAutoCountNotification(false)
+            saveScreenshot("voice-guide-paused")
+
+            openSettings()
+            composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
+            composeRule.onNodeWithTag("auto-count-stop").performScrollTo().performClick()
+            awaitNodeDisplayed("counter-surface")
+            openSettings()
+            composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
             composeRule.onNodeWithTag("auto-chant-open-options").performScrollTo().performClick()
-            composeRule.onNodeWithText("Record a new chant").performScrollTo().assertIsDisplayed()
+            composeRule.onNodeWithTag("voice-recording-delete").performScrollTo().performClick()
+            composeRule.onNodeWithText("Record a chant").assertIsDisplayed()
+            assertTrue(
+                runCatching {
+                    composeRule.onNodeWithTag("voice-recording-delete").fetchSemanticsNode()
+                }.isFailure
+            )
+            assertTrue(!VoiceChantFiles(composeRule.activity.noBackupFilesDir).hasRecording())
         } finally {
             if (!audioManager.isVolumeFixed) {
                 audioManager.setStreamVolume(stream, originalVolume, 0)
@@ -384,7 +449,7 @@ class CounterInputIntegrationTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         runBlocking {
             context.dataStore.edit {
-                it[MantraPreferences.KEY_AUTO_CHANT_PACE_MILLIS] = 1_200
+                it[MantraPreferences.KEY_AUTO_CHANT_PACE_MILLIS] = 3_000
             }
         }
         openSettings()
@@ -393,8 +458,58 @@ class CounterInputIntegrationTest {
         composeRule.onNodeWithTag("auto-chant-start-count").performScrollTo().performClick()
 
         awaitBeadCount("1", timeoutMillis = 5_000)
+        awaitAutoCountNotification(true)
         composeRule.onNodeWithContentDescription("Pause auto count").performClick()
         composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+        composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
+        awaitAutoCountNotification(false)
+
+        composeRule.onNodeWithContentDescription("Resume auto count").performClick()
+        awaitAutoCountNotification(true)
+        composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Pause auto count").performClick()
+        awaitAutoCountNotification(false)
+    }
+
+    @Test
+    fun pausedAutoCountAllowsTimeoutAndCanResumeAfterReturningToApp() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        runBlocking {
+            context.dataStore.edit {
+                it[MantraPreferences.KEY_AUTO_CHANT_PACE_MILLIS] = 5_500
+            }
+        }
+        openSettings()
+        composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
+        composeRule.onNodeWithTag("auto-chant-saved-pace").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("auto-chant-start-count").performScrollTo().performClick()
+
+        awaitBeadCount("1", timeoutMillis = 8_000)
+        awaitAutoCountNotification(true)
+        saveScreenshot("auto-count-running")
+        composeRule.onNodeWithContentDescription("Pause auto count").performClick()
+        composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+        composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
+        awaitAutoCountNotification(false)
+        assertEquals(
+            "A paused Auto Count must allow the normal screen timeout",
+            0,
+            composeRule.activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+        )
+        saveScreenshot("auto-count-paused")
+
+        composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+        composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
+        awaitAutoCountNotification(false)
+        saveScreenshot("auto-count-paused-after-return")
+
+        composeRule.onNodeWithContentDescription("Resume auto count").performClick()
+        awaitAutoCountNotification(true)
+        composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Pause auto count").performClick()
+        awaitAutoCountNotification(false)
     }
 
     @Test
@@ -604,6 +719,19 @@ class CounterInputIntegrationTest {
         }
     }
 
+    private fun awaitPaceTrialStarted() {
+        awaitNodeDisplayed("auto-chant-countdown", timeoutMillis = 5_000)
+        composeRule.mainClock.advanceTimeBy(3_000L)
+        awaitNodeDisplayed("auto-chant-finish-trial", timeoutMillis = 5_000)
+    }
+
+    private fun awaitVoiceRecordingStarted(screenshotName: String = "voice-recording-countdown") {
+        awaitNodeDisplayed("auto-chant-countdown", timeoutMillis = 5_000)
+        saveScreenshot(screenshotName)
+        composeRule.mainClock.advanceTimeBy(3_000L)
+        awaitNodeDisplayed("voice-recording-stop", timeoutMillis = 10_000)
+    }
+
     private fun awaitDurationAtLeast(tag: String, minimumSeconds: Double) {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             runCatching {
@@ -613,5 +741,60 @@ class CounterInputIntegrationTest {
                 (text.substringBefore(' ').toDoubleOrNull() ?: 0.0) >= minimumSeconds
             }.getOrDefault(false)
         }
+    }
+
+    private fun awaitAutoCountNotification(expectedVisible: Boolean) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            val isVisible = NotificationManagerCompat.from(context)
+                .activeNotifications
+                .any { it.id == AutoCountOngoingActivity.NOTIFICATION_ID }
+            isVisible == expectedVisible
+        }
+    }
+
+    private fun saveScreenshot(name: String) {
+        composeRule.waitForIdle()
+        val bitmap = composeRule.onRoot(useUnmergedTree = true)
+            .captureToImage()
+            .asAndroidBitmap()
+        val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "${screenshotRunId}__$name.png")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            put(MediaStore.Images.Media.RELATIVE_PATH, SCREENSHOT_RELATIVE_PATH)
+            put(MediaStore.Images.Media.IS_PENDING, 1)
+        }
+        val screenshotUri = checkNotNull(
+            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        ) { "Could not create emulator screenshot $name.png" }
+        try {
+            val saved = resolver.openOutputStream(screenshotUri)?.use { output ->
+                check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
+                    "Could not save emulator screenshot $name.png"
+                }
+                true
+            } ?: false
+            check(saved) { "Could not open emulator screenshot $name.png" }
+            val published = ContentValues().apply {
+                put(MediaStore.Images.Media.IS_PENDING, 0)
+            }
+            check(resolver.update(screenshotUri, published, null, null) == 1) {
+                "Could not publish emulator screenshot $name.png"
+            }
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
+    companion object {
+        @JvmStatic
+        @BeforeClass
+        fun startScreenshotRun() {
+            screenshotRunId = System.currentTimeMillis().toString()
+        }
+
+        private const val SCREENSHOT_RELATIVE_PATH = "Pictures/GauraMalaEmulatorReview/"
+        private var screenshotRunId = ""
     }
 }
