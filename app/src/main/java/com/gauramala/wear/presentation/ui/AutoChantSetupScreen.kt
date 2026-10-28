@@ -38,7 +38,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Timer
@@ -98,6 +101,7 @@ fun AutoChantSetupScreen(
     var notificationMessage by remember { mutableStateOf<String?>(null) }
     var showNotificationSettings by remember { mutableStateOf(false) }
     var pendingVoiceGuide by remember { mutableStateOf<Boolean?>(null) }
+    var confirmVoiceRecordingDeletion by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val focusRequester = remember { FocusRequester() }
     val compactPaceIntro = page == AutoChantPage.PACE && paceStep == GuidedStep.INTRO
@@ -185,6 +189,10 @@ fun AutoChantSetupScreen(
     }
 
     fun goBack() {
+        if (confirmVoiceRecordingDeletion) {
+            confirmVoiceRecordingDeletion = false
+            return
+        }
         when (page) {
             AutoChantPage.CHOOSE -> onBack()
             AutoChantPage.OPTIONS -> page = AutoChantPage.CHOOSE
@@ -351,24 +359,61 @@ fun AutoChantSetupScreen(
                 }
 
                 AutoChantPage.OPTIONS -> {
-                    PageTitle("Auto Count", "Choose or change a guide")
-                    ActionButton(
-                        text = if (state.autoChantPaceMillis == null) "Set my pace" else "Change my pace",
-                        tag = "auto-chant-open-pace",
-                        onClick = ::openPaceSetup
-                    )
-                    ActionButton(
-                        text = if (state.hasVoiceChantRecording) "Record a new chant" else "Record a chant",
-                        tag = "auto-chant-open-voice",
-                        onClick = ::openVoiceSetup
-                    )
-                    if (state.hasVoiceChantRecording) {
+                    if (confirmVoiceRecordingDeletion) {
+                        PageTitle("Delete saved chant?", "Are you sure?")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(0.75f),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+                        ) {
+                            Button(
+                                onClick = { confirmVoiceRecordingDeletion = false },
+                                modifier = Modifier.size(48.dp).testTag("voice-recording-delete-cancel"),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = AutoChantSecondary,
+                                    contentColor = OnSurfaceWhite
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Cancel chant deletion",
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    viewModel.deleteVoiceChantRecording()
+                                    confirmVoiceRecordingDeletion = false
+                                },
+                                modifier = Modifier.size(48.dp).testTag("voice-recording-delete-confirm"),
+                                colors = ButtonDefaults.buttonColors(containerColor = AlertRed)
+                            ) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = "Confirm chant deletion",
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        PageTitle("Auto Count", "Choose or change a guide")
                         ActionButton(
-                            text = "Delete saved chant",
-                            tag = "voice-recording-delete",
-                            onClick = viewModel::deleteVoiceChantRecording,
-                            color = AlertRed
+                            text = if (state.autoChantPaceMillis == null) "Set my pace" else "Change my pace",
+                            tag = "auto-chant-open-pace",
+                            onClick = ::openPaceSetup
                         )
+                        ActionButton(
+                            text = if (state.hasVoiceChantRecording) "Record a new chant" else "Record a chant",
+                            tag = "auto-chant-open-voice",
+                            onClick = ::openVoiceSetup
+                        )
+                        if (state.hasVoiceChantRecording) {
+                            ActionButton(
+                                text = "Delete saved chant",
+                                tag = "voice-recording-delete",
+                                onClick = { confirmVoiceRecordingDeletion = true },
+                                color = AlertRed
+                            )
+                        }
                     }
                 }
 
@@ -534,29 +579,35 @@ fun AutoChantSetupScreen(
                             fontSize = 13.sp
                         )
                         WatchMediaVolumeControl(context)
-                        ActionButton(
-                            text = if (state.isVoiceChantPreviewing) "Stop" else "Play",
-                            tag = "voice-recording-preview",
-                            onClick = {
-                                if (state.isVoiceChantPreviewing) viewModel.stopVoiceChantPreview()
-                                else viewModel.previewVoiceChant()
-                            },
-                            color = AutoChantSecondary
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+                        ) {
+                            VoiceGuideIconButton(
+                                icon = if (state.isVoiceChantPreviewing) Icons.Filled.Stop else Icons.Filled.PlayArrow,
+                                description = if (state.isVoiceChantPreviewing) "Stop chant preview" else "Play saved chant",
+                                tag = "voice-recording-preview",
+                                onClick = {
+                                    if (state.isVoiceChantPreviewing) viewModel.stopVoiceChantPreview()
+                                    else viewModel.previewVoiceChant()
+                                }
+                            )
+                            VoiceGuideIconButton(
+                                icon = Icons.Filled.Mic,
+                                description = "Record another chant",
+                                tag = "voice-recording-again",
+                                onClick = {
+                                    viewModel.stopVoiceChantPreview()
+                                    voiceStep = GuidedStep.COUNTDOWN
+                                }
+                            )
+                        }
                         ActionButton(
                             text = "Count with this chant",
                             tag = "auto-chant-start-voice-count",
                             onClick = { requestCountStart(useVoiceGuide = true) },
-                            color = AutoChantSecondary
-                        )
-                        ActionButton(
-                            text = "Record",
-                            tag = "voice-recording-again",
-                            onClick = {
-                                viewModel.stopVoiceChantPreview()
-                                voiceStep = GuidedStep.COUNTDOWN
-                            },
-                            color = AutoChantSecondary
+                            color = GauraGold,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                         NotificationMessage(notificationMessage)
                         NotificationSettingsButtonIfNeeded(showNotificationSettings, context)
@@ -719,6 +770,29 @@ private fun IconActionButton(
             imageVector = icon,
             contentDescription = description,
             modifier = Modifier.size(26.dp)
+        )
+    }
+}
+
+@Composable
+private fun VoiceGuideIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    description: String,
+    tag: String,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.size(48.dp).testTag(tag),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = AutoChantSecondary,
+            contentColor = GauraGold
+        )
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = description,
+            modifier = Modifier.size(22.dp)
         )
     }
 }

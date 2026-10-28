@@ -386,11 +386,19 @@ class CounterInputIntegrationTest {
                 "Raise watch media volume",
                 composeRule.onNodeWithTag("voice-volume-up").performScrollTo()
             )
+            assertAtLeast48Dp(
+                "Play saved chant",
+                composeRule.onNodeWithTag("voice-recording-preview").performScrollTo()
+            )
+            assertAtLeast48Dp(
+                "Record another chant",
+                composeRule.onNodeWithTag("voice-recording-again").performScrollTo()
+            )
 
             composeRule.onNodeWithTag("voice-recording-preview").performScrollTo().performClick()
-            composeRule.onNodeWithText("Stop").assertIsDisplayed()
+            composeRule.onNodeWithContentDescription("Stop chant preview").assertIsDisplayed()
             composeRule.onNodeWithTag("voice-recording-preview").performScrollTo().performClick()
-            composeRule.onNodeWithText("Play").assertIsDisplayed()
+            composeRule.onNodeWithContentDescription("Play saved chant").assertIsDisplayed()
             composeRule.onNodeWithTag("voice-volume-level").performScrollTo().assertIsDisplayed()
 
             if (volumeCanChange) {
@@ -430,6 +438,14 @@ class CounterInputIntegrationTest {
             composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
             composeRule.onNodeWithTag("auto-chant-open-options").performScrollTo().performClick()
             composeRule.onNodeWithTag("voice-recording-delete").performScrollTo().performClick()
+            composeRule.onNodeWithText("Are you sure?").assertIsDisplayed()
+            composeRule.onNodeWithTag("voice-recording-delete-cancel").performClick()
+            composeRule.onNodeWithTag("voice-recording-delete").assertIsDisplayed()
+            assertTrue(VoiceChantFiles(composeRule.activity.noBackupFilesDir).hasRecording())
+
+            composeRule.onNodeWithTag("voice-recording-delete").performClick()
+            composeRule.onNodeWithText("Are you sure?").assertIsDisplayed()
+            composeRule.onNodeWithTag("voice-recording-delete-confirm").performClick()
             composeRule.onNodeWithText("Record a chant").assertIsDisplayed()
             assertTrue(
                 runCatching {
