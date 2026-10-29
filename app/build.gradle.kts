@@ -106,7 +106,7 @@ dependencies {
     implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.3.0")
 
     // Data Persistence
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.datastore:datastore-preferences:1.3.0")
 
     // Wearable Services
     implementation("com.google.android.gms:play-services-wearable:20.0.1")
