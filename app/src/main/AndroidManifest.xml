@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.type.watch" />
+    <!-- Voice recording is optional; the counter and pace timer work without a microphone. -->
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <!-- Haptic feedback for beads and round completion -->
     <uses-permission android:name="android.permission.VIBRATE" />
