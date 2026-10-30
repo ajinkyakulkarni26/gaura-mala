@@ -1,63 +1,28 @@
 # 📿 Gaura Mala (`gaura-mala`)
-### Native Wear OS Maha-Mantra Counter
+### A quiet Wear OS companion for Hare Krishna japa
 
 > *"harer nāma harer nāma harer nāmaiva kevalam*  
 > *kalau nāsty eva nāsty eva nāsty eva gatir anyathā"*  
-> — *Sri Chaitanya Mahaprabhu (Chaitanya Charitamrita Adi 17.21)*
+> — *Śrī Caitanya-caritāmṛta, Ādi 17.21* ([read the verse](https://vedabase.io/en/library/cc/adi/17/21/))
 
 ---
 
-## 🌟 Overview
+## A little room for remembrance
 
-**Gaura Mala** is a native **Wear OS** application designed for chanting the **Hare Krishna Maha-mantra**. Named in honor of **Sri Chaitanya Mahaprabhu (Gaura)**, who inaugurated the congregational chanting of the Holy Names, the app transforms your watch into an ergonomic digital *japa mala*.
+Gaura Mala is a simple counter for Hare Krishna maha-mantra rounds on Wear OS. It helps you keep your place with a 108-bead ring and quiet haptic cues, whether you are sitting for japa or doing a simple task with your hands.
 
-It addresses the fundamental limitation of traditional smartwatch counters: **requiring two hands** (one wearing the watch, the other tapping the screen). On compatible Wear OS devices, chanters can advance the counter with the system's **double-pinch gesture**. Screen tap and crown input remain available on other watches.
+Real japa beads remain the ideal companion. Gaura Mala is a small aid for moments when holding beads is impractical—not a replacement for beads, attentive chanting, or the guidance of your spiritual community. [Read the story and the thinking behind the app](./docs/why-gaura-mala.html) or [open the published page](https://ajinkyakulkarni26.github.io/gaura-mala/why-gaura-mala.html).
 
----
+## At a glance
 
-## ⚡ Key Highlights & Features
+- **Count your rounds:** Follow the centered 108-bead ring with tap, Digital Crown, or the system double-pinch gesture on supported watches.
+- **Keep a gentle rhythm:** Subtle haptics mark beads and round milestones, so you can look less often or close your eyes during quiet seated japa.
+- **Use Auto Count when it helps:** Set a natural pace, or optionally record one short chant as a local guide. Pause or stop at any time.
+- **Keep physical-mala progress:** Adjust completed rounds after chanting with real beads.
+- **See progress at a glance:** Use the Wear OS Tile or a watch-face complication.
+- **Keep your data on the watch:** Counts, settings, pace, and an optional voice guide stay local. The guide is user-recorded, excluded from Android backup, and can be deleted in the app. See the [privacy policy](https://ajinkyakulkarni26.github.io/gaura-mala/privacy-policy.html).
 
-### 1. 🤏 Single-Handed Double-Pinch Gesture
-- Uses Wear Compose's one-handed gesture API for the system primary action (double pinch on Pixel Watch).
-- Enable or disable the gesture independently from full-screen tap in Settings.
-- This requires the Wear OS one-handed gesture API and hardware that advertises gesture detection. The app hides the pinch hint when the system feature is unavailable; tap and crown input continue to work. See [Android's one-handed gesture guide](https://developer.android.com/training/wearables/compose/one-handed-gestures).
-- A **280ms debounce window** filters accidental repeat taps and gestures.
-- The pinch cue appears at most once each time the counter screen is opened; counting with taps, crown turns, or pinches does not repeatedly show it.
-
-### 2. 📳 Eyes-Closed Tactile Feedback (HapticHelper)
-- **Single Bead (1–107):** Subtle, crisp click (`VibrationEffect.EFFECT_CLICK`) providing quiet confirmation without looking.
-- **Milestones (27, 54, 81):** Subtle double-tick marking quarter, half, and three-quarter mala progress.
-- **Round Completed (108 Beads = 1 Mala):** Distinctive, deep double-pulse waveform (`[0, 140ms, 100ms, 260ms]`) signaling the completion of a round.
-- **Daily Goal Complete:** Triumphant 3-pulse crescendo vibration when the configurable daily round goal is reached (16 rounds by default).
-- **Haptic Undo Alert:** Soft tick confirmation when undoing an accidental chant.
-- **Round Picker Tick:** A subtle haptic tick confirms each completed-round adjustment when app haptics are enabled.
-
-### 3. 🛡️ Input Fallbacks & Ergonomics
-- **Full-Screen Tap:** Tap anywhere on the watch display to advance.
-- **Rotary Crown Support:** Rotate the physical watch crown downwards to advance beads.
-- **Physical Mala Progress:** Tap the round label to set completed rounds after chanting with a physical mala. Adjust the value with the crown or +/- buttons; saving starts the next watch round at bead 0 and clears any partial bead progress.
-- **Hands-free Auto Count:** Set your natural pace through three short guided trials; the middle time smooths out one unusually fast or slow chant. A countdown and haptic cue tell you when to begin each trial. Gaura Mala then advances one bead per interval with the usual milestone and round-completion cues.
-- **Optional chant recording:** Record one short chant on the watch to use as a looped Auto Count guide. Preview it, adjust watch media volume, record again, or delete it. The recording stays in app-private, non-backed-up storage and is not uploaded or shared. Microphone access is requested only when the user chooses to record. Record only a voice you have permission to record and use.
-- **Fatigue Mitigation:** Enable or disable gesture and screen-tap input independently in Settings.
-- **Accidental Tap Protection:** Quick Undo button and confirmation dialogs before resetting current-round or daily progress; reset confirmations use check/cross icons that fit round displays.
-- **Daily Goal:** Adjust the target from 1 to 64 rounds in Settings.
-- **Daily Rollover:** Progress resets for a new local calendar day when you return to or use the app; preferences and daily progress persist across app restarts.
-- **Local data:** Counts, preferences, and an optional voice guide stay on the watch, roll over by local calendar day where applicable, and are excluded from Android backup. The voice guide is stored only when the user opts in, can be deleted in the app, and is never transmitted. The app has no account, ads, analytics, or server-side user-data collection; see the [privacy policy](https://ajinkyakulkarni26.github.io/gaura-mala/privacy-policy.html).
-- **Intermittent use:** Wear OS may dim the display and return to the watch face after its configured idle timeout. This is expected system behavior, not a counter reset; saved progress remains available when you reopen Gaura Mala.
-- **Keep Awake:** An optional setting prevents dimming and uses more battery. It remains off by default. During an active Auto Count session, a low-priority Ongoing Activity keeps Gaura Mala available while the display stays dim; notification permission is requested when the user starts Auto Count. Stopping the session removes the activity.
-
-### 4. 🎨 Sacred Aesthetic & Battery Efficiency
-- **Golden Gaura Theme:** Inspired by Lord Chaitanya’s golden complexion (deep saffron `#FFB300`, amber `#FF8F00`, and sacred gold `#FFE082`).
-- **OLED Pure Black:** Built on true `#000000` AMOLED canvas for maximum battery longevity during multi-hour chanting sessions.
-- **Ambient Mode Support:** Shows the time, counter, and 108-bead progress ring while removing controls when the watch enters low-power ambient mode. Double pinch and active Auto Count haptics work while dim, so Keep Awake can remain off by default.
-- **Consistent Round Display:** Active and ambient screens show the current round; ambient mode shows “Goal” after the daily target is complete.
-- **Privacy Policy:** Read the policy on the watch. Contact Developer opens the project's GitHub Issues page on a paired phone, with the URL shown on the watch if no phone is available.
-
-### 5. ⌚ Wear OS Ecosystem Integration
-- **Glanceable Wear OS Tile (`GauraMalaTileService`):** View today's round and bead progress, refreshed as you chant.
-- **Watch Face Complication (`GauraMalaComplicationService`):** Supports `SHORT_TEXT` and `RANGED_VALUE` complications, refreshed on round completion and daily goal changes.
-
----
+For gesture support, audio recording, local storage, and other data practices, see the sections below and the linked privacy policy.
 
 ## 📁 Project Architecture
 
@@ -108,8 +73,18 @@ Additional source files: `presentation/CounterHapticPolicy.kt` selects input-spe
 
 - `assets/branding/` contains the app icon and logo source files.
 - `assets/design-references/gemini-generated/` keeps generated visual explorations outside the app source tree.
-- `play-store/` contains the Play Store feature graphic and watch listing screenshots. Refresh the screenshots before production after the UI is finalized.
-- `test-artifacts/` contains watch recordings and captures used during testing; review files individually before adding them to Git.
+- `play-store/` contains the Play Store feature graphic and current Wear OS listing screenshots. The Auto Count set shows pace setup, running and paused states, plus the optional voice guide; review these files before uploading them in Play Console.
+- `test-artifacts/` contains watch recordings and captures used during testing; review files individually before adding them to Git. Emulator UI screenshots from local test runs are saved under the ignored `test-artifacts/emulator-screenshots/` directory.
+
+## Why Gaura Mala?
+
+Japa with real beads is the heart of the practice. Gaura Mala began as a small companion for the moments when the hands are busy with a simple, familiar task, or when a quiet seated practice benefits from a gentle haptic rhythm. The watch helps you keep count; the chanting and attention remain yours.
+
+The app is meant to support remembrance through ordinary parts of the day and, for those who use it, help build a steadier chanting routine. It does not replace a physical mala, attentive japa, or the aspiration many devotees hold to complete their rounds during Brahma-muhūrta.
+
+The thought behind the app draws on verses such as Bhagavad-gītā 8.7, which teaches remembrance of Krishna while carrying out one’s duty, and Śrīmad-Bhāgavatam 11.5.32, read in the Gaudiya Vaishnava tradition as describing the worship of the Lord through chanting in Kali-yuga. Śrī Caitanya Mahāprabhu’s Śikṣāṣṭakam also describes the holy name as cleansing the mirror of the heart. These teachings are the spiritual context for the app, not a claim that a watch can create that transformation.
+
+[Read the longer story behind Gaura Mala](./docs/why-gaura-mala.html), with verse references and notes on how the app is intended to be used.
 
 ---
 
@@ -120,11 +95,11 @@ Additional source files: `presentation/CounterHapticPolicy.kt` selects input-spe
 - The Gradle wrapper uses Gradle 9.8.0 and Android Gradle Plugin 9.4.0.
 - To run the app in an emulator, install the latest stable Wear OS 7 (API 37) system image for your computer's architecture in Android Studio's SDK Manager, then create a round Wear OS device in Device Manager.
 
-Build the debug app from the repository root with `./gradlew :app:assembleDebug`. Before pushing, run `./scripts/test-local.sh`: it tests the contributor-approval policy, runs the JVM unit tests, 100% pure-logic coverage gate, debug build, and 64-bit native ABI check, then detects a connected Wear OS emulator and runs the UI integration suite when one is online. It targets only the detected emulator, even when a physical watch is also connected. If `actionlint` and `shellcheck` are installed, it also lints all workflows and shell scripts. The script prints each integration test case and its result. To run device tests directly, start a Wear OS emulator and use `./gradlew :app:connectedDebugAndroidTest`, then print the detailed results with `python3 scripts/print-android-test-results.py`. Android Studio can also build and install the app with the `app` run configuration.
+Build the debug app from the repository root with `./gradlew :app:assembleDebug`. Before pushing, run `./scripts/test-local.sh`: it tests the contributor-approval policy, runs the JVM unit tests, 100% pure-logic coverage gate, debug build, and 64-bit native ABI check, then detects a connected Wear OS emulator and runs the UI integration suite when one is online. It targets only an emulator, even when a physical watch is also connected. Set `WEAR_TEST_SERIAL` to choose a specific emulator when more than one is running. Set `WEAR_TEST_RUN_LABEL` to name the screenshot folder, and optionally set `WEAR_TEST_FONT_SCALE=1.3` to inspect a larger text scale. Local screenshots are collected under `test-artifacts/emulator-screenshots/`. If `actionlint` and `shellcheck` are installed, it also lints all workflows and shell scripts. The script prints each integration test case and its result. To run device tests directly, start a Wear OS emulator and use `./gradlew :app:connectedDebugAndroidTest`, then print the detailed results with `python3 scripts/print-android-test-results.py`. Android Studio can also build and install the app with the `app` run configuration.
 
 ### Continuous Integration
 
-GitHub Actions runs JVM tests, enforces 100% JaCoCo line coverage for the pure counter logic and Tile label mapping, builds a debug APK, and checks that 64-bit native libraries are packaged. It validates workflows with actionlint and shellcheck. The Wear OS instrumentation suite runs on both a large round API 35 emulator at default font scale and a small round emulator at 1.3x font scale. It covers the counter, tap/rotary input, undo, round completion and adjustment, settings, resets, pace-based Auto Count and pause, voice-recording disclosure, and actual TileService responses. CI compares executed case IDs with `config/wear-os-integration-tests.txt`: every registered case must run, and newly added tests must be registered. It prints case outcomes and uploads reports from both emulator configurations. Microphone capture, audio playback quality, real crown feel, double-pinch hardware detection, and real vibration still need a compatible physical watch. Gradle Enhanced Caching is enabled, and each Gradle invocation publishes an optional Build Scan for build diagnostics. CodeQL scans Kotlin/Java code with the `security-extended` query set, and Dependency Review fails PRs that introduce moderate-or-higher vulnerable dependencies; both run in the existing required Android CI check. A separate read-only workflow generates dependency snapshots for PRs, which a trusted follow-up workflow submits to GitHub; pushes to `main` also submit the Gradle dependency graph. Dependabot checks Gradle and GitHub Actions weekly, grouping minor and patch version updates by ecosystem/directory while leaving major and security updates separately reviewable. Workflow actions are pinned to full commit SHAs with their release tags in comments. Build Scans remain build diagnostics, not security scans. As of 2026-10-07, GitHub's dependency graph, Dependabot alerts, and Dependabot security updates are enabled. The active `main` ruleset requires CodeQL results and blocks high-or-higher security alerts (and CodeQL error alerts); secret scanning and push protection were already enabled. Automatic dependency submission is disabled because the repository submits Gradle snapshots through its workflows. You can start a run manually from the repository's **Actions** tab by selecting **Android CI** and choosing **Run workflow**. Compose tests inject rotary events through the app's input handler.
+GitHub Actions runs JVM tests, enforces 100% JaCoCo line coverage for the pure counter logic and Tile label mapping, builds a debug APK, and checks that 64-bit native libraries are packaged. It validates workflows with actionlint and shellcheck. The Wear OS instrumentation suite runs on both a large round API 35 emulator at default font scale and a small round emulator at 1.3x font scale. It covers the counter, tap/rotary input, undo, round completion and adjustment, settings, resets, three-trial pace calibration, Auto Count pause/resume and notification behavior, voice-recording disclosure and playback setup, and actual TileService responses. UI tests save screenshots of the counter, Auto Count setup/calibration/running/paused states, and voice-guide screens; CI uploads them with each emulator profile so layout can be reviewed at both sizes. Local runs save screenshots under `test-artifacts/emulator-screenshots/`. CI compares executed case IDs with `config/wear-os-integration-tests.txt`: every registered case must run, and newly added tests must be registered. Microphone capture, audio playback quality, real crown feel, double-pinch hardware detection, and real vibration still need a compatible physical watch. Gradle Enhanced Caching is enabled, and each Gradle invocation publishes an optional Build Scan for build diagnostics. CodeQL scans Kotlin/Java code with the `security-extended` query set, and Dependency Review fails PRs that introduce moderate-or-higher vulnerable dependencies; both run in the existing required Android CI check. A separate read-only workflow generates dependency snapshots for PRs, which a trusted follow-up workflow submits to GitHub; pushes to `main` also submit the Gradle dependency graph. Dependabot checks Gradle and GitHub Actions weekly, grouping minor and patch version updates by ecosystem/directory while leaving major and security updates separately reviewable. Workflow actions are pinned to full commit SHAs with their release tags in comments. Build Scans remain build diagnostics, not security scans. As of 2026-10-07, GitHub's dependency graph, Dependabot alerts, and Dependabot security updates are enabled. The active `main` ruleset requires CodeQL results and blocks high-or-higher security alerts (and CodeQL error alerts); secret scanning and push protection were already enabled. Automatic dependency submission is disabled because the repository submits Gradle snapshots through its workflows. You can start a run manually from the repository's **Actions** tab by selecting **Android CI** and choosing **Run workflow**. Compose tests inject rotary events through the app's input handler.
 
 The emulator suite also asserts that the counter, round adjustment, settings, and primary actions keep at least 48dp semantic touch targets. CI builds a release AAB using a temporary signing key and checks required 64-bit native ABIs. It also reports whether Gradle embedded native debug symbols and validates them when present; symbol availability is confirmed after upload in Play Console. CI never exposes or uses the Play upload key.
 
@@ -132,7 +107,7 @@ The `main` branch requires pull requests and passing CI checks. Contributors sho
 
 GitHub private vulnerability reporting is enabled, and `SECURITY.md` plus the issue forms point contributors to private disclosure for security reports.
 
-The current Play testing release notes in English, Hindi, and Marathi are in [RELEASE_NOTES_v13.txt](./RELEASE_NOTES_v13.txt).
+The draft release notes for version 15 in English, Hindi, and Marathi are in [RELEASE_NOTES_v15.txt](./RELEASE_NOTES_v15.txt). Earlier release notes remain in [RELEASE_NOTES_v13.txt](./RELEASE_NOTES_v13.txt).
 
 Use the [Wear OS release checklist](./docs/release-checklist.md) for each Google Play upload. Release publishing remains a maintainer action in Play Console. Release builds request `SYMBOL_TABLE`; Gradle packages symbols it can extract, while already-stripped prebuilt libraries may not contribute symbol data.
 

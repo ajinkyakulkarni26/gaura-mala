@@ -62,29 +62,40 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
                 fontWeight = FontWeight.Bold
             )
         }
-        item { PolicySection("Gaura Mala", "Effective: Oct 17, 2026") }
         item {
             PolicySection(
-                "Information and storage",
-                "Gaura Mala has no account, ads, analytics, or developer-operated server. Your counts, goal, settings, and optional chant recording stay on this watch and are not sent to a server."
+                "Gaura Mala 1.1.0",
+                "Applies to version 15 and later. Effective when version 15 is released."
+            )
+        }
+        item {
+            PolicySection(
+                "What stays on this watch",
+                "Gaura Mala has no account, ads, or analytics. Your counts, goal, settings, and saved Auto Count pace stay on this watch and are not sent to a developer-operated server."
+            )
+        }
+        item {
+            PolicySection(
+                "Optional chant recording",
+                "If you choose to record, the microphone captures one chant, up to 20 seconds, as an Auto Count guide. Pace setup only measures time; it records no audio. The saved chant stays in private app storage on this watch, is not uploaded or shared by Gaura Mala, and is excluded from Android backup. You can play, replace, or delete it in Auto Count settings. Canceling an unfinished take discards it. A saved take remains until you delete it, clear app storage, or uninstall Gaura Mala. Record only a voice you have permission to record and use."
             )
         }
         item {
             PolicySection(
                 "Daily reset and deletion",
-                "Counts reset each day. Settings stay until you clear app storage or uninstall. Delete a saved chant in Auto Count settings; it is also removed when you uninstall. Canceling setup deletes an unfinished take. App data is excluded from Android backup."
+                "Counts reset each day. Settings, saved pace, and a saved chant remain until changed or deleted, app storage is cleared, or the app is uninstalled. Reset today's count in Settings or delete a chant in Auto Count settings. App data is excluded from Android backup."
             )
         }
         item {
             PolicySection(
-                "Sharing and permissions",
-                "Microphone access is requested only if you choose Record a chant; pace counting uses no microphone. The recording stays in private app storage, is not uploaded, shared, or backed up, and can be deleted in Auto Count settings. A new valid take replaces the previous one. Record only a voice you have permission to record and use. Vibration access supports haptics."
+                "Permissions and sharing",
+                "Microphone access is requested only after you choose to record and agree to the in-app disclosure. Vibration access supports haptics. Gaura Mala does not request location, contacts, camera, or health data. If you open GitHub, GitHub's privacy practices apply to that service."
             )
         }
         item {
             PolicySection(
                 "Children and voice recordings",
-                "A chant recording contains the recorded person's voice. If a child records a chant, a parent or guardian should help decide whether to record and manage deletion. The recording stays on this watch until deleted or the app is uninstalled."
+                "A recording contains the speaker's voice. For a child, a parent or guardian should decide and help with recording and deletion. Gaura Mala does not ask for a child's age or a parent's contact details. The recording stays on the watch until deleted, app storage is cleared, or the app is uninstalled."
             )
         }
         item {

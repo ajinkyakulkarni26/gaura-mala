@@ -108,6 +108,29 @@ if [[ -n "${RUNNER_TEMP:-}" ]]; then
   if [[ -d app/build/outputs/androidTest-results/connected ]]; then
     cp -R app/build/outputs/androidTest-results/connected "${results_destination}/results"
   fi
+  screenshot_source="/sdcard/Pictures/GauraMalaEmulatorReview"
+  screenshot_destination="${results_destination}/screenshots"
+  if "${adb_path}" -s "${device_serial}" shell test -d "${screenshot_source}" 2>/dev/null; then
+    screenshot_names="$("${adb_path}" -s "${device_serial}" shell ls -1 "${screenshot_source}" 2>/dev/null | tr -d '\r')"
+    latest_screenshot="$(printf '%s\n' "${screenshot_names}" | sort -n | tail -n 1)"
+    screenshot_run_id="${latest_screenshot%%__*}"
+    mkdir -p "${screenshot_destination}"
+    while IFS= read -r stored_screenshot_name; do
+      [[ "${stored_screenshot_name}" == "${screenshot_run_id}__"* ]] || continue
+      screenshot_name="${stored_screenshot_name#*__}"
+      [[ -n "${screenshot_name}" ]] || continue
+      if ! "${adb_path}" -s "${device_serial}" pull \
+        "${screenshot_source}/${stored_screenshot_name}" "${screenshot_destination}/${screenshot_name}" \
+        >/dev/null </dev/null; then
+        echo "Could not pull Wear OS screenshot ${screenshot_name}." >&2
+      else
+        "${adb_path}" -s "${device_serial}" shell rm -f \
+          "${screenshot_source}/${stored_screenshot_name}" >/dev/null 2>&1 </dev/null || true
+      fi
+    done <<< "${screenshot_names}"
+  else
+    echo "No Wear OS review screenshots were saved by this run." >&2
+  fi
 fi
 
 if [[ "${test_status}" -ne 0 ]]; then

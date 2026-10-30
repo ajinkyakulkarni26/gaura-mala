@@ -1,0 +1,18 @@
+<en-US>
+• Set your natural chanting pace with three short guided trials.
+• Use optional Auto Count with your saved pace or a chant you record as a guide.
+• Pause and resume Auto Count while keeping your progress.
+• Your optional chant guide stays on your watch and can be deleted anytime.
+</en-US>
+<hi-IN>
+• तीन छोटे निर्देशित चरणों से अपनी जप गति तय करें।
+• अपनी सहेजी हुई गति या रिकॉर्ड किए गए मंत्र के साथ वैकल्पिक ऑटो काउंट का उपयोग करें।
+• प्रगति सुरक्षित रखते हुए ऑटो काउंट रोकें और फिर से शुरू करें।
+• आपका वैकल्पिक मंत्र-गाइड घड़ी पर ही रहता है और कभी भी हटाया जा सकता है।
+</hi-IN>
+<mr-IN>
+• तीन छोट्या मार्गदर्शित टप्प्यांतून तुमची जपाची नैसर्गिक गती ठरवा.
+• जतन केलेली गती किंवा स्वतः रेकॉर्ड केलेला मंत्र-गाइड वापरून ऐच्छिक ऑटो काउंट करा.
+• प्रगती जतन ठेवून ऑटो काउंट थांबवा आणि पुन्हा सुरू करा.
+• ऐच्छिक मंत्र-गाइड घड्याळावरच राहतो आणि कधीही हटवता येतो.
+</mr-IN>
