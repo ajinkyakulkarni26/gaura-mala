@@ -522,7 +522,7 @@ fun AutoChantSetupScreen(
                     GuidedStep.INTRO -> {
                         PageTitle("Record a chant", "Save a guide for Auto Count.")
                         Text(
-                            "One take stays on this watch until deleted. Nothing is sent.",
+                            "Records one chant, up to 20 seconds, as an Auto Count guide. It stays in this watch's private app storage until deleted. Gaura Mala doesn't upload or share it.",
                             color = OnSurfaceMuted,
                             fontSize = 10.sp,
                             textAlign = TextAlign.Center,
@@ -530,6 +530,12 @@ fun AutoChantSetupScreen(
                         )
                         Text(
                             "Only record a voice you have permission to record and use.",
+                            color = OnSurfaceMuted,
+                            fontSize = 10.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            "For a child, a parent or guardian should decide and help with recording and deletion.",
                             color = OnSurfaceMuted,
                             fontSize = 10.sp,
                             textAlign = TextAlign.Center

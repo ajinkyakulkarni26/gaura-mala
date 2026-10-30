@@ -77,7 +77,7 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
         item {
             PolicySection(
                 "Optional chant recording",
-                "If you choose to record, the microphone makes one short Auto Count guide. Pace setup only measures time; it records no audio. The saved chant stays in private app storage on this watch, is not uploaded or shared by Gaura Mala, and is excluded from Android backup. You can play, replace, or delete it in Auto Count settings. Canceling an unfinished take discards it. Record only a voice you have permission to record and use."
+                "If you choose to record, the microphone captures one chant, up to 20 seconds, as an Auto Count guide. Pace setup only measures time; it records no audio. The saved chant stays in private app storage on this watch, is not uploaded or shared by Gaura Mala, and is excluded from Android backup. You can play, replace, or delete it in Auto Count settings. Canceling an unfinished take discards it. A saved take remains until you delete it, clear app storage, or uninstall Gaura Mala. Record only a voice you have permission to record and use."
             )
         }
         item {
@@ -95,7 +95,7 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
         item {
             PolicySection(
                 "Children and voice recordings",
-                "A recording contains the speaker's voice. For a child, an adult should help decide whether to record and manage deletion. Gaura Mala does not ask for a child's age or a parent's contact details. The recording stays on the watch until deleted or the app is uninstalled."
+                "A recording contains the speaker's voice. For a child, a parent or guardian should decide and help with recording and deletion. Gaura Mala does not ask for a child's age or a parent's contact details. The recording stays on the watch until deleted, app storage is cleared, or the app is uninstalled."
             )
         }
         item {

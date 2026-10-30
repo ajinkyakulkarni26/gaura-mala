@@ -38,7 +38,8 @@ Run these checks on a compatible watch before a release that changes input, disp
 - [ ] Review Play Console's validation messages and confirm whether the native-symbol warning clears for the uploaded AAB.
 - [ ] If Play Console still reports missing native debug symbols, record the warning and check whether the affected libraries provide symbol files; do not treat the CI warning as resolved until Play Console confirms it.
 - [ ] Review release notes, screenshots, privacy policy, Data safety answers, tester list, and country availability.
-- [ ] If the microphone feature is included, verify the in-app disclosure and hosted privacy policy are current and aligned; review microphone access, local-only audio storage, and Families disclosures in Play Console. Confirm the final release AAB's merged permissions and dependencies.
+- [ ] Add the published story page URL to the full store description and the Website contact field, while keeping the privacy-policy URL in its dedicated field.
+- [ ] If the microphone feature is included, verify the in-app disclosure appears before the microphone prompt and accurately covers the purpose, 20-second limit, local storage, non-upload/non-sharing, permission to record and use the voice, and parent/guardian guidance for a child's recording. Keep the hosted privacy policy aligned; review microphone access, local-only audio storage, and Families declarations in Play Console. Confirm the final release AAB's merged permissions and dependencies.
 - [ ] If children are in the intended or declared audience, resolve the child voice recording and parental-consent assessment for applicable jurisdictions before rollout; a parent-supervision sentence alone does not implement consent.
 - [ ] Start rollout only after the track and artifact are correct. For production access, confirm the account's current opted-in tester count and continuous testing period in Play Console before applying.
 
@@ -47,3 +48,4 @@ Run these checks on a compatible watch before a release that changes input, disp
 - [ ] Confirm testers can install the release from the Play opt-in link.
 - [ ] Check crash and ANR reports after testers begin using the build.
 - [ ] Record the uploaded version, track, date, artifact status, and outstanding Play warnings in `AGENTS.md`.
+- [ ] Archive the uploaded bundle, Play-generated signed APK, source commit/tag, release notes, applicable symbols, and checksums using the [Android release archive guide](release-archive.md).

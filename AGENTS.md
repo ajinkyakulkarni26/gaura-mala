@@ -1,13 +1,13 @@
 # Gaura Mala Agent Notes
 
-Last reviewed: 2026-10-26
+Last reviewed: 2026-10-30
 
 ## Project
 
 Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It is a watch-only app with a circular 108-bead progress ring, daily round goal (16 by default), haptics, a Tile, and a watch-face complication.
 
 - Application ID: `com.gauramala.wear`
-- Current Android source version: `versionCode 15`, `versionName 1.1.0` for the next feature release; it has not been uploaded to Play. Play release `versionCode 14` (`versionName 1.0.0`) was submitted to Production on 2026-10-16 and was still `In review` in the user's Play Console screenshot on 2026-10-19.
+- Current Android source version: `versionCode 15`, `versionName 1.1.0` for the next feature release; it has not been uploaded to Play. Play release `versionCode 14` (`versionName 1.0.0`) was submitted to Production on 2026-10-16 and the user confirmed it was published on 2026-10-30.
 - Main stack: Kotlin, Jetpack Compose for Wear OS Material 3, DataStore, Wearable Services
 - Minimum SDK 30; target and compile SDK 37; JDK 17
 - The app is declared standalone in `AndroidManifest.xml`; core counting does not require a phone app.
@@ -142,7 +142,7 @@ The contributor-approval workflow checks out the approval script from the target
 
 ## Release status and next work
 
-As of 2026-10-26, the user reports that Play release `versionCode 14` (`versionName 1.0.0`) is still under review; the last supplied console screenshot showed submission 10 as `In review` on 2026-10-19. The source is set to `versionCode 15`, `versionName 1.1.0` for the next feature release; this build has not been uploaded to Play. Confirm the live Play Console state before release advice.
+The user confirmed on 2026-10-30 that Play release `versionCode 14` (`versionName 1.0.0`) was published. The source is set to `versionCode 15`, `versionName 1.1.0` for the next feature release; this build has not been uploaded to Play. Confirm the live Play Console state before release advice.
 
 Version 9 was built and installed on the user's Pixel Watch 5; the user confirmed its gesture and privacy-screen fixes work. Version 10 increases Daily Goal +/- controls to 48dp, raises small helper text to 10sp and the round label to 12sp, and permits settings copy to wrap. The version 10 debug build passed emulator layout checks at simulated 192dp and 227dp round sizes with reduced (0.85x) and enlarged (1.3x) system font scales. The current Settings implementation uses a regular `Column` with continuous touch scrolling and direct rotary scrolling; the user confirmed it feels smooth on the Pixel Watch 5.
 
@@ -150,14 +150,16 @@ Version 11 is a dependency maintenance release. `app/build.gradle.kts` now uses 
 
 Version 12's signed AAB was built on 2026-10-06; Play Console upload is not confirmed. The user confirmed its crown counting and picker haptics work on the Pixel Watch 5. Version 13 shortens on-watch confirmation, settings, summary, and privacy text. Its signed AAB and debug APK built successfully on 2026-10-06. An earlier v13 debug build was installed on the Pixel Watch 5 and the round-reset message was checked; reinstalling the final copy update is pending because the watch disconnected from ADB. Play Console upload is not confirmed. Its English, Hindi, and Marathi release notes are in `RELEASE_NOTES_v13.txt`.
 
-The user reports that version code 14 was submitted to Production on 2026-10-16 and remains under review as of 2026-10-26; this status has not been rechecked directly in Play Console. The next source version is code 15 / name 1.1.0, reserved for the new feature set and not yet uploaded. Keep the version 14 public privacy policy in place during its review; the version 15 policy draft in `docs/privacy-policy.html` should be published with the next release. Verify the Play Console state and complete the release checklist before upload.
+The user confirmed that version code 14 was submitted to Production on 2026-10-16 and published on 2026-10-30. The next source version is code 15 / name 1.1.0, reserved for the new feature set and not yet uploaded. Keep the version 14 public privacy policy in place until the version 15 policy draft in `docs/privacy-policy.html` is ready to publish with the next release. Verify the Play Console state and complete the release checklist before upload.
 
-Next steps:
+Release readiness checked on 2026-10-30:
 
-1. Review Auto Count screenshots from the large and small round emulator profiles; refresh the Play listing screenshots in `play-store/` with approved version 15 screens.
-2. Verify on a physical Wear OS watch that pausing Auto Count returns to the watch face after the normal timeout and reopening the app offers Resume; also check active dim-mode counting and voice playback.
-3. Keep the version 14 hosted privacy policy unchanged while its review is open. Before version 15 rollout, publish the version 15 policy draft and reconcile it with the in-app disclosure, Play Console Data safety, Target Audience and Content, Families, and SDK declarations. Resolve the child voice recording assessment before rollout.
-4. Run the registered Wear OS integration suite on both profiles; do not loosen coverage or omit registered cases to mask failures. Merge through the protected PR process and build version 15 only after the branch and Play version state are confirmed.
+- Play Console dashboard shows version 14 as the latest Production Wear OS release at 100% rollout, with no unpublished changes.
+- `./scripts/test-local.sh` passed on the large and small round API 35 ARM emulators: all 27 registered integration cases passed on each profile, JVM tests passed, required core line coverage remained 100%, and the debug build packaged `arm64-v8a` libraries. The refreshed local screenshots are under ignored `test-artifacts/emulator-screenshots/local-20261030-*`; the existing version 15 Play screenshot set was reviewed.
+- No physical watch was connected. Real microphone capture/playback, ambient behavior, notification/activity behavior, crown, and haptics still need a physical-watch check.
+- The live Play listing has an Everyone content rating and its Data safety section says “Committed to follow the Play Families Policy.” The last supplied Play Console review notes show child age groups selected; recheck the exact target-age selection before v15. The optional voice guide remains local-only, but the child-audience and retained-child-voice assessment remains open; confirm that the declared audience matches the intended product and resolve this issue before rollout.
+- Keep the version 14 hosted privacy policy in place until version 15 is ready. Before rollout, publish the version 15 policy draft and reconcile it with the in-app disclosure, Play Console Data safety, Target Audience and Content, Families, and SDK declarations. Add the story-page URL to the store description and Website contact field.
+- Release notes for version 15 are drafted in `RELEASE_NOTES_v15.txt`. The local release AAB is stale and is not version 15. Merge through the protected PR process, then build and inspect the signed version 15 AAB and archive the release artifacts before upload.
 
 ## Workspace hygiene
 
