@@ -76,7 +76,7 @@ import com.gauramala.wear.presentation.theme.OnSurfaceWhite
 import kotlinx.coroutines.delay
 import java.util.Locale
 
-private enum class AutoChantPage { CHOOSE, OPTIONS, PACE, VOICE }
+private enum class AutoChantPage { CHOOSE, OPTIONS, PACE, VOICE, NOTIFICATIONS }
 private enum class GuidedStep { INTRO, COUNTDOWN, CHANTING, TAKE_SAVED, RESULT }
 private val AutoChantSecondary = Color(0xFF303030)
 
@@ -85,9 +85,16 @@ fun AutoChantSetupScreen(
     state: MantraUiState,
     viewModel: MantraCounterViewModel,
     onBack: () -> Unit,
-    onStartCount: () -> Unit
+    onStartCount: () -> Unit,
+    notificationPermissionDeclined: Boolean,
+    onNotificationPermissionDeclined: () -> Unit
 ) {
     val context = LocalContext.current
+    val notificationPermissionMissing = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) != PackageManager.PERMISSION_GRANTED
     var page by remember { mutableStateOf(AutoChantPage.CHOOSE) }
     var returnPage by remember { mutableStateOf(AutoChantPage.CHOOSE) }
     var paceStep by remember { mutableStateOf(GuidedStep.INTRO) }
@@ -98,20 +105,19 @@ fun AutoChantSetupScreen(
     var elapsedMillis by remember { mutableStateOf(0L) }
     var calibrationMessage by remember { mutableStateOf<String?>(null) }
     var microphoneMessage by remember { mutableStateOf<String?>(null) }
-    var notificationMessage by remember { mutableStateOf<String?>(null) }
-    var showNotificationSettings by remember { mutableStateOf(false) }
     var pendingVoiceGuide by remember { mutableStateOf<Boolean?>(null) }
+    var notificationReturnPage by remember { mutableStateOf(AutoChantPage.CHOOSE) }
     var confirmVoiceRecordingDeletion by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val focusRequester = remember { FocusRequester() }
     val compactPaceIntro = page == AutoChantPage.PACE && paceStep == GuidedStep.INTRO
     val compactGuideChooser = page == AutoChantPage.CHOOSE &&
         state.autoChantPaceMillis == null && !state.hasVoiceChantRecording
-    val compactNavigationPage = compactPaceIntro || compactGuideChooser
+    val compactNotificationPrompt = page == AutoChantPage.NOTIFICATIONS
+    val compactNavigationPage = compactPaceIntro || compactGuideChooser || compactNotificationPrompt
 
     fun startCount(useVoiceGuide: Boolean) {
-        notificationMessage = null
-        showNotificationSettings = false
+        pendingVoiceGuide = null
         viewModel.startAutoCount(useVoiceGuide)
         onStartCount()
     }
@@ -121,32 +127,43 @@ fun AutoChantSetupScreen(
     ) { granted ->
         val useVoiceGuide = pendingVoiceGuide
         pendingVoiceGuide = null
-        if (useVoiceGuide == null) return@rememberLauncherForActivityResult
         if (granted && AutoCountOngoingActivity.notificationsEnabled(context)) {
-            startCount(useVoiceGuide)
+            if (useVoiceGuide == null) page = notificationReturnPage
+            else startCount(useVoiceGuide)
         } else {
-            notificationMessage = "Allow notifications to keep counting while dim."
-            showNotificationSettings = true
+            onNotificationPermissionDeclined()
+            page = notificationReturnPage
+        }
+    }
+
+    val notificationSettingsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        val useVoiceGuide = pendingVoiceGuide
+        pendingVoiceGuide = null
+        if (AutoCountOngoingActivity.notificationsEnabled(context)) {
+            if (useVoiceGuide == null) page = notificationReturnPage
+            else startCount(useVoiceGuide)
+        } else {
+            onNotificationPermissionDeclined()
+            page = notificationReturnPage
         }
     }
 
     fun requestCountStart(useVoiceGuide: Boolean) {
-        notificationMessage = null
-        showNotificationSettings = false
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (notificationPermissionMissing && !notificationPermissionDeclined) {
             pendingVoiceGuide = useVoiceGuide
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        } else if (!AutoCountOngoingActivity.notificationsEnabled(context)) {
-            notificationMessage = "Turn on notifications to keep counting while dim."
-            showNotificationSettings = true
+            notificationReturnPage = page
+            page = AutoChantPage.NOTIFICATIONS
         } else {
             startCount(useVoiceGuide)
         }
+    }
+
+    fun declineNotificationPermission() {
+        onNotificationPermissionDeclined()
+        pendingVoiceGuide = null
+        page = notificationReturnPage
     }
 
     val microphonePermissionLauncher = rememberLauncherForActivityResult(
@@ -210,6 +227,7 @@ fun AutoChantSetupScreen(
                 page = returnPage
                 returnPage = AutoChantPage.CHOOSE
             }
+            AutoChantPage.NOTIFICATIONS -> declineNotificationPermission()
         }
     }
 
@@ -282,7 +300,11 @@ fun AutoChantSetupScreen(
             .padding(
                 start = 12.dp,
                 end = 12.dp,
-                top = if (compactPaceIntro) 16.dp else 12.dp,
+                top = when {
+                    compactPaceIntro -> 16.dp
+                    compactNotificationPrompt -> 8.dp
+                    else -> 12.dp
+                },
                 bottom = if (compactNavigationPage) 4.dp else 12.dp
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -290,6 +312,7 @@ fun AutoChantSetupScreen(
             when {
                 compactPaceIntro -> 4.dp
                 compactGuideChooser -> 2.dp
+                compactNotificationPrompt -> 4.dp
                 else -> 8.dp
             }
         )
@@ -312,7 +335,11 @@ fun AutoChantSetupScreen(
                     PageTitle("Auto Count")
                     val hasPace = state.autoChantPaceMillis != null
                     val hasGuide = state.hasVoiceChantRecording
-                    if (hasPace || hasGuide) Spacer(Modifier.height(10.dp))
+                    if (hasPace || hasGuide) {
+                        Spacer(Modifier.height(2.dp))
+                    } else {
+                        Spacer(Modifier.height(8.dp))
+                    }
 
                     if (hasPace || hasGuide) {
                         if (hasPace) {
@@ -354,8 +381,34 @@ fun AutoChantSetupScreen(
                             color = AutoChantSecondary
                         )
                     }
-                    NotificationMessage(notificationMessage)
-                    NotificationSettingsButtonIfNeeded(showNotificationSettings, context)
+                }
+
+                AutoChantPage.NOTIFICATIONS -> {
+                    PageTitle("Notifications", compact = true)
+                    Text(
+                        "Return shortcut for Auto Count.",
+                        color = OnSurfaceMuted,
+                        fontSize = 9.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    ActionButton(
+                        text = if (notificationPermissionMissing && !notificationPermissionDeclined) {
+                            "Allow notifications"
+                        } else {
+                            "Open settings"
+                        },
+                        tag = "auto-count-allow-notifications",
+                        onClick = {
+                            if (notificationPermissionMissing && !notificationPermissionDeclined) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                notificationSettingsLauncher.launch(
+                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                )
+                            }
+                        }
+                    )
                 }
 
                 AutoChantPage.OPTIONS -> {
@@ -412,6 +465,19 @@ fun AutoChantSetupScreen(
                                 tag = "voice-recording-delete",
                                 onClick = { confirmVoiceRecordingDeletion = true },
                                 color = AlertRed
+                            )
+                        }
+                        if (notificationPermissionMissing ||
+                            !AutoCountOngoingActivity.notificationsEnabled(context)
+                        ) {
+                            ActionButton(
+                                text = "Notifications",
+                                tag = "auto-chant-notifications",
+                                onClick = {
+                                    pendingVoiceGuide = null
+                                    notificationReturnPage = page
+                                    page = AutoChantPage.NOTIFICATIONS
+                                }
                             )
                         }
                     }
@@ -513,8 +579,6 @@ fun AutoChantSetupScreen(
                             },
                             color = AutoChantSecondary
                         )
-                        NotificationMessage(notificationMessage)
-                        NotificationSettingsButtonIfNeeded(showNotificationSettings, context)
                     }
                 }
 
@@ -615,8 +679,6 @@ fun AutoChantSetupScreen(
                             color = GauraGold,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         )
-                        NotificationMessage(notificationMessage)
-                        NotificationSettingsButtonIfNeeded(showNotificationSettings, context)
                     }
                 }
             }
@@ -633,7 +695,10 @@ fun AutoChantSetupScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = if (page == AutoChantPage.VOICE && voiceStep == GuidedStep.INTRO) {
+                        contentDescription = if (
+                            (page == AutoChantPage.VOICE && voiceStep == GuidedStep.INTRO) ||
+                            page == AutoChantPage.NOTIFICATIONS
+                        ) {
                             "Not now"
                         } else {
                             "Back"
@@ -642,7 +707,9 @@ fun AutoChantSetupScreen(
                         modifier = Modifier.size(22.dp)
                     )
                 }
-                if (page == AutoChantPage.VOICE && voiceStep == GuidedStep.INTRO) {
+                if ((page == AutoChantPage.VOICE && voiceStep == GuidedStep.INTRO) ||
+                    page == AutoChantPage.NOTIFICATIONS
+                ) {
                     Text("Not now", color = OnSurfaceWhite, fontSize = 9.sp, textAlign = TextAlign.Center)
                 }
             }
@@ -708,27 +775,6 @@ private fun SessionPage(
         contentColor = MaterialTheme.colorScheme.onPrimary
     )
     ActionButton("Stop counting", "auto-count-stop", onStop, color = AlertRed)
-}
-
-@Composable
-private fun NotificationMessage(message: String?) {
-    message?.let { Text(it, color = AlertRed, fontSize = 10.sp, textAlign = TextAlign.Center) }
-}
-
-@Composable
-private fun NotificationSettingsButtonIfNeeded(show: Boolean, context: android.content.Context) {
-    if (!show) return
-    ActionButton(
-        text = "Open notification settings",
-        tag = "auto-count-notification-settings",
-        onClick = {
-            context.startActivity(
-                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                    .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            )
-        }
-    )
 }
 
 @Composable

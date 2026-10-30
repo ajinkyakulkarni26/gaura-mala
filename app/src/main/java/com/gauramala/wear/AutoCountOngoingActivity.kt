@@ -10,7 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.wear.ongoing.OngoingActivity
 
-/** Keeps an explicitly started Auto Count session available through ambient-mode timeouts. */
+/** Keeps Auto Count reachable while running and leaves a paused return notification until stopped. */
 internal class AutoCountOngoingActivity(context: Context) {
     private val appContext = context.applicationContext
     private val notifications = NotificationManagerCompat.from(appContext)

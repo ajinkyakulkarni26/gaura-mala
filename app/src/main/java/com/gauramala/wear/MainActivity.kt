@@ -43,9 +43,9 @@ class MainActivity : ComponentActivity() {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
                 autoCountOngoingActivity.update(
-                    // Keep paused sessions resumable in app state without using an
-                    // Ongoing Activity to hold the display at Gaura Mala indefinitely.
-                    isActive = state.autoCountActive && state.autoCountRunning,
+                    // A paused session keeps a return notification, but pausing has already
+                    // stopped the timer/audio and released the Auto Count wake lock.
+                    isActive = state.autoCountActive,
                     isRunning = state.autoCountRunning
                 )
             }
