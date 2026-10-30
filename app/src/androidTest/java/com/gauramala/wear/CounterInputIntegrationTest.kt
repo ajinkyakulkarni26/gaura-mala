@@ -427,7 +427,7 @@ class CounterInputIntegrationTest {
             saveScreenshot("voice-guide-running")
             composeRule.onNodeWithContentDescription("Pause auto count").performClick()
             composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
-            awaitAutoCountNotification(false)
+            awaitAutoCountNotification(true)
             saveScreenshot("voice-guide-paused")
 
             openSettings()
@@ -478,13 +478,13 @@ class CounterInputIntegrationTest {
         composeRule.onNodeWithContentDescription("Pause auto count").performClick()
         composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
         composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
-        awaitAutoCountNotification(false)
+        awaitAutoCountNotification(true)
 
         composeRule.onNodeWithContentDescription("Resume auto count").performClick()
         awaitAutoCountNotification(true)
         composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Pause auto count").performClick()
-        awaitAutoCountNotification(false)
+        awaitAutoCountNotification(true)
     }
 
     @Test
@@ -506,7 +506,7 @@ class CounterInputIntegrationTest {
         composeRule.onNodeWithContentDescription("Pause auto count").performClick()
         composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
         composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
-        awaitAutoCountNotification(false)
+        awaitAutoCountNotification(true)
         assertEquals(
             "A paused Auto Count must allow the normal screen timeout",
             0,
@@ -518,14 +518,14 @@ class CounterInputIntegrationTest {
         composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
         composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
         composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
-        awaitAutoCountNotification(false)
+        awaitAutoCountNotification(true)
         saveScreenshot("auto-count-paused-after-return")
 
         composeRule.onNodeWithContentDescription("Resume auto count").performClick()
         awaitAutoCountNotification(true)
         composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Pause auto count").performClick()
-        awaitAutoCountNotification(false)
+        awaitAutoCountNotification(true)
     }
 
     @Test

@@ -81,6 +81,7 @@ fun MantraCounterScreen(
     val canUsePinchGesture = state.isPinchGestureEnabled && state.supportsOneHandedGestures
     var showSettings by remember { mutableStateOf(false) }
     var showAutoChantSetup by remember { mutableStateOf(false) }
+    var notificationPermissionDeclined by remember { mutableStateOf(false) }
     var showRoundProgress by remember { mutableStateOf(false) }
     val isAmbient = LocalAmbientModeManager.current?.currentAmbientMode is AmbientMode.Ambient
     val gestureConfiguration = rememberOneHandedGestureConfiguration(
@@ -146,7 +147,9 @@ fun MantraCounterScreen(
             state = state,
             viewModel = viewModel,
             onBack = { showAutoChantSetup = false },
-            onStartCount = { showAutoChantSetup = false }
+            onStartCount = { showAutoChantSetup = false },
+            notificationPermissionDeclined = notificationPermissionDeclined,
+            onNotificationPermissionDeclined = { notificationPermissionDeclined = true }
         )
         return
     }
