@@ -55,11 +55,14 @@ internal class ChantReminderScheduler(context: Context) {
             cancelScheduledReminder()
             return
         }
-        val triggerAtMillis = System.currentTimeMillis() + 15_000L
+        val triggerAtMillis = nextTime
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
         alarmManager?.setWindow(
             AlarmManager.RTC_WAKEUP,
             triggerAtMillis,
-            1_000L,
+            ALARM_WINDOW_MILLIS,
             showReminderPendingIntent()
         )
     }
