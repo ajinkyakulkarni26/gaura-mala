@@ -118,16 +118,9 @@ struct AutoChantSetupView: View {
             }
         }
         .onChange(of: model.voiceRecordingFinished) { _, finished in
-            switch finished {
-            case true:
-                chantStartedAtUptime = nil
-                voiceStep = .result
-            case false:
-                chantStartedAtUptime = nil
-                voiceStep = .intro
-            case nil:
-                break
-            }
+            guard let finished else { return }
+            chantStartedAtUptime = nil
+            voiceStep = finished ? .result : .intro
         }
     }
 
