@@ -12,7 +12,6 @@ struct CounterView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var showingSettings = false
-    @State private var showingRoundPicker = false
     @State private var crownValue = 0.0
 
     var body: some View {
@@ -21,7 +20,7 @@ struct CounterView: View {
 
             VStack(spacing: 2) {
                 Button {
-                    showingRoundPicker = true
+                    model.isShowingRoundPicker = true
                 } label: {
                     HStack(spacing: 4) {
                         Text(model.state.isGoalAchieved ? "Daily goal reached" : "Round \(model.state.currentRound) of \(model.state.dailyGoalRounds)")
@@ -97,7 +96,7 @@ struct CounterView: View {
             SettingsView()
                 .environmentObject(model)
         }
-        .sheet(isPresented: $showingRoundPicker) {
+        .sheet(isPresented: $model.isShowingRoundPicker) {
             RoundPickerView()
                 .environmentObject(model)
         }

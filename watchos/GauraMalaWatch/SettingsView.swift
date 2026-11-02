@@ -51,6 +51,13 @@ struct SettingsView: View {
                         set: { model.updateSettings(areMilestonesEnabled: $0) }
                     ))
                     .disabled(!model.state.isHapticsEnabled)
+                    Toggle("Reminders", isOn: Binding(
+                        get: { model.state.areRemindersEnabled },
+                        set: { model.updateSettings(areRemindersEnabled: $0) }
+                    ))
+                    Text("Gentle reminder after 2.5 hours idle once you start chanting today.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Progress") {

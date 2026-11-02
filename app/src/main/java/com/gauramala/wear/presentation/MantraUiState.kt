@@ -12,6 +12,7 @@ data class MantraUiState(
     val isHapticsEnabled: Boolean = true,
     val isMilestonesEnabled: Boolean = true,
     val keepScreenOn: Boolean = false,
+    val isRemindersEnabled: Boolean = false,
     val lastRecordedDate: String = "",
     val canUndo: Boolean = false,
     val showGoalAchievedDialog: Boolean = false,
@@ -47,7 +48,11 @@ internal fun MantraUiState.withPreferences(
 ): MantraUiState {
     val isNewDay = lastRecordedDate.isNotEmpty() &&
         lastRecordedDate != preferences.lastRecordedDate
-    val useSavedProgress = !preserveLocalProgress || isNewDay
+    val externalGoalCompleted = !isNewDay &&
+        preferences.completedRounds >= preferences.dailyGoalRounds &&
+        completedRounds < preferences.dailyGoalRounds &&
+        preferences.beadCount == 0
+    val useSavedProgress = !preserveLocalProgress || isNewDay || externalGoalCompleted
 
     return copy(
         beadCount = if (useSavedProgress) preferences.beadCount else beadCount,
@@ -58,9 +63,10 @@ internal fun MantraUiState.withPreferences(
         isHapticsEnabled = preferences.hapticFeedbackEnabled,
         isMilestonesEnabled = preferences.milestoneVibrationsEnabled,
         keepScreenOn = preferences.keepScreenOn,
+        isRemindersEnabled = preferences.remindersEnabled,
         autoChantPaceMillis = preferences.autoChantPaceMillis,
         lastRecordedDate = preferences.lastRecordedDate,
-        canUndo = if (isNewDay) false else canUndo,
-        showGoalAchievedDialog = if (isNewDay) false else showGoalAchievedDialog
+        canUndo = if (isNewDay || externalGoalCompleted) false else canUndo,
+        showGoalAchievedDialog = if (isNewDay || externalGoalCompleted) false else showGoalAchievedDialog
     )
 }

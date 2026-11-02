@@ -1,6 +1,11 @@
 package com.gauramala.wear.presentation.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,11 +30,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
@@ -131,6 +138,12 @@ fun SettingsDialog(
         return
     }
 
+    val context = LocalContext.current
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        viewModel.toggleReminders(granted)
+    }
     val scrollState = rememberScrollState()
     val rotaryFocusRequester = remember { FocusRequester() }
     val switchButtonColors = SwitchButtonDefaults.switchButtonColors(
@@ -305,7 +318,30 @@ fun SettingsDialog(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-keep-awake")
         )
 
-        // 6. Reset Current Round
+        // 6. Gentle Chanting Reminders
+        SwitchButton(
+            checked = state.isRemindersEnabled,
+            onCheckedChange = { enabled ->
+                if (!enabled) {
+                    viewModel.toggleReminders(false)
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    viewModel.toggleReminders(true)
+                }
+            },
+            label = { Text("Reminders", fontSize = 12.sp) },
+            secondaryLabel = { Text("Gentle cue after 2.5h idle", fontSize = 10.sp) },
+            colors = switchButtonColors,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-reminders")
+        )
+
+        // 7. Reset Current Round
         Button(
             onClick = {
                 pendingReset = ResetTarget.CURRENT_ROUND

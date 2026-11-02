@@ -72,6 +72,15 @@
                 android:value="0" />
         </service>
 
+        <receiver
+            android:name=".ChantReminderReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.gauramala.wear.action.SHOW_CHANT_REMINDER" />
+                <action android:name="com.gauramala.wear.action.MARK_GOAL_DONE" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

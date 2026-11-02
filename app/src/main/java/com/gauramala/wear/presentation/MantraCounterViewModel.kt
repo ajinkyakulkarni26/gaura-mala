@@ -454,6 +454,12 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         viewModelScope.launch { preferences.toggleKeepScreenOn(enabled) }
     }
 
+    fun toggleReminders(enabled: Boolean) {
+        if (!preferencesLoaded) return
+        _uiState.update { it.copy(isRemindersEnabled = enabled) }
+        viewModelScope.launch { preferences.toggleReminders(enabled) }
+    }
+
     fun updateDailyGoal(newGoal: Int) {
         if (!preferencesLoaded) return
         if (newGoal in 1..64) {

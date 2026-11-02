@@ -172,5 +172,84 @@ final class CounterEngineTests: XCTestCase {
         XCTAssertFalse(state.showGoalReached)
         XCTAssertTrue(state.isDoubleTapEnabled)
         XCTAssertTrue(state.isHapticsEnabled)
+        XCTAssertFalse(state.areRemindersEnabled)
+        XCTAssertEqual(state.lastReminderTemplateIndex, -1)
+    }
+
+    func testMarkDailyGoalCompletedReachesGoalAndClearsBeads() {
+        var engine = CounterEngine(state: CounterState(beadCount: 34, completedRounds: 4, dailyGoalRounds: 16, canUndo: true))
+        engine.markDailyGoalCompleted()
+        XCTAssertEqual(engine.state.completedRounds, 16)
+        XCTAssertEqual(engine.state.beadCount, 0)
+        XCTAssertFalse(engine.state.canUndo)
+        XCTAssertFalse(engine.state.showGoalReached)
+    }
+
+    func testReminderEligibilityRequiresEnabledAndStartedTodayAndBelowGoal() {
+        XCTAssertFalse(ChantReminderPolicy.isEligibleForReminder(
+            remindersEnabled: false,
+            completedRounds: 4,
+            beadCount: 0,
+            dailyGoalRounds: 16
+        ))
+        XCTAssertFalse(ChantReminderPolicy.isEligibleForReminder(
+            remindersEnabled: true,
+            completedRounds: 0,
+            beadCount: 0,
+            dailyGoalRounds: 16
+        ))
+        XCTAssertTrue(ChantReminderPolicy.isEligibleForReminder(
+            remindersEnabled: true,
+            completedRounds: 0,
+            beadCount: 12,
+            dailyGoalRounds: 16
+        ))
+        XCTAssertTrue(ChantReminderPolicy.isEligibleForReminder(
+            remindersEnabled: true,
+            completedRounds: 4,
+            beadCount: 0,
+            dailyGoalRounds: 16
+        ))
+        XCTAssertFalse(ChantReminderPolicy.isEligibleForReminder(
+            remindersEnabled: true,
+            completedRounds: 16,
+            beadCount: 0,
+            dailyGoalRounds: 16
+        ))
+        XCTAssertFalse(ChantReminderPolicy.isEligibleForReminder(
+            remindersEnabled: true,
+            completedRounds: 4,
+            beadCount: 10,
+            dailyGoalRounds: 16,
+            isAutoChanting: true
+        ))
+    }
+
+    func testNextReminderDateRespectsTwoAndAHalfHourDelayAndQuietHours() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let morning = calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 9, minute: 0))!
+        let expected = calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 11, minute: 30))!
+        XCTAssertEqual(ChantReminderPolicy.nextReminderDate(from: morning, calendar: calendar), expected)
+
+        let evening = calendar.date(from: DateComponents(year: 2026, month: 11, day: 2, hour: 19, minute: 0))!
+        XCTAssertNil(ChantReminderPolicy.nextReminderDate(from: evening, calendar: calendar))
+    }
+
+    func testReminderMessagesRotateWithoutRepeatingConsecutively() {
+        var lastIndex = -1
+        var seenTitles = Set<String>()
+        for step in 0..<ChantReminderPolicy.templateCount {
+            let content = ChantReminderPolicy.buildReminderContent(
+                completedRounds: 4,
+                dailyGoalRounds: 16,
+                lastTemplateIndex: lastIndex
+            )
+            XCTAssertEqual(content.templateIndex, step)
+            XCTAssertNotEqual(content.templateIndex, lastIndex)
+            seenTitles.insert(content.title)
+            lastIndex = content.templateIndex
+        }
+        XCTAssertEqual(seenTitles.count, ChantReminderPolicy.templateCount)
     }
 }

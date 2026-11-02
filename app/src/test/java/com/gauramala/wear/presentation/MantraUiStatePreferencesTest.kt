@@ -70,4 +70,28 @@ class MantraUiStatePreferencesTest {
         assertFalse(state.showGoalAchievedDialog)
         assertEquals("2026-09-29", state.lastRecordedDate)
     }
+
+    @Test
+    fun externalGoalCompletionFromNotificationUpdatesInMemoryProgress() {
+        val state = MantraUiState(
+            beadCount = 12,
+            completedRounds = 4,
+            dailyGoalRounds = 16,
+            lastRecordedDate = "2026-09-29",
+            canUndo = true
+        ).withPreferences(
+            preferences = UserPreferences(
+                beadCount = 0,
+                completedRounds = 16,
+                dailyGoalRounds = 16,
+                remindersEnabled = true,
+                lastRecordedDate = "2026-09-29"
+            ),
+            preserveLocalProgress = true
+        )
+
+        assertEquals(0, state.beadCount)
+        assertEquals(16, state.completedRounds)
+        assertFalse(state.canUndo)
+    }
 }
