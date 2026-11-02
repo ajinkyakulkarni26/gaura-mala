@@ -462,8 +462,11 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
 
     func syncReminderNotification() {
         let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: [Self.reminderRequestIdentifier])
-        center.removeDeliveredNotifications(withIdentifiers: [Self.reminderRequestIdentifier])
+        let reminderIds = [Self.reminderRequestIdentifier] + (0..<ChantReminderPolicy.templateCount).map {
+            "\(Self.reminderRequestIdentifier).\($0)"
+        }
+        center.removePendingNotificationRequests(withIdentifiers: reminderIds)
+        center.removeDeliveredNotifications(withIdentifiers: reminderIds)
 
         let currentState = engine.state
         guard ChantReminderPolicy.isEligibleForReminder(
@@ -489,10 +492,11 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
         }
 
         let delay = max(targetDate.timeIntervalSinceNow, 60)
+        let requestId = "\(Self.reminderRequestIdentifier).\(contentSpec.templateIndex)"
         center.getNotificationSettings { settings in
             guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
-                center.removePendingNotificationRequests(withIdentifiers: [Self.reminderRequestIdentifier])
-                center.removeDeliveredNotifications(withIdentifiers: [Self.reminderRequestIdentifier])
+                center.removePendingNotificationRequests(withIdentifiers: reminderIds)
+                center.removeDeliveredNotifications(withIdentifiers: reminderIds)
                 return
             }
             let content = UNMutableNotificationContent()
@@ -503,7 +507,7 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
 
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
             let request = UNNotificationRequest(
-                identifier: Self.reminderRequestIdentifier,
+                identifier: requestId,
                 content: content,
                 trigger: trigger
             )

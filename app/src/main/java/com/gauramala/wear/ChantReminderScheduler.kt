@@ -55,14 +55,11 @@ internal class ChantReminderScheduler(context: Context) {
             cancelScheduledReminder()
             return
         }
-        val triggerAtMillis = nextTime
-            .atZone(ZoneId.systemDefault())
-            .toInstant()
-            .toEpochMilli()
+        val triggerAtMillis = System.currentTimeMillis() + 15_000L
         alarmManager?.setWindow(
             AlarmManager.RTC_WAKEUP,
             triggerAtMillis,
-            ALARM_WINDOW_MILLIS,
+            1_000L,
             showReminderPendingIntent()
         )
     }
@@ -77,12 +74,15 @@ internal class ChantReminderScheduler(context: Context) {
     }
 
     fun dismissNotification() {
-        notifications.cancel(NOTIFICATION_ID)
+        for (index in 0 until ChantReminderPolicy.TEMPLATE_COUNT) {
+            notifications.cancel(notificationIdForTemplate(index))
+        }
     }
 
     fun showNotification(content: ChantReminderContent) {
         if (!canPostNotifications()) return
         createNotificationChannel()
+        dismissNotification()
 
         val openAppIntent = PendingIntent.getActivity(
             appContext,
@@ -119,6 +119,8 @@ internal class ChantReminderScheduler(context: Context) {
             .setStyle(NotificationCompat.BigTextStyle().bigText(content.body))
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setWhen(System.currentTimeMillis())
+            .setShowWhen(true)
             .setContentIntent(openAppIntent)
             .setAutoCancel(true)
             .addAction(
@@ -133,7 +135,7 @@ internal class ChantReminderScheduler(context: Context) {
             )
             .build()
 
-        runCatching { notifications.notify(NOTIFICATION_ID, notification) }
+        runCatching { notifications.notify(notificationIdForTemplate(content.templateIndex), notification) }
     }
 
     private fun showReminderPendingIntent(): PendingIntent =
@@ -167,6 +169,12 @@ internal class ChantReminderScheduler(context: Context) {
         const val ACTION_SHOW_REMINDER = "com.gauramala.wear.action.SHOW_CHANT_REMINDER"
         const val ACTION_MARK_GOAL_DONE = "com.gauramala.wear.action.MARK_GOAL_DONE"
         const val EXTRA_OPEN_ROUND_PICKER = "com.gauramala.wear.extra.OPEN_ROUND_PICKER"
+
+        fun notificationIdForTemplate(templateIndex: Int): Int =
+            NOTIFICATION_ID + templateIndex.coerceIn(0, ChantReminderPolicy.TEMPLATE_COUNT - 1)
+
+        fun isReminderNotificationId(id: Int): Boolean =
+            id in NOTIFICATION_ID until (NOTIFICATION_ID + ChantReminderPolicy.TEMPLATE_COUNT)
 
         private const val REQUEST_SHOW_REMINDER = 201
         private const val REQUEST_OPEN_APP = 202

@@ -877,7 +877,7 @@ class CounterInputIntegrationTest {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             val active = NotificationManagerCompat.from(context)
                 .activeNotifications
-                .firstOrNull { it.id == ChantReminderScheduler.NOTIFICATION_ID }
+                .firstOrNull { ChantReminderScheduler.isReminderNotificationId(it.id) }
             val isVisible = active != null
             val titleMatches = expectedTitle == null ||
                 active?.notification?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString() == expectedTitle
