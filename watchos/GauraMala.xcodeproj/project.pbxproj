@@ -18,6 +18,8 @@
 		A1000000000000000000000A /* GauraMalaWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* GauraMalaWidgetExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A1000000000000000000000B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* Assets.xcassets */; };
 		A1000000000000000000000C /* GauraMalaWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* GauraMalaWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A1000000000000000000000D /* AutoChantSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* AutoChantSetupView.swift */; };
+		A1000000000000000000000E /* VoiceChantAudio.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* VoiceChantAudio.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +37,8 @@
 		A2000000000000000000000C /* GauraMalaWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GauraMalaWidget.entitlements; sourceTree = "<group>"; };
 		A2000000000000000000000D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2000000000000000000000E /* GauraMala.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GauraMala.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000000000000000000000F /* AutoChantSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoChantSetupView.swift; sourceTree = "<group>"; };
+		A20000000000000000000010 /* VoiceChantAudio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceChantAudio.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +68,8 @@
 				A20000000000000000000004 /* RoundPickerView.swift */,
 				A20000000000000000000005 /* SettingsView.swift */,
 				A20000000000000000000006 /* PrivacyPolicyView.swift */,
+				A2000000000000000000000F /* AutoChantSetupView.swift */,
+				A20000000000000000000010 /* VoiceChantAudio.swift */,
 				A2000000000000000000000B /* GauraMalaWatch.entitlements */,
 				A2000000000000000000000D /* Assets.xcassets */,
 			);
@@ -227,6 +233,8 @@
 				A10000000000000000000004 /* RoundPickerView.swift in Sources */,
 				A10000000000000000000005 /* SettingsView.swift in Sources */,
 				A10000000000000000000006 /* PrivacyPolicyView.swift in Sources */,
+				A1000000000000000000000D /* AutoChantSetupView.swift in Sources */,
+				A1000000000000000000000E /* VoiceChantAudio.swift in Sources */,
 				A10000000000000000000007 /* CounterState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -274,6 +282,7 @@
 				CODE_SIGN_ENTITLEMENTS = GauraMalaWatch/GauraMalaWatch.entitlements;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Gaura Mala";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Gaura Mala records one short chant on this watch only when you choose to create an optional Auto Count voice guide. Recordings stay on this watch and are never uploaded or shared.";
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -296,6 +305,7 @@
 				CODE_SIGN_ENTITLEMENTS = GauraMalaWatch/GauraMalaWatch.entitlements;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Gaura Mala";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Gaura Mala records one short chant on this watch only when you choose to create an optional Auto Count voice guide. Recordings stay on this watch and are never uploaded or shared.";
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";

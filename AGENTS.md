@@ -1,6 +1,6 @@
 # Gaura Mala Agent Notes
 
-Last reviewed: 2026-10-30
+Last reviewed: 2026-11-02
 
 ## Project
 
@@ -11,7 +11,7 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - Main stack: Kotlin, Jetpack Compose for Wear OS Material 3, DataStore, Wearable Services
 - Minimum SDK 30; target and compile SDK 37; JDK 17
 - The app is declared standalone in `AndroidManifest.xml`; core counting does not require a phone app.
-- A separate standalone Apple Watch implementation is being added under `watchos/`; it does not require an iPhone companion app.
+- A separate standalone Apple Watch implementation lives under `watchos/`; it does not require an iPhone companion app. Although the Apple Watch app is not being released immediately, maintain full feature parity with Wear OS so `watchos/` is always ready to ship.
 
 ## Source map
 
@@ -34,9 +34,9 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - `tile/GauraMalaTileService.kt`, `complication/GauraMalaComplicationService.kt`: Wear OS surfaces.
 - `tile/GauraMalaTileContent.kt`: pure mapping from saved progress to Tile text.
 - `watchos/GauraMala.xcodeproj/`: native standalone watchOS SwiftUI app project.
-- `watchos/GauraMalaWatch/`: SwiftUI counter, round adjustment, settings, privacy view, local persistence, crown handling, and haptics.
+- `watchos/GauraMalaWatch/`: SwiftUI counter, Auto Count setup (pace calibration and optional local voice guide), round adjustment, settings, privacy view, local persistence, crown handling, and haptics.
 - `watchos/GauraMalaWidget/`: WidgetKit accessory complication families and Smart Stack surface.
-- `watchos/GauraMalaCore/`: Swift counter state machine and unit tests runnable on macOS.
+- `watchos/GauraMalaCore/`: Swift counter state machine, input-specific haptic policy, Auto Count pacer, local voice file management, and unit tests runnable on macOS.
 - `app/src/test/`: unit tests for counter transitions, haptic policy, preference state, and rotary input.
 - `app/src/androidTest/`: Wear OS UI and TileService integration tests for the counter, tap/rotary input, undo, round completion and adjustment, settings, reset flows, Tile progress, and daily rollover.
 - `scripts/test-local.sh`: local pre-push checks with optional Wear OS emulator integration tests and screenshot collection; `scripts/print-android-test-results.py` prints individual case names, descriptions, and outcomes.
@@ -64,7 +64,7 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - The launcher uses a black adaptive-icon background and a bead-mala foreground with no text. Keep the artwork centered and sized to avoid clipping in the circular mask.
 - Contact Developer opens the GitHub Issues page on the paired phone through `RemoteActivityHelper`. If the phone is unavailable, the policy screen displays the URL. There is no email sent automatically and no phone companion app is required.
 - The Apple Watch port is standalone. It uses the primary hand-gesture shortcut for Double Tap where watchOS and hardware support it; tap and Digital Crown remain available. The Digital Crown and haptics use native SwiftUI/WatchKit APIs.
-- Keep the Apple Watch implementation in `watchos/` and its build/test workflow separate from Android. Core behavior is ported to Swift and is not source-shared with Kotlin; keep transition behavior aligned with the Android app and add tests for every changed rule.
+- Keep the Apple Watch implementation in `watchos/` and its build/test workflow separate from Android, while maintaining strict feature parity with the Wear OS app. Every feature, UX flow, privacy disclosure, and behavior rule added or updated on Wear OS must also be implemented on `watchos/` with matching tests and build verification so the Apple Watch app stays release-ready even before App Store launch. Core behavior is ported to Swift and is not source-shared with Kotlin; keep transition behavior aligned with the Android app and add tests for every changed rule.
 
 ## UI conventions
 
