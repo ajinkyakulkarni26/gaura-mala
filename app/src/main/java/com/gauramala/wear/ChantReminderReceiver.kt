@@ -39,6 +39,10 @@ class ChantReminderReceiver : BroadcastReceiver() {
                 scheduler.cancelAll()
             }
             ChantReminderScheduler.ACTION_SHOW_REMINDER -> {
+                if (!scheduler.canPostNotifications()) {
+                    scheduler.cancelAll()
+                    return
+                }
                 val snapshot = preferences.userPreferencesFlow.first()
                 if (!ChantReminderPolicy.shouldDeliverReminderNow(
                         preferences = snapshot,

@@ -1,14 +1,17 @@
 package com.gauramala.wear
 
+import android.Manifest
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.gauramala.wear.presentation.ChantReminderContent
 import com.gauramala.wear.presentation.ChantReminderPolicy
 import com.gauramala.wear.presentation.MantraUiState
@@ -24,9 +27,18 @@ internal class ChantReminderScheduler(context: Context) {
     private val notifications = NotificationManagerCompat.from(appContext)
     private val alarmManager = appContext.getSystemService(AlarmManager::class.java)
 
+    fun canPostNotifications(): Boolean {
+        val runtimeGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                appContext,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        return runtimeGranted && notifications.areNotificationsEnabled()
+    }
+
     fun sync(state: MantraUiState, now: LocalDateTime = LocalDateTime.now()) {
         dismissNotification()
-        if (!ChantReminderPolicy.isEligibleForReminder(state) || !notifications.areNotificationsEnabled()) {
+        if (!ChantReminderPolicy.isEligibleForReminder(state) || !canPostNotifications()) {
             cancelScheduledReminder()
             return
         }
@@ -34,6 +46,10 @@ internal class ChantReminderScheduler(context: Context) {
     }
 
     fun scheduleNext(now: LocalDateTime = LocalDateTime.now()) {
+        if (!canPostNotifications()) {
+            cancelScheduledReminder()
+            return
+        }
         val nextTime = ChantReminderPolicy.nextReminderTime(now)
         if (nextTime == null) {
             cancelScheduledReminder()
@@ -65,7 +81,7 @@ internal class ChantReminderScheduler(context: Context) {
     }
 
     fun showNotification(content: ChantReminderContent) {
-        if (!notifications.areNotificationsEnabled()) return
+        if (!canPostNotifications()) return
         createNotificationChannel()
 
         val openAppIntent = PendingIntent.getActivity(

@@ -74,21 +74,6 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
         areRemindersEnabled: Bool? = nil
     ) {
         refreshForCurrentDay()
-        if areRemindersEnabled == true {
-            Task {
-                let center = UNUserNotificationCenter.current()
-                let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
-                engine.updateSettings(
-                    isDoubleTapEnabled: isDoubleTapEnabled,
-                    isHapticsEnabled: isHapticsEnabled,
-                    areMilestonesEnabled: areMilestonesEnabled,
-                    areRemindersEnabled: granted
-                )
-                state = engine.state
-                persist()
-            }
-            return
-        }
         engine.updateSettings(
             isDoubleTapEnabled: isDoubleTapEnabled,
             isHapticsEnabled: isHapticsEnabled,
@@ -97,6 +82,13 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
         )
         state = engine.state
         persist()
+        if areRemindersEnabled == true {
+            Task {
+                let center = UNUserNotificationCenter.current()
+                _ = try? await center.requestAuthorization(options: [.alert, .sound])
+                self.syncReminderNotification()
+            }
+        }
     }
 
     func markDailyGoalCompleted() {
@@ -129,10 +121,13 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
     }
 
     func refreshForCurrentDay() {
-        guard engine.rollOverIfNeeded(to: Self.localDateString()) else { return }
-        state = engine.state
-        isShowingGoalAlert = false
-        persist()
+        if engine.rollOverIfNeeded(to: Self.localDateString()) {
+            state = engine.state
+            isShowingGoalAlert = false
+            persist()
+        } else {
+            syncReminderNotification()
+        }
     }
 
     private func play(_ cue: CounterCue) {
@@ -150,10 +145,61 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
     }
 
     private func persist() {
-        guard let data = try? JSONEncoder().decodeStateAndReencode(&engine, syncReminder: true) else { return }
+        syncReminderNotification()
+        guard let data = try? JSONEncoder().encode(engine.state) else { return }
         state = engine.state
         defaults.set(data, forKey: Self.storageKey)
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    func syncReminderNotification() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [Self.reminderRequestIdentifier])
+        center.removeDeliveredNotifications(withIdentifiers: [Self.reminderRequestIdentifier])
+
+        let currentState = engine.state
+        guard ChantReminderPolicy.isEligibleForReminder(
+            remindersEnabled: currentState.areRemindersEnabled,
+            completedRounds: currentState.completedRounds,
+            beadCount: currentState.beadCount,
+            dailyGoalRounds: currentState.dailyGoalRounds
+        ),
+        let targetDate = ChantReminderPolicy.nextReminderDate(from: .now) else {
+            return
+        }
+
+        let contentSpec = ChantReminderPolicy.buildReminderContent(
+            completedRounds: currentState.completedRounds,
+            dailyGoalRounds: currentState.dailyGoalRounds,
+            lastTemplateIndex: currentState.lastReminderTemplateIndex
+        )
+        engine.updateSettings(lastReminderTemplateIndex: contentSpec.templateIndex)
+        state = engine.state
+        if let data = try? JSONEncoder().encode(engine.state) {
+            defaults.set(data, forKey: Self.storageKey)
+        }
+
+        let delay = max(targetDate.timeIntervalSinceNow, 60)
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+                center.removePendingNotificationRequests(withIdentifiers: [Self.reminderRequestIdentifier])
+                center.removeDeliveredNotifications(withIdentifiers: [Self.reminderRequestIdentifier])
+                return
+            }
+            let content = UNMutableNotificationContent()
+            content.title = contentSpec.title
+            content.body = contentSpec.body
+            content.sound = .default
+            content.categoryIdentifier = Self.reminderCategoryIdentifier
+
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: Self.reminderRequestIdentifier,
+                content: content,
+                trigger: trigger
+            )
+            center.add(request)
+        }
     }
 
     private func configureNotificationCategories() {
@@ -200,45 +246,5 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
     private static func localDateString(_ date: Date = .now) -> String {
         let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", components.year ?? 0, components.month ?? 0, components.day ?? 0)
-    }
-}
-
-private extension JSONEncoder {
-    func decodeStateAndReencode(_ engine: inout CounterEngine, syncReminder: Bool) throws -> Data {
-        let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: [AppModel.reminderRequestIdentifier])
-        center.removeDeliveredNotifications(withIdentifiers: [AppModel.reminderRequestIdentifier])
-
-        let currentState = engine.state
-        if syncReminder,
-           ChantReminderPolicy.isEligibleForReminder(
-               remindersEnabled: currentState.areRemindersEnabled,
-               completedRounds: currentState.completedRounds,
-               beadCount: currentState.beadCount,
-               dailyGoalRounds: currentState.dailyGoalRounds
-           ),
-           let targetDate = ChantReminderPolicy.nextReminderDate(from: .now) {
-            let contentSpec = ChantReminderPolicy.buildReminderContent(
-                completedRounds: currentState.completedRounds,
-                dailyGoalRounds: currentState.dailyGoalRounds,
-                lastTemplateIndex: currentState.lastReminderTemplateIndex
-            )
-            engine.updateSettings(lastReminderTemplateIndex: contentSpec.templateIndex)
-            let content = UNMutableNotificationContent()
-            content.title = contentSpec.title
-            content.body = contentSpec.body
-            content.sound = .default
-            content.categoryIdentifier = AppModel.reminderCategoryIdentifier
-
-            let delay = max(targetDate.timeIntervalSinceNow, 60)
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
-            let request = UNNotificationRequest(
-                identifier: AppModel.reminderRequestIdentifier,
-                content: content,
-                trigger: trigger
-            )
-            center.add(request)
-        }
-        return try encode(engine.state)
     }
 }

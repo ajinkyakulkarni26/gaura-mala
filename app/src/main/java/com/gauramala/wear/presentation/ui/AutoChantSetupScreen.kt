@@ -668,7 +668,16 @@ fun AutoChantSetupScreen(
                                 tag = "voice-recording-again",
                                 onClick = {
                                     viewModel.stopVoiceChantPreview()
-                                    voiceStep = GuidedStep.COUNTDOWN
+                                    if (ContextCompat.checkSelfPermission(
+                                            context,
+                                            Manifest.permission.RECORD_AUDIO
+                                        ) == PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        voiceStep = GuidedStep.COUNTDOWN
+                                    } else {
+                                        voiceStep = GuidedStep.INTRO
+                                        microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
                                 }
                             )
                         }

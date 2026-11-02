@@ -29,6 +29,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refreshDailySession()
+        val currentState = viewModel.uiState.value
+        autoCountOngoingActivity.update(
+            isActive = currentState.autoCountActive,
+            isRunning = currentState.autoCountRunning
+        )
+        chantReminderScheduler.sync(currentState)
     }
 
     override fun onNewIntent(intent: Intent) {

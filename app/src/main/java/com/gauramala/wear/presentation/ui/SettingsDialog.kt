@@ -48,6 +48,8 @@ import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.SwitchButtonDefaults
 import androidx.wear.compose.material3.Text
+import com.gauramala.wear.AutoCountOngoingActivity
+import com.gauramala.wear.ChantReminderScheduler
 import com.gauramala.wear.presentation.MantraCounterViewModel
 import com.gauramala.wear.presentation.MantraUiState
 import com.gauramala.wear.presentation.theme.AlertRed
@@ -139,10 +141,14 @@ fun SettingsDialog(
     }
 
     val context = LocalContext.current
+    var notificationsAllowed by remember {
+        mutableStateOf(AutoCountOngoingActivity.notificationsEnabled(context))
+    }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        viewModel.toggleReminders(granted)
+    ) {
+        notificationsAllowed = AutoCountOngoingActivity.notificationsEnabled(context)
+        ChantReminderScheduler(context).sync(state.copy(isRemindersEnabled = true))
     }
     val scrollState = rememberScrollState()
     val rotaryFocusRequester = remember { FocusRequester() }
@@ -322,21 +328,28 @@ fun SettingsDialog(
         SwitchButton(
             checked = state.isRemindersEnabled,
             onCheckedChange = { enabled ->
-                if (!enabled) {
-                    viewModel.toggleReminders(false)
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                viewModel.toggleReminders(enabled)
+                notificationsAllowed = AutoCountOngoingActivity.notificationsEnabled(context)
+                if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                     ContextCompat.checkSelfPermission(
                         context,
                         Manifest.permission.POST_NOTIFICATIONS
                     ) != PackageManager.PERMISSION_GRANTED
                 ) {
                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                } else {
-                    viewModel.toggleReminders(true)
                 }
             },
             label = { Text("Reminders", fontSize = 12.sp) },
-            secondaryLabel = { Text("Gentle cue after 2.5h idle", fontSize = 10.sp) },
+            secondaryLabel = {
+                Text(
+                    if (state.isRemindersEnabled && !notificationsAllowed) {
+                        "Allow notifications in settings"
+                    } else {
+                        "Gentle cue after 2.5h idle"
+                    },
+                    fontSize = 10.sp
+                )
+            },
             colors = switchButtonColors,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-reminders")
         )
