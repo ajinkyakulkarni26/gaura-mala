@@ -13,6 +13,6 @@
     <string name="auto_count_notification_paused">Paused · tap to return</string>
     <string name="chant_reminder_notification_channel">Chanting Reminders</string>
     <string name="chant_reminder_notification_description">Gentle reminders to complete your daily rounds</string>
-    <string name="chant_reminder_action_goal_done">Goal done</string>
+    <string name="chant_reminder_action_goal_done">All Rounds Complete</string>
     <string name="chant_reminder_action_log_rounds">Log rounds</string>
 </resources>

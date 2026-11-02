@@ -341,7 +341,7 @@ public enum ChantReminderPolicy {
             return ChantReminderContent(
                 templateIndex: 4,
                 title: "Chanted on your beads?",
-                body: "Let's keep the enthusiasm flowing—chant Round \(nextRound) now or mark your goal done."
+                body: "Let's keep the enthusiasm flowing—chant Round \(nextRound) now or mark all rounds complete."
             )
         }
     }

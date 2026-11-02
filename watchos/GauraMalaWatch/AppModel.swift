@@ -516,7 +516,7 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
         center.delegate = self
         let goalDoneAction = UNNotificationAction(
             identifier: Self.actionMarkGoalDone,
-            title: "Goal done",
+            title: "All Rounds Complete",
             options: []
         )
         let logRoundsAction = UNNotificationAction(
