@@ -29,6 +29,8 @@ data class UserPreferences(
     val hapticFeedbackEnabled: Boolean = true,
     val milestoneVibrationsEnabled: Boolean = true,
     val keepScreenOn: Boolean = false,
+    val remindersEnabled: Boolean = false,
+    val lastReminderTemplateIndex: Int = -1,
     val lastRecordedDate: String = "",
     val autoChantPaceMillis: Int? = null
 )
@@ -44,6 +46,8 @@ class MantraPreferences(private val context: Context) {
         val KEY_HAPTIC_ENABLED = booleanPreferencesKey("key_haptic_enabled")
         val KEY_MILESTONE_ENABLED = booleanPreferencesKey("key_milestone_enabled")
         val KEY_KEEP_SCREEN_ON = booleanPreferencesKey("key_keep_screen_on")
+        val KEY_REMINDERS_ENABLED = booleanPreferencesKey("key_reminders_enabled")
+        val KEY_LAST_REMINDER_TEMPLATE_INDEX = intPreferencesKey("key_last_reminder_template_index")
         val KEY_LAST_DATE = stringPreferencesKey("key_last_date")
         val KEY_AUTO_CHANT_PACE_MILLIS = intPreferencesKey("key_auto_chant_pace_millis")
     }
@@ -58,6 +62,8 @@ class MantraPreferences(private val context: Context) {
             hapticFeedbackEnabled = preferences[KEY_HAPTIC_ENABLED] ?: true,
             milestoneVibrationsEnabled = preferences[KEY_MILESTONE_ENABLED] ?: true,
             keepScreenOn = preferences[KEY_KEEP_SCREEN_ON] ?: false,
+            remindersEnabled = preferences[KEY_REMINDERS_ENABLED] ?: false,
+            lastReminderTemplateIndex = preferences[KEY_LAST_REMINDER_TEMPLATE_INDEX] ?: -1,
             lastRecordedDate = preferences[KEY_LAST_DATE] ?: "",
             autoChantPaceMillis = preferences[KEY_AUTO_CHANT_PACE_MILLIS]?.takeIf { it > 0 }
         )
@@ -135,6 +141,35 @@ class MantraPreferences(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[KEY_KEEP_SCREEN_ON] = enabled
         }
+    }
+
+    suspend fun toggleReminders(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_REMINDERS_ENABLED] = enabled
+        }
+    }
+
+    suspend fun updateLastReminderTemplateIndex(index: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_LAST_REMINDER_TEMPLATE_INDEX] = index
+        }
+    }
+
+    /** Marks the user's daily round goal as completed today (for example, from physical beads). */
+    suspend fun markDailyGoalCompleted() {
+        val today = LocalDate.now().toString()
+        context.dataStore.edit { prefs ->
+            val goal = (prefs[KEY_DAILY_GOAL] ?: 16).coerceIn(1, 64)
+            val currentRounds = if (prefs[KEY_LAST_DATE] == today) {
+                prefs[KEY_COMPLETED_ROUNDS] ?: 0
+            } else {
+                0
+            }
+            prefs[KEY_BEAD_COUNT] = 0
+            prefs[KEY_COMPLETED_ROUNDS] = maxOf(currentRounds, goal)
+            prefs[KEY_LAST_DATE] = today
+        }
+        WearSurfaceUpdater.requestUpdate(context, updateComplications = true)
     }
 
     suspend fun resetDay() {

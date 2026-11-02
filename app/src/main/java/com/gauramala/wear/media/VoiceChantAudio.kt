@@ -1,14 +1,18 @@
 package com.gauramala.wear.media
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Build
+import androidx.core.content.ContextCompat
 
 /** Records and plays one short chant entirely inside the app's non-backed-up private directory. */
 internal class VoiceChantAudio(context: Context) {
+    private val appContext = context.applicationContext
     private val files = VoiceChantFiles(context.noBackupFilesDir)
     private var recorder: MediaRecorder? = null
     private var player: MediaPlayer? = null
@@ -43,8 +47,14 @@ internal class VoiceChantAudio(context: Context) {
         return duration?.takeIf { it > 0L }
     }
 
+    private fun hasRecordPermission(): Boolean =
+        ContextCompat.checkSelfPermission(
+            appContext,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+
     fun startRecording(onLimitReached: () -> Unit): Boolean {
-        if (recorder != null) return false
+        if (recorder != null || !hasRecordPermission()) return false
         val temporaryFile = files.temporaryRecordingFile()
         temporaryFile.parentFile?.mkdirs()
         temporaryFile.delete()

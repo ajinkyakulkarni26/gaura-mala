@@ -5,9 +5,10 @@ import WatchKit
 import WidgetKit
 
 @MainActor
-final class AppModel: ObservableObject {
+final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     @Published private(set) var state: CounterState
     @Published var isShowingGoalAlert = false
+    @Published var isShowingRoundPicker = false
     @Published private(set) var autoCountActive = false
     @Published private(set) var autoCountRunning = false
     @Published private(set) var autoCountUsesVoiceGuide = false
@@ -21,6 +22,10 @@ final class AppModel: ObservableObject {
     private let defaults: UserDefaults
     static let storageKey = "gaura-mala.watch.counter-state.v1"
     static let appGroup = "group.com.gauramala.watchos"
+    static let reminderCategoryIdentifier = "CHANT_REMINDER"
+    static let reminderRequestIdentifier = "gaura-mala.chant-reminder"
+    static let actionMarkGoalDone = "ACTION_MARK_GOAL_DONE"
+    static let actionOpenRoundPicker = "ACTION_OPEN_ROUND_PICKER"
     private static let autoCountNotificationId = "gaura-mala.auto-count.session"
 
     private var engine: CounterEngine
@@ -44,6 +49,8 @@ final class AppModel: ObservableObject {
         _ = engine.rollOverIfNeeded(to: Self.localDateString())
         state = engine.state
         hasVoiceChantRecording = voiceChantAudio.hasRecording()
+        super.init()
+        configureNotificationCategories()
         persist()
     }
 
@@ -109,15 +116,31 @@ final class AppModel: ObservableObject {
         isDoubleTapEnabled: Bool? = nil,
         isScreenTapEnabled: Bool? = nil,
         isHapticsEnabled: Bool? = nil,
-        areMilestonesEnabled: Bool? = nil
+        areMilestonesEnabled: Bool? = nil,
+        areRemindersEnabled: Bool? = nil
     ) {
         refreshForCurrentDay()
         engine.updateSettings(
             isDoubleTapEnabled: isDoubleTapEnabled,
             isScreenTapEnabled: isScreenTapEnabled,
             isHapticsEnabled: isHapticsEnabled,
-            areMilestonesEnabled: areMilestonesEnabled
+            areMilestonesEnabled: areMilestonesEnabled,
+            areRemindersEnabled: areRemindersEnabled
         )
+        state = engine.state
+        persist()
+        if areRemindersEnabled == true {
+            Task {
+                let center = UNUserNotificationCenter.current()
+                _ = try? await center.requestAuthorization(options: [.alert, .sound])
+                self.syncReminderNotification()
+            }
+        }
+    }
+
+    func markDailyGoalCompleted() {
+        refreshForCurrentDay()
+        engine.markDailyGoalCompleted()
         state = engine.state
         persist()
     }
@@ -149,10 +172,13 @@ final class AppModel: ObservableObject {
     }
 
     func refreshForCurrentDay() {
-        guard engine.rollOverIfNeeded(to: Self.localDateString()) else { return }
-        state = engine.state
-        isShowingGoalAlert = false
-        persist()
+        if engine.rollOverIfNeeded(to: Self.localDateString()) {
+            state = engine.state
+            isShowingGoalAlert = false
+            persist()
+        } else {
+            syncReminderNotification()
+        }
     }
 
     func roundAdjustmentSelectionTick() {
@@ -379,6 +405,7 @@ final class AppModel: ObservableObject {
     }
 
     private func updateAutoCountNotification() {
+        syncReminderNotification()
         let current = (autoCountActive, autoCountRunning)
         if let last = lastNotificationSessionState, last.0 == current.0 && last.1 == current.1 {
             return
@@ -394,6 +421,8 @@ final class AppModel: ObservableObject {
 
         center.getNotificationSettings { settings in
             guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+                center.removePendingNotificationRequests(withIdentifiers: [Self.autoCountNotificationId])
+                center.removeDeliveredNotifications(withIdentifiers: [Self.autoCountNotificationId])
                 return
             }
             let content = UNMutableNotificationContent()
@@ -424,9 +453,107 @@ final class AppModel: ObservableObject {
     }
 
     private func persist() {
+        syncReminderNotification()
         guard let data = try? JSONEncoder().encode(engine.state) else { return }
+        state = engine.state
         defaults.set(data, forKey: Self.storageKey)
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    func syncReminderNotification() {
+        let center = UNUserNotificationCenter.current()
+        let reminderIds = [Self.reminderRequestIdentifier] + (0..<ChantReminderPolicy.templateCount).map {
+            "\(Self.reminderRequestIdentifier).\($0)"
+        }
+        center.removePendingNotificationRequests(withIdentifiers: reminderIds)
+        center.removeDeliveredNotifications(withIdentifiers: reminderIds)
+
+        let currentState = engine.state
+        guard ChantReminderPolicy.isEligibleForReminder(
+            remindersEnabled: currentState.areRemindersEnabled,
+            completedRounds: currentState.completedRounds,
+            beadCount: currentState.beadCount,
+            dailyGoalRounds: currentState.dailyGoalRounds,
+            isAutoChanting: autoCountActive
+        ),
+        let targetDate = ChantReminderPolicy.nextReminderDate(from: .now) else {
+            return
+        }
+
+        let contentSpec = ChantReminderPolicy.buildReminderContent(
+            completedRounds: currentState.completedRounds,
+            dailyGoalRounds: currentState.dailyGoalRounds,
+            lastTemplateIndex: currentState.lastReminderTemplateIndex
+        )
+        engine.updateSettings(lastReminderTemplateIndex: contentSpec.templateIndex)
+        state = engine.state
+        if let data = try? JSONEncoder().encode(engine.state) {
+            defaults.set(data, forKey: Self.storageKey)
+        }
+
+        let delay = max(targetDate.timeIntervalSinceNow, 60)
+        let requestId = "\(Self.reminderRequestIdentifier).\(contentSpec.templateIndex)"
+        center.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+                center.removePendingNotificationRequests(withIdentifiers: reminderIds)
+                center.removeDeliveredNotifications(withIdentifiers: reminderIds)
+                return
+            }
+            let content = UNMutableNotificationContent()
+            content.title = contentSpec.title
+            content.body = contentSpec.body
+            content.sound = .default
+            content.categoryIdentifier = Self.reminderCategoryIdentifier
+
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: delay, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: requestId,
+                content: content,
+                trigger: trigger
+            )
+            center.add(request)
+        }
+    }
+
+    private func configureNotificationCategories() {
+        let center = UNUserNotificationCenter.current()
+        center.delegate = self
+        let goalDoneAction = UNNotificationAction(
+            identifier: Self.actionMarkGoalDone,
+            title: "All Rounds Complete",
+            options: []
+        )
+        let logRoundsAction = UNNotificationAction(
+            identifier: Self.actionOpenRoundPicker,
+            title: "Log rounds",
+            options: [.foreground]
+        )
+        let category = UNNotificationCategory(
+            identifier: Self.reminderCategoryIdentifier,
+            actions: [goalDoneAction, logRoundsAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        center.setNotificationCategories([category])
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let actionIdentifier = response.actionIdentifier
+        Task { @MainActor in
+            switch actionIdentifier {
+            case Self.actionMarkGoalDone:
+                self.markDailyGoalCompleted()
+            case Self.actionOpenRoundPicker:
+                self.isShowingRoundPicker = true
+            default:
+                break
+            }
+            completionHandler()
+        }
     }
 
     private static func uptimeMillis() -> Int64 {

@@ -14,7 +14,6 @@ struct CounterView: View {
     @Environment(\.isLuminanceReduced) private var isAmbient
     @State private var showingSettings = false
     @State private var showingAutoChantSetup = false
-    @State private var showingRoundPicker = false
     @State private var crownValue = 0.0
 
     var body: some View {
@@ -28,7 +27,7 @@ struct CounterView: View {
                         .foregroundStyle(.white)
                 } else {
                     Button {
-                        showingRoundPicker = true
+                        model.isShowingRoundPicker = true
                     } label: {
                         HStack(spacing: 4) {
                             Text(model.state.isGoalAchieved ? "Daily goal reached" : "Round \(model.state.currentRound) of \(model.state.dailyGoalRounds)")
@@ -135,7 +134,7 @@ struct CounterView: View {
             )
             .environmentObject(model)
         }
-        .sheet(isPresented: $showingRoundPicker) {
+        .sheet(isPresented: $model.isShowingRoundPicker) {
             RoundPickerView()
                 .environmentObject(model)
         }

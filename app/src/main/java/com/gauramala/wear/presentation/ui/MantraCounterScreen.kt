@@ -75,7 +75,9 @@ import com.gauramala.wear.presentation.theme.SurfaceDark
 @Composable
 fun MantraCounterScreen(
     viewModel: MantraCounterViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    openRoundPickerInitially: Boolean = false,
+    onRoundPickerLaunchConsumed: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val canUsePinchGesture = state.isPinchGestureEnabled && state.supportsOneHandedGestures
@@ -83,6 +85,15 @@ fun MantraCounterScreen(
     var showAutoChantSetup by remember { mutableStateOf(false) }
     var notificationPermissionDeclined by remember { mutableStateOf(false) }
     var showRoundProgress by remember { mutableStateOf(false) }
+
+    LaunchedEffect(openRoundPickerInitially) {
+        if (openRoundPickerInitially) {
+            showSettings = false
+            showAutoChantSetup = false
+            showRoundProgress = true
+            onRoundPickerLaunchConsumed()
+        }
+    }
     val isAmbient = LocalAmbientModeManager.current?.currentAmbientMode is AmbientMode.Ambient
     val gestureConfiguration = rememberOneHandedGestureConfiguration(
         action = OneHandedGestureAction.Primary,

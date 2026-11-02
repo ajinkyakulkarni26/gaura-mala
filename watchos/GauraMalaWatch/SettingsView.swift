@@ -90,6 +90,14 @@ struct SettingsView: View {
                         Text("Ticks at 27, 54, 81.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+
+                        Toggle("Reminders", isOn: Binding(
+                            get: { model.state.areRemindersEnabled },
+                            set: { model.updateSettings(areRemindersEnabled: $0) }
+                        ))
+                        Text("Gentle reminder after 2.5 hours idle once you start chanting today.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
 
                     Section("Progress") {

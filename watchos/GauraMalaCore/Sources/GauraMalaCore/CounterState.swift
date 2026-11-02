@@ -8,6 +8,8 @@ public struct CounterState: Codable, Equatable, Sendable {
     public var isScreenTapEnabled: Bool
     public var isHapticsEnabled: Bool
     public var areMilestonesEnabled: Bool
+    public var areRemindersEnabled: Bool
+    public var lastReminderTemplateIndex: Int
     public var autoChantPaceMillis: Int?
     public var lastRecordedDate: String
     public var canUndo: Bool
@@ -21,6 +23,8 @@ public struct CounterState: Codable, Equatable, Sendable {
         isScreenTapEnabled: Bool = true,
         isHapticsEnabled: Bool = true,
         areMilestonesEnabled: Bool = true,
+        areRemindersEnabled: Bool = false,
+        lastReminderTemplateIndex: Int = -1,
         autoChantPaceMillis: Int? = nil,
         lastRecordedDate: String = "",
         canUndo: Bool = false,
@@ -33,6 +37,8 @@ public struct CounterState: Codable, Equatable, Sendable {
         self.isScreenTapEnabled = isScreenTapEnabled
         self.isHapticsEnabled = isHapticsEnabled
         self.areMilestonesEnabled = areMilestonesEnabled
+        self.areRemindersEnabled = areRemindersEnabled
+        self.lastReminderTemplateIndex = lastReminderTemplateIndex
         self.autoChantPaceMillis = autoChantPaceMillis.flatMap {
             AutoChantTiming.isValidPace($0) ? $0 : nil
         }
@@ -49,6 +55,8 @@ public struct CounterState: Codable, Equatable, Sendable {
         case isScreenTapEnabled
         case isHapticsEnabled
         case areMilestonesEnabled
+        case areRemindersEnabled
+        case lastReminderTemplateIndex
         case autoChantPaceMillis
         case lastRecordedDate
         case canUndo
@@ -65,6 +73,8 @@ public struct CounterState: Codable, Equatable, Sendable {
             isScreenTapEnabled: try values.decodeIfPresent(Bool.self, forKey: .isScreenTapEnabled) ?? true,
             isHapticsEnabled: try values.decodeIfPresent(Bool.self, forKey: .isHapticsEnabled) ?? true,
             areMilestonesEnabled: try values.decodeIfPresent(Bool.self, forKey: .areMilestonesEnabled) ?? true,
+            areRemindersEnabled: try values.decodeIfPresent(Bool.self, forKey: .areRemindersEnabled) ?? false,
+            lastReminderTemplateIndex: try values.decodeIfPresent(Int.self, forKey: .lastReminderTemplateIndex) ?? -1,
             autoChantPaceMillis: try values.decodeIfPresent(Int.self, forKey: .autoChantPaceMillis),
             lastRecordedDate: try values.decodeIfPresent(String.self, forKey: .lastRecordedDate) ?? "",
             canUndo: false,
@@ -187,12 +197,24 @@ public struct CounterEngine: Sendable {
         isDoubleTapEnabled: Bool? = nil,
         isScreenTapEnabled: Bool? = nil,
         isHapticsEnabled: Bool? = nil,
-        areMilestonesEnabled: Bool? = nil
+        areMilestonesEnabled: Bool? = nil,
+        areRemindersEnabled: Bool? = nil,
+        lastReminderTemplateIndex: Int? = nil
     ) {
         if let isDoubleTapEnabled { state.isDoubleTapEnabled = isDoubleTapEnabled }
         if let isScreenTapEnabled { state.isScreenTapEnabled = isScreenTapEnabled }
         if let isHapticsEnabled { state.isHapticsEnabled = isHapticsEnabled }
         if let areMilestonesEnabled { state.areMilestonesEnabled = areMilestonesEnabled }
+        if let areRemindersEnabled { state.areRemindersEnabled = areRemindersEnabled }
+        if let lastReminderTemplateIndex { state.lastReminderTemplateIndex = lastReminderTemplateIndex }
+    }
+
+    public mutating func markDailyGoalCompleted() {
+        state.completedRounds = max(state.completedRounds, state.dailyGoalRounds)
+        state.beadCount = 0
+        state.canUndo = false
+        state.showGoalReached = false
+        previousState = nil
     }
 
     public mutating func resetCurrentRound() {
@@ -219,6 +241,109 @@ public struct CounterEngine: Sendable {
 
     public mutating func dismissGoalReached() {
         state.showGoalReached = false
+    }
+}
+
+public struct ChantReminderContent: Equatable, Sendable {
+    public let templateIndex: Int
+    public let title: String
+    public let body: String
+
+    public init(templateIndex: Int, title: String, body: String) {
+        self.templateIndex = templateIndex
+        self.title = title
+        self.body = body
+    }
+}
+
+public enum ChantReminderPolicy {
+    public static let inactivityMinutes: Int = 150
+    public static let quietHoursStartHour: Int = 21
+    public static let quietHoursEndHour: Int = 6
+    public static let templateCount: Int = 5
+
+    public static func isEligibleForReminder(
+        remindersEnabled: Bool,
+        completedRounds: Int,
+        beadCount: Int,
+        dailyGoalRounds: Int,
+        isAutoChanting: Bool = false
+    ) -> Bool {
+        if !remindersEnabled || isAutoChanting {
+            return false
+        }
+        let hasStartedToday = completedRounds > 0 || beadCount > 0
+        let hasRemainingGoal = completedRounds < dailyGoalRounds
+        return hasStartedToday && hasRemainingGoal
+    }
+
+    public static func isWithinQuietHours(hour: Int) -> Bool {
+        hour >= quietHoursStartHour || hour < quietHoursEndHour
+    }
+
+    public static func nextReminderDate(from now: Date, calendar: Calendar = .current) -> Date? {
+        guard let candidate = calendar.date(byAdding: .minute, value: inactivityMinutes, to: now) else {
+            return nil
+        }
+        let nowDay = calendar.startOfDay(for: now)
+        let candidateDay = calendar.startOfDay(for: candidate)
+        guard nowDay == candidateDay else {
+            return nil
+        }
+        let candidateHour = calendar.component(.hour, from: candidate)
+        if isWithinQuietHours(hour: candidateHour) {
+            return nil
+        }
+        return candidate
+    }
+
+    public static func nextTemplateIndex(lastTemplateIndex: Int) -> Int {
+        guard lastTemplateIndex >= 0 else { return 0 }
+        return (lastTemplateIndex + 1) % templateCount
+    }
+
+    public static func buildReminderContent(
+        completedRounds: Int,
+        dailyGoalRounds: Int,
+        lastTemplateIndex: Int
+    ) -> ChantReminderContent {
+        let index = nextTemplateIndex(lastTemplateIndex: lastTemplateIndex)
+        let remaining = max(dailyGoalRounds - completedRounds, 1)
+        let nextRound = completedRounds + 1
+        let remainingLabel = remaining == 1 ? "1 round left" : "\(remaining) rounds left"
+
+        switch index {
+        case 0:
+            return ChantReminderContent(
+                templateIndex: 0,
+                title: "Ready for Round \(nextRound)?",
+                body: "You're at \(completedRounds) of \(dailyGoalRounds) today—let's chant a peaceful round."
+            )
+        case 1:
+            return ChantReminderContent(
+                templateIndex: 1,
+                title: "Time for a quick round?",
+                body: "\(remainingLabel) for your \(dailyGoalRounds)-round goal. Every mantra brings steady joy."
+            )
+        case 2:
+            return ChantReminderContent(
+                templateIndex: 2,
+                title: "Keep your mala moving?",
+                body: "Nice start with \(completedRounds) done! Tap to chant Round \(nextRound) or log bead rounds."
+            )
+        case 3:
+            return ChantReminderContent(
+                templateIndex: 3,
+                title: "A gentle japa pause?",
+                body: "Have a few quiet minutes for Round \(nextRound)? You're \(remainingLabel) from today's goal."
+            )
+        default:
+            return ChantReminderContent(
+                templateIndex: 4,
+                title: "Chanted on your beads?",
+                body: "Let's keep the enthusiasm flowing—chant Round \(nextRound) now or mark all rounds complete."
+            )
+        }
     }
 }
 

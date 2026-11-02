@@ -1,27 +1,31 @@
 package com.gauramala.wear
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.wear.ongoing.OngoingActivity
 
 /** Keeps Auto Count reachable while running and leaves a paused return notification until stopped. */
 internal class AutoCountOngoingActivity(context: Context) {
     private val appContext = context.applicationContext
     private val notifications = NotificationManagerCompat.from(appContext)
-    private var lastSessionState: Pair<Boolean, Boolean>? = null
+    private var lastSessionState: Triple<Boolean, Boolean, Boolean>? = null
 
     fun update(isActive: Boolean, isRunning: Boolean) {
-        val sessionState = isActive to isRunning
+        val notificationsAllowed = notificationsEnabled(appContext)
+        val sessionState = Triple(isActive, isRunning, notificationsAllowed)
         if (sessionState == lastSessionState) return
         lastSessionState = sessionState
 
-        if (!isActive || !notifications.areNotificationsEnabled()) {
+        if (!isActive || !notificationsAllowed) {
             stop()
             return
         }
@@ -63,7 +67,7 @@ internal class AutoCountOngoingActivity(context: Context) {
 
     fun stop() {
         notifications.cancel(NOTIFICATION_ID)
-        lastSessionState = false to false
+        lastSessionState = Triple(false, false, notificationsEnabled(appContext))
     }
 
     private fun createNotificationChannel() {
@@ -87,7 +91,13 @@ internal class AutoCountOngoingActivity(context: Context) {
         const val CHANNEL_ID = "auto_count_session"
         const val NOTIFICATION_ID = 108
 
-        fun notificationsEnabled(context: Context): Boolean =
-            NotificationManagerCompat.from(context).areNotificationsEnabled()
+        fun notificationsEnabled(context: Context): Boolean {
+            val runtimeGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            return runtimeGranted && NotificationManagerCompat.from(context).areNotificationsEnabled()
+        }
     }
 }

@@ -1,7 +1,9 @@
 package com.gauramala.wear
 
 import android.Manifest
+import android.app.Notification
 import android.content.ContentValues
+import android.content.Intent
 import android.graphics.Bitmap
 import android.media.AudioManager
 import android.provider.MediaStore
@@ -47,6 +49,8 @@ import org.junit.rules.ExternalResource
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalTestApi::class)
@@ -66,11 +70,13 @@ class CounterInputIntegrationTest {
                 }
             }
             VoiceChantFiles(context.noBackupFilesDir).deleteAll()
+            ChantReminderScheduler(context).cancelAll()
         }
 
         override fun after() {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
             VoiceChantFiles(context.noBackupFilesDir).deleteAll()
+            ChantReminderScheduler(context).cancelAll()
         }
     }
     private val grantNotificationPermission = GrantPermissionRule.grant(
@@ -220,6 +226,7 @@ class CounterInputIntegrationTest {
         composeRule.onNodeWithText("Double Pinch").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Screen Tap").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("settings-haptics").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("settings-reminders").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("settings-keep-awake").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Reset Round").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Reset Today").performScrollTo().assertIsDisplayed()
@@ -253,6 +260,17 @@ class CounterInputIntegrationTest {
 
         keepAwakeSwitch.assertIsOff().performClick()
         awaitSwitchOn("settings-keep-awake")
+    }
+
+    @Test
+    fun remindersSettingDefaultsOffAndCanBeToggled() {
+        openSettings()
+        val remindersSwitch = composeRule.onNodeWithTag("settings-reminders").performScrollTo()
+
+        remindersSwitch.assertIsOff().performClick()
+        awaitSwitchOn("settings-reminders")
+        composeRule.onNodeWithTag("settings-reminders").performScrollTo().performClick()
+        awaitSwitchOff("settings-reminders")
     }
 
     @Test
@@ -552,6 +570,7 @@ class CounterInputIntegrationTest {
             "settings-screen-tap",
             "settings-haptics",
             "settings-milestones",
+            "settings-reminders",
             "settings-keep-awake"
         ).forEach { tag ->
             assertAtLeast48Dp(tag, composeRule.onNodeWithTag(tag).performScrollTo())
@@ -646,6 +665,87 @@ class CounterInputIntegrationTest {
 
         awaitBeadCount("0")
         awaitRound("Round 1 of 16")
+    }
+
+    @Test
+    fun chantReminderDeliversAndGoalDoneActionCompletesDailyGoal() {
+        openSettings()
+        val remindersSwitch = composeRule.onNodeWithTag("settings-reminders").performScrollTo()
+        remindersSwitch.assertIsOff().performClick()
+        awaitSwitchOn("settings-reminders")
+        composeRule.onNodeWithText("Done").performScrollTo().performClick()
+
+        setStoredProgress(beadCount = 0, completedRounds = 4)
+        awaitRound("Round 5 of 16")
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val receiver = ChantReminderReceiver()
+        val midMorning = LocalDateTime.of(LocalDate.now(), LocalTime.of(11, 0))
+        runBlocking {
+            receiver.handleAction(context, ChantReminderScheduler.ACTION_SHOW_REMINDER, midMorning)
+        }
+        awaitReminderNotification(expectedVisible = true, expectedTitle = "Time for a round?")
+
+        val earlyAfternoon = LocalDateTime.of(LocalDate.now(), LocalTime.of(13, 30))
+        runBlocking {
+            receiver.handleAction(context, ChantReminderScheduler.ACTION_SHOW_REMINDER, earlyAfternoon)
+        }
+        awaitReminderNotification(expectedVisible = true, expectedTitle = "Keep your mala flowing")
+
+        runBlocking {
+            receiver.handleAction(context, ChantReminderScheduler.ACTION_MARK_GOAL_DONE, earlyAfternoon)
+        }
+        awaitReminderNotification(expectedVisible = false)
+        awaitRound("Daily goal reached")
+        awaitBeadCount("0")
+    }
+
+    @Test
+    fun chantReminderDoesNotDeliverBeforeChantingStartsOrDuringQuietHours() {
+        openSettings()
+        composeRule.onNodeWithTag("settings-reminders").performScrollTo().performClick()
+        awaitSwitchOn("settings-reminders")
+        composeRule.onNodeWithText("Done").performScrollTo().performClick()
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val receiver = ChantReminderReceiver()
+        val midMorning = LocalDateTime.of(LocalDate.now(), LocalTime.of(11, 0))
+        runBlocking {
+            receiver.handleAction(context, ChantReminderScheduler.ACTION_SHOW_REMINDER, midMorning)
+        }
+        awaitReminderNotification(expectedVisible = false)
+
+        setStoredProgress(beadCount = 0, completedRounds = 4)
+        awaitRound("Round 5 of 16")
+
+        val quietNight = LocalDateTime.of(LocalDate.now(), LocalTime.of(22, 0))
+        runBlocking {
+            receiver.handleAction(context, ChantReminderScheduler.ACTION_SHOW_REMINDER, quietNight)
+        }
+        awaitReminderNotification(expectedVisible = false)
+    }
+
+    @Test
+    fun chantReminderLogRoundsIntentOpensRoundAdjustmentDialog() {
+        setStoredProgress(beadCount = 0, completedRounds = 4)
+        awaitRound("Round 5 of 16")
+
+        composeRule.runOnUiThread {
+            composeRule.activity.handleLaunchIntent(
+                Intent(composeRule.activity, MainActivity::class.java).apply {
+                    putExtra(ChantReminderScheduler.EXTRA_OPEN_ROUND_PICKER, true)
+                }
+            )
+        }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runCatching { composeRule.onNodeWithText("Rounds").assertIsDisplayed() }.isSuccess
+        }
+        repeat(2) {
+            composeRule.onNodeWithContentDescription("Increase completed rounds").performClick()
+        }
+        composeRule.onNodeWithContentDescription("Set completed rounds").performClick()
+        awaitRound("Round 7 of 16")
     }
 
     private fun tapCounter() {
@@ -766,6 +866,22 @@ class CounterInputIntegrationTest {
                 .activeNotifications
                 .any { it.id == AutoCountOngoingActivity.NOTIFICATION_ID }
             isVisible == expectedVisible
+        }
+    }
+
+    private fun awaitReminderNotification(
+        expectedVisible: Boolean,
+        expectedTitle: String? = null
+    ) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            val active = NotificationManagerCompat.from(context)
+                .activeNotifications
+                .firstOrNull { ChantReminderScheduler.isReminderNotificationId(it.id) }
+            val isVisible = active != null
+            val titleMatches = expectedTitle == null ||
+                active?.notification?.extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString() == expectedTitle
+            isVisible == expectedVisible && titleMatches
         }
     }
 
