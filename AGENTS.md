@@ -17,9 +17,11 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 
 - `MainActivity.kt`: activity, screen-on preference, and Compose setup.
 - `AutoCountOngoingActivity.kt`: low-priority notification that keeps running Auto Count reachable through ambient timeout and remains as “Paused · tap to return” while a session is paused; it is removed when counting is stopped.
+- `ChantReminderScheduler.kt`, `ChantReminderReceiver.kt`: optional daytime chanting reminder alarms (after 2.5 hours of inactivity once the user has started chanting today and is below their daily goal) and notification actions (`All Rounds Complete` and `Log rounds`).
 - `presentation/MantraCounterViewModel.kt`: counter behavior, day rollover, debouncing, persistence coordination, and haptic dispatch.
 - `presentation/MantraCounterStateMachine.kt`: pure counter transitions and undo history.
 - `presentation/AutoChantPacer.kt`: validated user pace calibration and one-at-a-time timer scheduling.
+- `presentation/ChantReminderPolicy.kt`: pure eligibility, quiet-hours (`9 PM–6 AM`), and rotating reminder template policy.
 - `presentation/CounterHapticPolicy.kt`: input-specific haptic selection.
 - `presentation/RotaryBeadInput.kt`: crown delta accumulation and idle reset.
 - `presentation/ui/MantraCounterScreen.kt`: counter screen, tap/crown/double-pinch input, and the one-time pinch cue.
@@ -52,6 +54,7 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - The recording disclosure must tell users to record only a voice they have permission to record and use. Do not market the feature as a way to capture or replay famous people's recordings; do not bundle third-party chant audio.
 - Milestones are beads 27, 54, and 81; one round completes at 108. The daily-goal completion cue takes priority when the last bead also reaches the daily goal.
 - The counter's round label opens a manual adjustment for completed rounds today, so users can reconcile progress after chanting with physical beads. The picker supports plus/minus buttons and crown rotation, with a subtle selection tick when haptics are enabled; use a short title and check/cross actions to fit the round display. Saving starts the next watch round at bead 0, clears the previous bead's undo history, and does not play chanting haptics or show the goal celebration.
+- Optional Chanting Reminders (`Reminders` in Settings, off by default) schedule a local daytime notification after 2.5 hours of inactivity once the user has chanted at least one bead or round today and is still below their daily goal. Reminders never fire during quiet hours (9:00 PM – 6:00 AM), while Auto Count is running, or after the daily goal is reached. Five gentle, non-repeating templates rotate across reminders, and each reminder cancels any previous unread reminder and posts with a distinct per-template notification ID (`109 + templateIndex`) so the watch alerts fresh at each interval without piling up multiple notifications. Notification actions let the user open the round picker (`Log rounds`) or mark the daily goal completed (`All Rounds Complete`) directly from the notification tray. Both notification surfaces and microphone recording re-check system permission state on resume and before acting so external permission grants or revocations take effect immediately.
 - Reset confirmation actions use accessible check/cross icon buttons to avoid clipped labels on round displays.
 - When a modal screen takes focus for crown input, restore focus to the counter after it closes so crown counting continues without requiring a tap.
 - The ambient counter header shows the current round (`completedRounds + 1`) to match the active display, and shows `Goal` when the daily goal is complete.
@@ -163,4 +166,4 @@ Release readiness checked on 2026-10-30:
 
 ## Workspace hygiene
 
-Branding files are grouped under `assets/branding/`; generated visual references are under `assets/design-references/gemini-generated/`; Play Store artwork and listing screenshots are under `play-store/`; watch recordings and captures are under `test-artifacts/`. Review screenshots and test artifacts individually before staging. `testers.csv` contains tester email addresses; do not commit it. Avoid broad `git add .` while these user-owned files are present.
+Branding files are grouped under `assets/branding/`; generated visual references are under `assets/design-references/gemini-generated/`; Play Store artwork and listing screenshots are under `play-store/`; watch recordings and captures are under `test-artifacts/`. Review screenshots and test artifacts individually before staging. `testers.csv` contains tester email addresses; do not commit it. Avoid broad `git add .` while these user-owned files are present. Keep `README.md` and `AGENTS.md` concise and free of duplicated sections, repeated links, or split source trees whenever adding or updating features.
