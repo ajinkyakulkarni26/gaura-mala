@@ -7,7 +7,7 @@ Last reviewed: 2026-11-02
 Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It is a watch-only app with a circular 108-bead progress ring, daily round goal (16 by default), haptics, a Tile, and a watch-face complication.
 
 - Application ID: `com.gauramala.wear`
-- Current Android source version: `versionCode 15`, `versionName 1.1.0`; its Production (Wear OS) release is in review and Managed publishing is on. Play release `versionCode 14` (`versionName 1.0.0`) was submitted to Production on 2026-10-16 and the user confirmed it was published on 2026-10-30.
+- Current Android source version: `versionCode 16`, `versionName 1.1.0`; `versionCode 15` (`1.1.0`) was rejected in Play review for missing scrollbars and round-bezel clipping in Settings, and `versionCode 16` addresses both across all screens while bundling Chanting Reminders. Play release `versionCode 14` (`versionName 1.0.0`) was submitted to Production on 2026-10-16 and the user confirmed it was published on 2026-10-30.
 - Main stack: Kotlin, Jetpack Compose for Wear OS Material 3, DataStore, Wearable Services
 - Minimum SDK 30; target and compile SDK 37; JDK 17
 - The app is declared standalone in `AndroidManifest.xml`; core counting does not require a phone app.
@@ -27,6 +27,7 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - `presentation/ui/MantraCounterScreen.kt`: counter screen, tap/crown/double-pinch input, and the one-time pinch cue.
 - `presentation/ui/RoundProgressDialog.kt`: manual completed-round adjustment for rounds chanted with physical beads.
 - `presentation/ui/BeadProgressRing.kt`: 108-bead circular progress UI.
+- `presentation/ui/RoundScrollContainer.kt`: shared curved `ScrollIndicator` container and `Modifier.roundScrollItem()` bezel-safe scaling/fading for continuous `Column` scroll views.
 - `presentation/ui/SettingsDialog.kt`: settings, resets, and privacy policy entry.
 - `presentation/ui/AutoChantSetupScreen.kt`: pace calibration, optional recording disclosure, playback, and hands-free controls.
 - `presentation/ui/PrivacyPolicyScreen.kt`: on-watch policy and Contact Developer action.
@@ -60,8 +61,8 @@ Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It
 - The ambient counter header shows the current round (`completedRounds + 1`) to match the active display, and shows `Goal` when the daily goal is complete.
 - Keep Awake is optional and defaults off. The double-pinch path and Auto Count haptics work in ambient mode; do not force the display to remain fully awake to make counting work. A running Auto Count uses an Ongoing Activity while preserving the dim display. A paused session removes that notification and follows the watch's normal inactivity timeout when Keep Awake is off; it can be resumed after reopening the app.
 - Preserve the current centered round bead ring. Earlier circle redesigns looked disoriented to the user; the requested adjustment was text placement, not a different ring.
-- Wear OS screens must adapt to round displays with different usable diameters and system font scales. Let labels wrap where needed, keep important controls within the curved safe area, and preserve at least 48dp touch targets for primary actions.
-- The Settings list is a short, regular `Column` with continuous `verticalScroll` and `rotaryScrollable` attached to the same scroll state. The user confirmed this feels smooth on the Pixel Watch 5. Keep this implementation; `TransformingLazyColumn` free scrolling felt rough, and its snap-and-fling experiment felt slow and stepped like an elevator.
+- Wear OS screens must adapt to round displays with different usable diameters and system font scales. Let labels wrap where needed, keep important controls within the curved safe area, display a Wear OS `ScrollIndicator` whenever a screen is scrollable, and preserve at least 48dp touch targets for primary actions.
+- The Settings list is a short, regular `Column` with continuous `verticalScroll` and `rotaryScrollable` attached to the same scroll state (`RoundScrollContainer` + `Modifier.roundScrollItem()`). The user confirmed this feels smooth on the Pixel Watch 5, and `roundScrollItem()` visually scales and fades items near the top/bottom bezel without changing layout height or semantic touch targets. Keep this implementation; `TransformingLazyColumn` free scrolling felt rough, and its snap-and-fling experiment felt slow and stepped like an elevator.
 - Wrist-flick dismissal is standard Wear OS behavior. Do not try to intercept system navigation to keep the app open.
 - Progress, preferences, and an optional chant recording are stored locally on the watch. Counts roll over on the local calendar date; preferences and any recording remain until cleared or uninstalled. The app does not send this data to a server, and Android backup is disabled. Do not describe the app as storing no data at all.
 - The launcher uses a black adaptive-icon background and a bead-mala foreground with no text. Keep the artwork centered and sized to avoid clipping in the circular mask.

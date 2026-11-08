@@ -3,6 +3,7 @@ package com.gauramala.wear.presentation.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +40,7 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScrollIndicator
 import androidx.wear.compose.material3.Text
 import com.gauramala.wear.presentation.MantraUiState
 import com.gauramala.wear.presentation.theme.GauraGold
@@ -75,124 +77,145 @@ fun RoundProgressDialog(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .onRotaryScrollEvent { event ->
-                val roundSteps = rotaryInput.consume(
-                    deltaPx = event.verticalScrollPixels,
-                    eventUptimeMs = event.uptimeMillis
-                )
-                if (roundSteps != 0) {
-                    adjustRoundsBy(roundSteps)
+    val scrollState = rememberScrollState()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .onRotaryScrollEvent { event ->
+                    val roundSteps = rotaryInput.consume(
+                        deltaPx = event.verticalScrollPixels,
+                        eventUptimeMs = event.uptimeMillis
+                    )
+                    if (roundSteps != 0) {
+                        adjustRoundsBy(roundSteps)
+                    }
+                    true
                 }
-                true
-            }
-            .focusRequester(rotaryFocusRequester)
-            .focusable()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Rounds",
-            style = MaterialTheme.typography.labelSmall,
-            color = GauraGold,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(2.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                .focusRequester(rotaryFocusRequester)
+                .focusable()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp, vertical = 18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Button(
-                onClick = { adjustRoundsBy(-1) },
-                enabled = selectedRounds > 0,
-                modifier = Modifier.size(48.dp).testTag("round-picker-decrease"),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = SurfaceDark,
-                    contentColor = OnSurfaceWhite
-                )
-            ) {
-                Icon(Icons.Default.Remove, contentDescription = "Decrease completed rounds", modifier = Modifier.size(26.dp))
-            }
-
             Text(
-                text = "$selectedRounds",
-                modifier = Modifier.weight(1f).testTag("selected-completed-rounds"),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
+                text = "Rounds",
+                style = MaterialTheme.typography.labelSmall,
+                color = GauraGold,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                maxLines = 1
+                modifier = Modifier.roundScrollItem()
             )
 
-            Button(
-                onClick = { adjustRoundsBy(1) },
-                enabled = selectedRounds < maxRounds,
-                modifier = Modifier.size(48.dp).testTag("round-picker-increase"),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = SurfaceDark,
-                    contentColor = OnSurfaceWhite
-                )
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .roundScrollItem(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Increase completed rounds", modifier = Modifier.size(26.dp))
+                Button(
+                    onClick = { adjustRoundsBy(-1) },
+                    enabled = selectedRounds > 0,
+                    modifier = Modifier.size(48.dp).testTag("round-picker-decrease"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SurfaceDark,
+                        contentColor = OnSurfaceWhite
+                    )
+                ) {
+                    Icon(Icons.Default.Remove, contentDescription = "Decrease completed rounds", modifier = Modifier.size(26.dp))
+                }
+
+                Text(
+                    text = "$selectedRounds",
+                    modifier = Modifier.weight(1f).testTag("selected-completed-rounds"),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
+                )
+
+                Button(
+                    onClick = { adjustRoundsBy(1) },
+                    enabled = selectedRounds < maxRounds,
+                    modifier = Modifier.size(48.dp).testTag("round-picker-increase"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SurfaceDark,
+                        contentColor = OnSurfaceWhite
+                    )
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Increase completed rounds", modifier = Modifier.size(26.dp))
+                }
             }
-        }
 
-        Text(
-            text = "Next round: ${selectedRounds + 1}",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center
-        )
-
-        if (state.beadCount > 0) {
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Saving clears ${state.beadCount}/108 beads.",
+                text = "Next round: ${selectedRounds + 1}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 10.sp,
-                textAlign = TextAlign.Center
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.roundScrollItem()
             )
+
+            if (state.beadCount > 0) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Saving clears ${state.beadCount}/108 beads.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.roundScrollItem()
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.75f)
+                    .roundScrollItem(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(48.dp).testTag("round-picker-cancel"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SurfaceDark,
+                        contentColor = OnSurfaceWhite
+                    )
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancel round adjustment", modifier = Modifier.size(22.dp))
+                }
+                Button(
+                    onClick = { onSetRounds(selectedRounds) },
+                    modifier = Modifier.size(48.dp).testTag("round-picker-confirm"),
+                    colors = ButtonDefaults.buttonColors(containerColor = GauraGold)
+                ) {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = "Set completed rounds",
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(0.75f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.size(48.dp).testTag("round-picker-cancel"),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = SurfaceDark,
-                    contentColor = OnSurfaceWhite
-                )
-            ) {
-                Icon(Icons.Default.Close, contentDescription = "Cancel round adjustment", modifier = Modifier.size(22.dp))
-            }
-            Button(
-                onClick = { onSetRounds(selectedRounds) },
-                modifier = Modifier.size(48.dp).testTag("round-picker-confirm"),
-                colors = ButtonDefaults.buttonColors(containerColor = GauraGold)
-            ) {
-                Icon(
-                    Icons.Default.Check,
-                    contentDescription = "Set completed rounds",
-                    modifier = Modifier.size(22.dp)
-                )
-            }
+        if (scrollState.maxValue > 0) {
+            ScrollIndicator(
+                state = scrollState,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 2.dp)
+                    .testTag("round-picker-scroll-indicator")
+            )
         }
     }
 }

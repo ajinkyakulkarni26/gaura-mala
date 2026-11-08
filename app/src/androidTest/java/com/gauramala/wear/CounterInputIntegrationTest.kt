@@ -204,6 +204,10 @@ class CounterInputIntegrationTest {
     @Test
     @OptIn(ExperimentalTestApi::class)
     fun crownStepFromLastBeadCompletesRoundAndAdvancesToRoundTwo() {
+        setBeadCount(19)
+        awaitBeadCount("19")
+        saveScreenshot("counter-progress")
+
         setBeadCount(107)
         awaitBeadCount("107")
 
@@ -223,13 +227,22 @@ class CounterInputIntegrationTest {
 
         composeRule.onNodeWithText("Settings").assertIsDisplayed()
         composeRule.onNodeWithText("Daily goal").assertIsDisplayed()
+        composeRule.onNodeWithTag("settings-scroll-indicator", useUnmergedTree = true)
+            .assertIsDisplayed()
+        saveScreenshot("settings-top")
         composeRule.onNodeWithText("Double Pinch").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Screen Tap").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("settings-haptics").performScrollTo().assertIsDisplayed()
+        saveScreenshot("settings-controls")
         composeRule.onNodeWithTag("settings-reminders").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("settings-keep-awake").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Reset Round").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Reset Today").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Done").performScrollTo().assertIsDisplayed()
+        saveScreenshot("settings-bottom")
+        composeRule.onNodeWithText("Privacy Policy").performScrollTo().performClick()
+        composeRule.onNodeWithTag("privacy-scroll-indicator", useUnmergedTree = true)
+            .assertIsDisplayed()
     }
 
     @Test
@@ -391,11 +404,11 @@ class CounterInputIntegrationTest {
                     composeRule.onNodeWithText("Chant ready").assertIsDisplayed()
                 }.isSuccess
             }
+            saveScreenshot("voice-guide-ready")
             composeRule.onNodeWithTag("voice-recording-preview").performScrollTo().assertIsDisplayed()
             composeRule.onNodeWithTag("auto-chant-start-voice-count").performScrollTo().assertIsDisplayed()
             composeRule.onNodeWithTag("voice-recording-again").performScrollTo().assertIsDisplayed()
             composeRule.onNodeWithText("Chant ready").performScrollTo().assertIsDisplayed()
-            saveScreenshot("voice-guide-ready")
             assertAtLeast48Dp(
                 "Lower watch media volume",
                 composeRule.onNodeWithTag("voice-volume-down").performScrollTo()
