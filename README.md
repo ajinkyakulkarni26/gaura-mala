@@ -63,6 +63,7 @@ gaura-mala/
 │   │       │       ├── MantraCounterScreen.kt     # Main circular counter UI
 │   │       │       ├── PrivacyPolicyScreen.kt     # On-watch policy and Contact Developer action
 │   │       │       ├── RoundProgressDialog.kt     # Manual completed-round adjustment
+│   │       │       ├── RoundScrollContainer.kt    # Curved ScrollIndicator container and bezel-safe item scaling
 │   │       │       ├── SettingsDialog.kt          # Counter settings, reminders, and Auto Count entry
 │   │       │       └── SummaryDialog.kt           # Daily goal completion celebration
 │   │       ├── tile/

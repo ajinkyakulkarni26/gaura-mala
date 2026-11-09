@@ -94,7 +94,7 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
             item {
                 PolicySection(
                     "Permissions and sharing",
-                    "Microphone access is requested only after you choose to record and agree to the in-app disclosure. Vibration access supports haptics. Gaura Mala does not request location, contacts, camera, or health data. If you open GitHub, GitHub's privacy practices apply to that service."
+                    "Microphone access is requested only after you choose to record and agree to the in-app disclosure. Optional notification access supports Auto Count and daytime chanting reminders. Vibration access supports haptics. Gaura Mala does not request location, contacts, camera, or health data. If you open GitHub, GitHub's privacy practices apply to that service."
                 )
             }
             item {

@@ -18,7 +18,7 @@ struct PrivacyPolicyView: View {
         ),
         (
             "Permissions and sharing",
-            "Microphone access is requested only after you choose to record and agree to the in-app disclosure. Apple Watch haptics support counting cues. Gaura Mala does not request location, contacts, camera, or health data. If you open GitHub, GitHub's privacy practices apply to that service."
+            "Microphone access is requested only after you choose to record and agree to the in-app disclosure. Optional notification access supports daytime chanting reminders. Apple Watch haptics support counting cues. Gaura Mala does not request location, contacts, camera, or health data. If you open GitHub, GitHub's privacy practices apply to that service."
         ),
         (
             "Children and voice recordings",
