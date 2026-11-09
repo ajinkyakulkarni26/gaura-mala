@@ -64,6 +64,7 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScrollIndicator
 import androidx.wear.compose.material3.Text
 import com.gauramala.wear.AutoCountOngoingActivity
 import com.gauramala.wear.presentation.AutoChantTiming
@@ -287,36 +288,37 @@ fun AutoChantSetupScreen(
     }
     LaunchedEffect(page, paceStep, voiceStep) { scrollState.scrollTo(0) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .hierarchicalFocusGroup(active = true)
-            .requestFocusOnHierarchyActive()
-            .rotaryScrollable(
-                behavior = RotaryScrollableDefaults.behavior(scrollableState = scrollState),
-                focusRequester = focusRequester
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .hierarchicalFocusGroup(active = true)
+                .requestFocusOnHierarchyActive()
+                .rotaryScrollable(
+                    behavior = RotaryScrollableDefaults.behavior(scrollableState = scrollState),
+                    focusRequester = focusRequester
+                )
+                .verticalScroll(scrollState)
+                .padding(
+                    start = 14.dp,
+                    end = 14.dp,
+                    top = when {
+                        compactPaceIntro -> 16.dp
+                        compactNotificationPrompt -> 8.dp
+                        else -> 12.dp
+                    },
+                    bottom = if (compactNavigationPage) 4.dp else 20.dp
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(
+                when {
+                    compactPaceIntro -> 4.dp
+                    compactGuideChooser -> 2.dp
+                    compactNotificationPrompt -> 4.dp
+                    else -> 8.dp
+                }
             )
-            .verticalScroll(scrollState)
-            .padding(
-                start = 12.dp,
-                end = 12.dp,
-                top = when {
-                    compactPaceIntro -> 16.dp
-                    compactNotificationPrompt -> 8.dp
-                    else -> 12.dp
-                },
-                bottom = if (compactNavigationPage) 4.dp else 12.dp
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(
-            when {
-                compactPaceIntro -> 4.dp
-                compactGuideChooser -> 2.dp
-                compactNotificationPrompt -> 4.dp
-                else -> 8.dp
-            }
-        )
-    ) {
+        ) {
         if (state.autoCountActive) {
             SessionPage(
                 state = state,
@@ -590,19 +592,28 @@ fun AutoChantSetupScreen(
                             color = OnSurfaceMuted,
                             fontSize = 10.sp,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.testTag("voice-recording-disclosure")
+                            modifier = Modifier
+                                .roundScrollItem()
+                                .padding(horizontal = 4.dp)
+                                .testTag("voice-recording-disclosure")
                         )
                         Text(
                             "Only record a voice you have permission to record and use.",
                             color = OnSurfaceMuted,
                             fontSize = 10.sp,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .roundScrollItem()
+                                .padding(horizontal = 4.dp)
                         )
                         Text(
                             "For a child, a parent or guardian should decide and help with recording and deletion.",
                             color = OnSurfaceMuted,
                             fontSize = 10.sp,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .roundScrollItem()
+                                .padding(horizontal = 4.dp)
                         )
                         Spacer(Modifier.height(4.dp))
                         IconActionButton(
@@ -611,12 +622,30 @@ fun AutoChantSetupScreen(
                             tag = "voice-recording-start",
                             onClick = ::beginVoiceSetup,
                         )
-                        Text("Agree & begin", color = OnSurfaceWhite, fontSize = 10.sp, textAlign = TextAlign.Center)
+                        Text(
+                            "Agree & begin",
+                            color = OnSurfaceWhite,
+                            fontSize = 10.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.roundScrollItem()
+                        )
                         state.voiceChantMessage?.let {
-                            Text(it, color = OnSurfaceMuted, fontSize = 10.sp, textAlign = TextAlign.Center)
+                            Text(
+                                it,
+                                color = OnSurfaceMuted,
+                                fontSize = 10.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.roundScrollItem()
+                            )
                         }
                         microphoneMessage?.let {
-                            Text(it, color = AlertRed, fontSize = 10.sp, textAlign = TextAlign.Center)
+                            Text(
+                                it,
+                                color = AlertRed,
+                                fontSize = 10.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.roundScrollItem()
+                            )
                         }
                     }
                     GuidedStep.COUNTDOWN -> CountdownPage(countdown)
@@ -646,11 +675,14 @@ fun AutoChantSetupScreen(
                         Text(
                             paceDescription(state.autoChantPaceMillis),
                             color = OnSurfaceWhite,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
+                            modifier = Modifier.roundScrollItem()
                         )
                         WatchMediaVolumeControl(context)
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .roundScrollItem(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
                         ) {
                             VoiceGuideIconButton(
@@ -693,7 +725,9 @@ fun AutoChantSetupScreen(
             }
 
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .roundScrollItem(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
@@ -723,6 +757,17 @@ fun AutoChantSetupScreen(
                 }
             }
         }
+        }
+
+        if (scrollState.maxValue > 0) {
+            ScrollIndicator(
+                state = scrollState,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 2.dp)
+                    .testTag("auto-chant-scroll-indicator")
+            )
+        }
     }
 }
 
@@ -734,7 +779,9 @@ private fun CountdownPage(countdown: Int) {
         color = GauraGold,
         fontSize = 48.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.testTag("auto-chant-countdown")
+        modifier = Modifier
+            .roundScrollItem()
+            .testTag("auto-chant-countdown")
     )
 }
 
@@ -742,7 +789,10 @@ private fun CountdownPage(countdown: Int) {
 private fun PageTitle(title: String, hint: String? = null, compact: Boolean = false) {
     Text(
         title,
-        modifier = Modifier.fillMaxWidth(if (compact) 0.9f else 0.72f).padding(horizontal = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth(if (compact) 0.9f else 0.72f)
+            .roundScrollItem()
+            .padding(horizontal = 4.dp),
         style = if (compact) MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp)
         else MaterialTheme.typography.titleMedium,
         color = GauraGold,
@@ -753,7 +803,10 @@ private fun PageTitle(title: String, hint: String? = null, compact: Boolean = fa
     if (!hint.isNullOrBlank()) {
         Text(
             hint,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = if (compact) 4.dp else 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .roundScrollItem()
+                .padding(horizontal = if (compact) 4.dp else 12.dp),
             color = OnSurfaceMuted,
             fontSize = 10.sp,
             textAlign = TextAlign.Center,
@@ -774,7 +827,8 @@ private fun SessionPage(
         if (state.autoCountUsesVoiceGuide) "Following your chant" else paceDescription(state.autoChantPaceMillis),
         color = OnSurfaceMuted,
         fontSize = 10.sp,
-        textAlign = TextAlign.Center
+        textAlign = TextAlign.Center,
+        modifier = Modifier.roundScrollItem()
     )
     ActionButton(
         text = if (state.autoCountRunning) "Pause" else "Resume",
@@ -798,6 +852,7 @@ private fun ActionButton(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth(0.82f)
+            .roundScrollItem()
             .heightIn(min = 48.dp)
             .testTag(tag),
         colors = ButtonDefaults.buttonColors(containerColor = color, contentColor = contentColor)
@@ -821,7 +876,10 @@ private fun IconActionButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = Modifier.size(56.dp).testTag(tag),
+        modifier = Modifier
+            .roundScrollItem()
+            .size(56.dp)
+            .testTag(tag),
         colors = ButtonDefaults.buttonColors(
             containerColor = AutoChantSecondary,
             contentColor = GauraGold
@@ -874,10 +932,14 @@ private fun WatchMediaVolumeControl(context: Context) {
         text = if (volumeIsFixed) "Volume fixed" else "Volume ${volume * 100 / maxVolume}%",
         color = OnSurfaceWhite,
         fontSize = 10.sp,
-        textAlign = TextAlign.Center
+        textAlign = TextAlign.Center,
+        modifier = Modifier.roundScrollItem()
     )
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .roundScrollItem()
+            .padding(horizontal = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

@@ -78,17 +78,21 @@ fun SettingsDialog(
 
     if (pendingReset != null) {
         val isDailyReset = pendingReset == ResetTarget.DAILY_COUNT
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        val confirmScrollState = rememberScrollState()
+        RoundScrollContainer(
+            scrollState = confirmScrollState,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                horizontal = 18.dp,
+                vertical = 24.dp
+            ),
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = if (isDailyReset) "Reset today's count?" else "Reset this round?",
                 style = MaterialTheme.typography.titleMedium,
-                color = AlertRed
+                color = AlertRed,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.roundScrollItem()
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -98,11 +102,15 @@ fun SettingsDialog(
                     "Clears beads in this round."
                 },
                 style = MaterialTheme.typography.bodyMedium,
-                fontSize = 12.sp
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.roundScrollItem()
             )
             Spacer(modifier = Modifier.height(16.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(0.75f),
+                modifier = Modifier
+                    .fillMaxWidth(0.75f)
+                    .roundScrollItem(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
             ) {
                 Button(
@@ -165,31 +173,33 @@ fun SettingsDialog(
         uncheckedTrackColor = OnSurfaceMuted.copy(alpha = 0.35f)
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .hierarchicalFocusGroup(active = true)
-            .requestFocusOnHierarchyActive()
-            .rotaryScrollable(
-                behavior = RotaryScrollableDefaults.behavior(scrollableState = scrollState),
-                focusRequester = rotaryFocusRequester
-            )
-            .verticalScroll(scrollState)
-            .padding(horizontal = 6.dp, vertical = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    RoundScrollContainer(
+        scrollState = scrollState,
+        focusRequester = rotaryFocusRequester,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = 14.dp,
+            end = 14.dp,
+            top = 26.dp,
+            bottom = 42.dp
+        ),
+        verticalSpacing = 4.dp,
+        scrollIndicatorTag = "settings-scroll-indicator"
     ) {
         Text(
             text = "Settings",
             style = MaterialTheme.typography.titleMedium,
             color = GauraGold,
-            modifier = Modifier.padding(bottom = 6.dp)
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .roundScrollItem()
+                .padding(bottom = 6.dp)
         )
 
         Button(
             onClick = onAutoChant,
             modifier = Modifier
                 .fillMaxWidth()
+                .roundScrollItem()
                 .padding(horizontal = 4.dp)
                 .testTag("settings-auto-chant"),
             colors = ButtonDefaults.buttonColors(
@@ -197,9 +207,22 @@ fun SettingsDialog(
                 contentColor = OnSurfaceWhite
             )
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Auto Count", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                Text("Set pace or record a chant", fontSize = 10.sp, color = OnSurfaceMuted)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Auto Count",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    "Set pace or record a chant",
+                    fontSize = 10.sp,
+                    color = OnSurfaceMuted,
+                    textAlign = TextAlign.Center
+                )
             }
         }
 
@@ -209,10 +232,19 @@ fun SettingsDialog(
                 .padding(horizontal = 4.dp, vertical = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Daily goal", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+            Text(
+                "Daily goal",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.roundScrollItem()
+            )
             Spacer(modifier = Modifier.height(2.dp))
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .roundScrollItem()
+                    .padding(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -260,7 +292,8 @@ fun SettingsDialog(
                 "1–64 rounds",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.roundScrollItem()
             )
         }
 
@@ -281,7 +314,11 @@ fun SettingsDialog(
             },
             enabled = state.supportsOneHandedGestures,
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-double-pinch")
+            modifier = Modifier
+                .fillMaxWidth()
+                .roundScrollItem()
+                .padding(horizontal = 4.dp)
+                .testTag("settings-double-pinch")
         )
 
         // 2. Screen Tap Toggle
@@ -291,7 +328,11 @@ fun SettingsDialog(
             label = { Text("Screen Tap", fontSize = 12.sp) },
             secondaryLabel = { Text("Tap to count", fontSize = 10.sp) },
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-screen-tap")
+            modifier = Modifier
+                .fillMaxWidth()
+                .roundScrollItem()
+                .padding(horizontal = 4.dp)
+                .testTag("settings-screen-tap")
         )
 
         // 3. Haptics Toggle
@@ -301,7 +342,11 @@ fun SettingsDialog(
             label = { Text("Haptics", fontSize = 12.sp) },
             secondaryLabel = { Text("Bead and milestone cues", fontSize = 10.sp) },
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-haptics")
+            modifier = Modifier
+                .fillMaxWidth()
+                .roundScrollItem()
+                .padding(horizontal = 4.dp)
+                .testTag("settings-haptics")
         )
 
         // 4. Milestone Vibrations
@@ -311,7 +356,11 @@ fun SettingsDialog(
             label = { Text("Milestones", fontSize = 12.sp) },
             secondaryLabel = { Text("Ticks at 27, 54, 81", fontSize = 10.sp) },
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-milestones")
+            modifier = Modifier
+                .fillMaxWidth()
+                .roundScrollItem()
+                .padding(horizontal = 4.dp)
+                .testTag("settings-milestones")
         )
 
         // 5. Keep Screen Awake
@@ -321,7 +370,11 @@ fun SettingsDialog(
             label = { Text("Keep Awake", fontSize = 12.sp) },
             secondaryLabel = { Text("Keeps screen on; uses more power", fontSize = 10.sp) },
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-keep-awake")
+            modifier = Modifier
+                .fillMaxWidth()
+                .roundScrollItem()
+                .padding(horizontal = 4.dp)
+                .testTag("settings-keep-awake")
         )
 
         // 6. Gentle Chanting Reminders
@@ -351,7 +404,11 @@ fun SettingsDialog(
                 )
             },
             colors = switchButtonColors,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("settings-reminders")
+            modifier = Modifier
+                .fillMaxWidth()
+                .roundScrollItem()
+                .padding(horizontal = 4.dp)
+                .testTag("settings-reminders")
         )
 
         // 7. Reset Current Round
@@ -361,37 +418,56 @@ fun SettingsDialog(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 2.dp),
+                .roundScrollItem()
+                .padding(horizontal = 10.dp, vertical = 2.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = SurfaceDark,
                 contentColor = OnSurfaceWhite
             )
         ) {
-            Text("Reset Round", fontSize = 12.sp)
+            Text(
+                "Reset Round",
+                fontSize = 12.sp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
         }
 
-        // 7. Reset Entire Day
+        // 8. Reset Entire Day
         Button(
             onClick = { pendingReset = ResetTarget.DAILY_COUNT },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 2.dp),
+                .roundScrollItem()
+                .padding(horizontal = 10.dp, vertical = 2.dp),
             colors = ButtonDefaults.buttonColors(containerColor = AlertRed.copy(alpha = 0.2f))
         ) {
-            Text("Reset Today", color = AlertRed, fontSize = 12.sp)
+            Text(
+                "Reset Today",
+                color = AlertRed,
+                fontSize = 12.sp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
         }
 
         Button(
             onClick = { showPrivacyPolicy = true },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 2.dp),
+                .roundScrollItem()
+                .padding(horizontal = 10.dp, vertical = 2.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = SurfaceDark,
                 contentColor = OnSurfaceWhite
             )
         ) {
-            Text("Privacy Policy", fontSize = 12.sp)
+            Text(
+                "Privacy Policy",
+                fontSize = 12.sp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
         }
 
         // Close / Back button
@@ -400,12 +476,18 @@ fun SettingsDialog(
             onClick = onDismiss,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .roundScrollItem()
+                .padding(horizontal = 10.dp),
             colors = ButtonDefaults.buttonColors(containerColor = GauraGold)
         ) {
-            Text("Done", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+            Text(
+                "Done",
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
         }
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
