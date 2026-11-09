@@ -7,7 +7,7 @@ Last reviewed: 2026-11-02
 Gaura Mala is a native Wear OS japa counter for the Hare Krishna maha-mantra. It is a watch-only app with a circular 108-bead progress ring, daily round goal (16 by default), haptics, a Tile, and a watch-face complication.
 
 - Application ID: `com.gauramala.wear`
-- Current Android source version: `versionCode 16`, `versionName 1.1.0`; `versionCode 15` (`1.1.0`) was rejected in Play review for missing scrollbars and round-bezel clipping in Settings, and `versionCode 16` addresses both across all screens while bundling Chanting Reminders. Play release `versionCode 14` (`versionName 1.0.0`) was submitted to Production on 2026-10-16 and the user confirmed it was published on 2026-10-30.
+- Current Android source version: `versionCode 17`, `versionName 1.1.0`; `versionCode 15` (`1.1.0`) was rejected in Play review for missing scrollbars and round-bezel clipping in Settings, and `versionCode 17` (superseding draft upload `16` after the in-app privacy policy wording sync) addresses both across all screens while bundling Chanting Reminders. Play release `versionCode 14` (`versionName 1.0.0`) was submitted to Production on 2026-10-16 and the user confirmed it was published on 2026-10-30.
 - Main stack: Kotlin, Jetpack Compose for Wear OS Material 3, DataStore, Wearable Services
 - Minimum SDK 30; target and compile SDK 37; JDK 17
 - The app is declared standalone in `AndroidManifest.xml`; core counting does not require a phone app.
