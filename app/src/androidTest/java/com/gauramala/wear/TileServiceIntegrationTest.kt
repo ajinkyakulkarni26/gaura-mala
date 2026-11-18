@@ -46,9 +46,20 @@ class TileServiceIntegrationTest {
         val tilePayload = tile.toString()
 
         assertEquals("1", tile.resourcesVersion)
+        assertTrue("Tile should include the tile heading", tilePayload.contains("Gaura Mala"))
         assertTrue("Tile should include the saved round count", tilePayload.contains("Round 4 / 12"))
         assertTrue("Tile should include the partial bead count", tilePayload.contains("37 / 108 Beads"))
         assertTrue("Tile action should open the counter activity", tilePayload.contains(MainActivity::class.java.name))
+
+        context.dataStore.edit { preferences ->
+            preferences[MantraPreferences.KEY_AUTO_COUNT_ACTIVE] = true
+            preferences[MantraPreferences.KEY_AUTO_COUNT_RUNNING] = true
+        }
+        val activeOngoingTilePayload = requestTile().toString()
+        assertTrue(
+            "Tile should reference the active Auto Count ongoing activity",
+            activeOngoingTilePayload.contains("Auto Count · 37 / 108")
+        )
     }
 
     @Test

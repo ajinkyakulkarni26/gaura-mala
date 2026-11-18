@@ -37,7 +37,8 @@ gaura-mala/
 │   │   │   └── drawable/ (ic_launcher.xml)
 │   │   └── java/com/gauramala/wear/
 │   │       ├── MainActivity.kt
-│   │       ├── AutoCountOngoingActivity.kt        # Low-power active-session notification
+│   │       ├── AutoCountOngoingActivity.kt        # Ongoing Activity notification, watch face & Recents status
+│   │       ├── AutoCountSessionStore.kt           # Retains active Auto Count session across watch-face navigation
 │   │       ├── ChantReminderScheduler.kt          # Optional 2.5-hour daytime reminder alarms & notifications
 │   │       ├── ChantReminderReceiver.kt           # Reminder alarm & "All Rounds Complete" broadcast handler
 │   │       ├── WearSurfaceUpdater.kt              # Tile and complication refresh requests

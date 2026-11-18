@@ -11,17 +11,30 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.LocusIdCompat
 import androidx.wear.ongoing.OngoingActivity
+import androidx.wear.ongoing.Status
 
 /** Keeps Auto Count reachable while running and leaves a paused return notification until stopped. */
 internal class AutoCountOngoingActivity(context: Context) {
     private val appContext = context.applicationContext
     private val notifications = NotificationManagerCompat.from(appContext)
-    private var lastSessionState: Triple<Boolean, Boolean, Boolean>? = null
+    private var lastSessionState: SessionSnapshot? = null
 
-    fun update(isActive: Boolean, isRunning: Boolean) {
+    fun update(
+        isActive: Boolean,
+        isRunning: Boolean,
+        beadCount: Int = 0,
+        completedRounds: Int = 0
+    ) {
         val notificationsAllowed = notificationsEnabled(appContext)
-        val sessionState = Triple(isActive, isRunning, notificationsAllowed)
+        val sessionState = SessionSnapshot(
+            isActive = isActive,
+            isRunning = isRunning,
+            beadCount = beadCount,
+            completedRounds = completedRounds,
+            notificationsAllowed = notificationsAllowed
+        )
         if (sessionState == lastSessionState) return
         lastSessionState = sessionState
 
@@ -39,26 +52,44 @@ internal class AutoCountOngoingActivity(context: Context) {
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        val statusText = if (isRunning) {
+            appContext.getString(
+                R.string.auto_count_notification_running_status,
+                completedRounds + 1,
+                beadCount
+            )
+        } else {
+            appContext.getString(
+                R.string.auto_count_notification_paused_status,
+                beadCount
+            )
+        }
+        val locusId = LocusIdCompat(LOCUS_ID)
         val notification = NotificationCompat.Builder(appContext, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_auto_count_ongoing)
             .setContentTitle(appContext.getString(R.string.auto_count_notification_title))
-            .setContentText(
-                appContext.getString(
-                    if (isRunning) R.string.auto_count_notification_running
-                    else R.string.auto_count_notification_paused
-                )
-            )
+            .setContentText(statusText)
             .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setLocusId(locusId)
             .setContentIntent(returnIntent)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setOngoing(true)
 
+        val ongoingStatus = Status.Builder()
+            .addTemplate("#status#")
+            .addPart("status", Status.TextPart(statusText))
+            .build()
+
         OngoingActivity.Builder(appContext, NOTIFICATION_ID, notification)
+            .setAnimatedIcon(R.drawable.ic_auto_count_ongoing)
             .setStaticIcon(R.drawable.ic_auto_count_ongoing)
-            .setTouchIntent(returnIntent)
             .setTitle(appContext.getString(R.string.auto_count_notification_title))
+            .setStatus(ongoingStatus)
+            .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
+            .setLocusId(locusId)
+            .setTouchIntent(returnIntent)
             .build()
             .apply(appContext)
 
@@ -67,7 +98,13 @@ internal class AutoCountOngoingActivity(context: Context) {
 
     fun stop() {
         notifications.cancel(NOTIFICATION_ID)
-        lastSessionState = Triple(false, false, notificationsEnabled(appContext))
+        lastSessionState = SessionSnapshot(
+            isActive = false,
+            isRunning = false,
+            beadCount = 0,
+            completedRounds = 0,
+            notificationsAllowed = notificationsEnabled(appContext)
+        )
     }
 
     private fun createNotificationChannel() {
@@ -90,6 +127,7 @@ internal class AutoCountOngoingActivity(context: Context) {
     companion object {
         const val CHANNEL_ID = "auto_count_session"
         const val NOTIFICATION_ID = 108
+        const val LOCUS_ID = "gaura_mala_auto_count"
 
         fun notificationsEnabled(context: Context): Boolean {
             val runtimeGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
@@ -100,4 +138,12 @@ internal class AutoCountOngoingActivity(context: Context) {
             return runtimeGranted && NotificationManagerCompat.from(context).areNotificationsEnabled()
         }
     }
+
+    private data class SessionSnapshot(
+        val isActive: Boolean,
+        val isRunning: Boolean,
+        val beadCount: Int,
+        val completedRounds: Int,
+        val notificationsAllowed: Boolean
+    )
 }

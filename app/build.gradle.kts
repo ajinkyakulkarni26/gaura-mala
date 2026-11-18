@@ -16,7 +16,7 @@ android {
         applicationId = "com.gauramala.wear"
         minSdk = 30
         targetSdk = 37
-        versionCode = 17
+        versionCode = 18
         versionName = "1.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

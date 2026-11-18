@@ -35,6 +35,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import androidx.wear.ongoing.OngoingActivity
 import com.gauramala.wear.data.MantraPreferences
 import com.gauramala.wear.data.dataStore
 import com.gauramala.wear.media.VoiceChantFiles
@@ -59,6 +60,7 @@ class CounterInputIntegrationTest {
     private val clearStoredProgress = object : ExternalResource() {
         override fun before() {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
+            AutoCountSessionStore.clear()
             // Seed a visible marker so @Before can wait until the Activity has consumed its
             // first DataStore emission. The counter surface itself renders before that load
             // completes, which can otherwise make the first simulated input disappear.
@@ -75,6 +77,7 @@ class CounterInputIntegrationTest {
 
         override fun after() {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
+            AutoCountSessionStore.clear()
             VoiceChantFiles(context.noBackupFilesDir).deleteAll()
             ChantReminderScheduler(context).cancelAll()
         }
@@ -534,6 +537,13 @@ class CounterInputIntegrationTest {
         awaitBeadCount("1", timeoutMillis = 8_000)
         awaitAutoCountNotification(true)
         saveScreenshot("auto-count-running")
+
+        // Navigating away while Auto Count is running must keep the ongoing session active.
+        composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
+        awaitAutoCountNotification(true)
+
         composeRule.onNodeWithContentDescription("Pause auto count").performClick()
         composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
         composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
@@ -878,7 +888,18 @@ class CounterInputIntegrationTest {
             val isVisible = NotificationManagerCompat.from(context)
                 .activeNotifications
                 .any { it.id == AutoCountOngoingActivity.NOTIFICATION_ID }
-            isVisible == expectedVisible
+            val recovered = OngoingActivity.recoverOngoingActivity(
+                context,
+                AutoCountOngoingActivity.NOTIFICATION_ID
+            )
+            val hasOngoingMetadata = recovered != null &&
+                recovered.status != null &&
+                recovered.locusId?.id == AutoCountOngoingActivity.LOCUS_ID
+            if (expectedVisible) {
+                isVisible && hasOngoingMetadata
+            } else {
+                !isVisible
+            }
         }
     }
 

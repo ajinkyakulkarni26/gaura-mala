@@ -17,6 +17,7 @@ import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import androidx.wear.tiles.TileService
 import com.gauramala.wear.MainActivity
+import com.gauramala.wear.R
 import com.gauramala.wear.data.MantraPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +42,7 @@ class GauraMalaTileService : TileService() {
 
         val primaryLayout = PrimaryLayout.Builder(requestParams.deviceConfiguration)
             .setPrimaryLabelTextContent(
-                Text.Builder(this@GauraMalaTileService, "GauraMala 📿")
+                Text.Builder(this@GauraMalaTileService, getString(R.string.tile_name))
                     .setColor(argb(0xFFFFB300.toInt()))
                     .setTypography(androidx.wear.protolayout.material.Typography.TYPOGRAPHY_CAPTION1)
                     .build()
