@@ -599,7 +599,11 @@ class CounterInputIntegrationTest {
         // Simulating back-swipe activity destruction and relaunch from Watch Face / Recents / Tile
         // must reconnect to the retained AutoCountSessionStore ViewModel.
         composeRule.activityRule.scenario.recreate()
-        composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runCatching {
+                composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+            }.isSuccess
+        }
         composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
         awaitBeadCount("1")
         awaitAutoCountNotification(true)

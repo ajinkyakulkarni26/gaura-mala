@@ -83,6 +83,7 @@ internal class AutoCountOngoingActivity(context: Context) {
             .build()
 
         OngoingActivity.Builder(appContext, NOTIFICATION_ID, notification)
+            .setOngoingActivityId(NOTIFICATION_ID)
             .setAnimatedIcon(R.drawable.ic_auto_count_ongoing)
             .setStaticIcon(R.drawable.ic_auto_count_ongoing)
             .setTitle(appContext.getString(R.string.auto_count_notification_title))
