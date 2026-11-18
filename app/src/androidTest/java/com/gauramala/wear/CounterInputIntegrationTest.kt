@@ -2,8 +2,10 @@ package com.gauramala.wear
 
 import android.Manifest
 import android.app.Notification
+import android.content.ComponentName
 import android.content.ContentValues
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.media.AudioManager
 import android.provider.MediaStore
@@ -559,6 +561,47 @@ class CounterInputIntegrationTest {
         awaitAutoCountNotification(true)
         composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Pause auto count").performClick()
+        awaitAutoCountNotification(true)
+    }
+
+    @Test
+    fun leavingAppPausesAutoCountAndRetainsOngoingActivityAcrossActivityRecreation() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val activityInfo = context.packageManager.getActivityInfo(
+            ComponentName(context, MainActivity::class.java),
+            0
+        )
+        assertEquals(
+            "MainActivity must use singleTask so launching from the Tile never stacks duplicate instances",
+            ActivityInfo.LAUNCH_SINGLE_TASK,
+            activityInfo.launchMode
+        )
+
+        runBlocking {
+            context.dataStore.edit {
+                it[MantraPreferences.KEY_AUTO_CHANT_PACE_MILLIS] = 5_000
+            }
+        }
+        openSettings()
+        composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
+        composeRule.onNodeWithTag("auto-chant-start-count").performScrollTo().performClick()
+
+        awaitBeadCount("1", timeoutMillis = 8_000)
+        awaitAutoCountNotification(true)
+
+        // Leaving the app pauses counting while retaining the Ongoing Activity and session state.
+        composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+        composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
+        awaitAutoCountNotification(true)
+
+        // Simulating back-swipe activity destruction and relaunch from Watch Face / Recents / Tile
+        // must reconnect to the retained AutoCountSessionStore ViewModel.
+        composeRule.activityRule.scenario.recreate()
+        composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
+        composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
+        awaitBeadCount("1")
         awaitAutoCountNotification(true)
     }
 

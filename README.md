@@ -68,8 +68,8 @@ gaura-mala/
 │   │       │       ├── SettingsDialog.kt          # Counter settings, reminders, and Auto Count entry
 │   │       │       └── SummaryDialog.kt           # Daily goal completion celebration
 │   │       ├── tile/
-│   │       │   ├── GauraMalaTileContent.kt        # Pure mapping from saved progress to Tile labels
-│   │       │   └── GauraMalaTileService.kt        # Wear OS Tile provider
+│   │       │   ├── GauraMalaTileContent.kt        # Pure mapping from saved progress and Auto Count state to Tile labels
+│   │       │   └── GauraMalaTileService.kt        # Wear OS Material 3 Tile provider
 │   │       └── complication/
 │   │           └── GauraMalaComplicationService.kt# Watch face complication provider
 │   ├── src/test/                                  # JVM unit tests (100% line coverage on pure core logic)
