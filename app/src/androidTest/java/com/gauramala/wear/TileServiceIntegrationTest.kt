@@ -46,9 +46,50 @@ class TileServiceIntegrationTest {
         val tilePayload = tile.toString()
 
         assertEquals("1", tile.resourcesVersion)
+        assertTrue("Tile should include the tile heading", tilePayload.contains("Gaura Mala"))
         assertTrue("Tile should include the saved round count", tilePayload.contains("Round 4 / 12"))
         assertTrue("Tile should include the partial bead count", tilePayload.contains("37 / 108 Beads"))
         assertTrue("Tile action should open the counter activity", tilePayload.contains(MainActivity::class.java.name))
+    }
+
+    @Test
+    fun tileServiceReferencesActiveAndPausedAutoCountOngoingActivity() = runBlocking {
+        context.dataStore.edit { preferences ->
+            preferences[MantraPreferences.KEY_COMPLETED_ROUNDS] = 2
+            preferences[MantraPreferences.KEY_BEAD_COUNT] = 19
+            preferences[MantraPreferences.KEY_DAILY_GOAL] = 16
+            preferences[MantraPreferences.KEY_AUTO_COUNT_ACTIVE] = true
+            preferences[MantraPreferences.KEY_AUTO_COUNT_RUNNING] = true
+            preferences[MantraPreferences.KEY_LAST_DATE] = LocalDate.now().toString()
+        }
+
+        val runningPayload = requestTile().toString()
+        assertTrue(
+            "Running Auto Count must be referenced on the Tile",
+            runningPayload.contains("Auto Count · 19 / 108")
+        )
+        assertTrue(
+            "Tile heading must not include the redundant word 'Tile'",
+            !runningPayload.contains("Gaura Mala Tile")
+        )
+
+        context.dataStore.edit { preferences ->
+            preferences[MantraPreferences.KEY_AUTO_COUNT_RUNNING] = false
+        }
+        val pausedPayload = requestTile().toString()
+        assertTrue(
+            "Paused Auto Count must remain referenced on the Tile",
+            pausedPayload.contains("Paused · 19 / 108")
+        )
+
+        context.dataStore.edit { preferences ->
+            preferences[MantraPreferences.KEY_AUTO_COUNT_ACTIVE] = false
+        }
+        val idlePayload = requestTile().toString()
+        assertTrue(
+            "Stopped Auto Count must return the Tile to standard bead progress",
+            idlePayload.contains("19 / 108 Beads")
+        )
     }
 
     @Test

@@ -5,6 +5,8 @@ import android.os.PowerManager
 import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.gauramala.wear.AutoCountOngoingActivity
+import com.gauramala.wear.ChantReminderScheduler
 import com.gauramala.wear.data.MantraPreferences
 import com.gauramala.wear.haptics.HapticHelper
 import com.gauramala.wear.media.VoiceChantAudio
@@ -16,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
@@ -25,6 +28,8 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     private val preferences = MantraPreferences(application)
     private val hapticHelper = HapticHelper(application)
     private val voiceChantAudio = VoiceChantAudio(application)
+    private val autoCountOngoingActivity = AutoCountOngoingActivity(application)
+    private val chantReminderScheduler = ChantReminderScheduler(application)
     private val autoCountWakeLock = application
         .getSystemService(PowerManager::class.java)
         .newWakeLock(
@@ -51,6 +56,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     private val debounceWindowMs: Long = 280L
     private var preferencesLoaded = false
     private var hasLocalProgressChanges = false
+    private var lastSyncedAutoCountState: Pair<Boolean, Boolean> = false to false
     private val pendingBeadInputs = ArrayDeque<PendingBeadInput>()
     private val countSaveRequests = Channel<CountSnapshot>(Channel.CONFLATED)
 
@@ -58,6 +64,28 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         viewModelScope.launch {
             for (snapshot in countSaveRequests) {
                 preferences.saveCounts(snapshot.beadCount, snapshot.completedRounds)
+            }
+        }
+
+        // Keep Ongoing Activity, Tile status, and chanting reminders synced even while MainActivity
+        // is in the background or dismissed to the watch face.
+        viewModelScope.launch {
+            uiState.collectLatest { state ->
+                autoCountOngoingActivity.update(
+                    isActive = state.autoCountActive,
+                    isRunning = state.autoCountRunning,
+                    beadCount = state.beadCount,
+                    completedRounds = state.completedRounds
+                )
+                chantReminderScheduler.sync(state)
+                val autoCountState = state.autoCountActive to state.autoCountRunning
+                if (autoCountState != lastSyncedAutoCountState) {
+                    lastSyncedAutoCountState = autoCountState
+                    preferences.updateAutoCountState(
+                        active = state.autoCountActive,
+                        running = state.autoCountRunning
+                    )
+                }
             }
         }
 
@@ -212,7 +240,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         autoCountJob?.cancel()
         releaseAutoCountWakeLock()
         if (!useVoiceGuide && !autoChantPacer.start(SystemClock.elapsedRealtime())) return
-        if (!useVoiceGuide) acquireAutoCountWakeLock()
+        acquireAutoCountWakeLock()
 
         _uiState.update {
             it.copy(
@@ -403,7 +431,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     private fun onVoiceChantCompleted(): Boolean {
         val shouldContinue = incrementBeadFromAutoCount() && _uiState.value.autoCountRunning
         if (!shouldContinue) {
-            _uiState.update { it.copy(autoCountRunning = false, autoCountActive = false) }
+            stopAutoCount()
         }
         return shouldContinue
     }
@@ -427,6 +455,14 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
 
     fun refreshDailySession() {
         viewModelScope.launch { preferences.resetIfNewDay() }
+        val currentState = _uiState.value
+        autoCountOngoingActivity.update(
+            isActive = currentState.autoCountActive,
+            isRunning = currentState.autoCountRunning,
+            beadCount = currentState.beadCount,
+            completedRounds = currentState.completedRounds
+        )
+        chantReminderScheduler.sync(currentState)
     }
 
     fun togglePinchGesture(enabled: Boolean) {
@@ -474,6 +510,7 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
 
     override fun onCleared() {
         stopAutoCount()
+        autoCountOngoingActivity.stop()
         voiceChantAudio.release()
         super.onCleared()
     }

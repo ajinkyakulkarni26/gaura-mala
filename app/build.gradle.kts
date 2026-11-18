@@ -16,8 +16,8 @@ android {
         applicationId = "com.gauramala.wear"
         minSdk = 30
         targetSdk = 37
-        versionCode = 17
-        versionName = "1.1.0"
+        versionCode = 18
+        versionName = "1.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -102,6 +102,7 @@ dependencies {
     implementation("androidx.wear.protolayout:protolayout:1.4.2")
     implementation("androidx.wear.protolayout:protolayout-expression:1.4.2")
     implementation("androidx.wear.protolayout:protolayout-material:1.4.2")
+    implementation("androidx.wear.protolayout:protolayout-material3:1.4.2")
     implementation("androidx.wear.watchface:watchface-complications-data-source:1.3.0")
     implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.3.0")
 

@@ -1,11 +1,11 @@
 package com.gauramala.wear
 
 import android.content.Intent
+import android.content.LocusId
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,20 +21,14 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: MantraCounterViewModel by viewModels()
-    private val autoCountOngoingActivity by lazy { AutoCountOngoingActivity(this) }
-    private val chantReminderScheduler by lazy { ChantReminderScheduler(this) }
+    private val viewModel: MantraCounterViewModel by lazy {
+        AutoCountSessionStore.getOrCreate(application)
+    }
     private var openRoundPickerOnLaunch by mutableStateOf(false)
 
     override fun onResume() {
         super.onResume()
         viewModel.refreshDailySession()
-        val currentState = viewModel.uiState.value
-        autoCountOngoingActivity.update(
-            isActive = currentState.autoCountActive,
-            isRunning = currentState.autoCountRunning
-        )
-        chantReminderScheduler.sync(currentState)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -49,11 +43,20 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
 
+    override fun onDestroy() {
+        if (!isChangingConfigurations) {
+            AutoCountSessionStore.releaseIfInactive()
+        }
+        super.onDestroy()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setLocusContext(LocusId(AutoCountOngoingActivity.LOCUS_ID), null)
         handleLaunchIntent(intent)
 
-        // Observe screen wake preference, Auto Count ongoing notification, and chanting reminders
+        // Observe screen wake preference; Auto Count ongoing activity and reminders are
+        // managed directly by MantraCounterViewModel so they stay active in the background.
         lifecycleScope.launch {
             viewModel.uiState.collectLatest { state ->
                 if (state.keepScreenOn) {
@@ -61,13 +64,6 @@ class MainActivity : ComponentActivity() {
                 } else {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
-                autoCountOngoingActivity.update(
-                    // A paused session keeps a return notification, but pausing has already
-                    // stopped the timer/audio and released the Auto Count wake lock.
-                    isActive = state.autoCountActive,
-                    isRunning = state.autoCountRunning
-                )
-                chantReminderScheduler.sync(state)
             }
         }
 

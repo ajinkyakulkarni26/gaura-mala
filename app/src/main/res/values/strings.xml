@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Gaura Mala</string>
     <string name="title_counter">Mantra Counter</string>
-    <string name="tile_name">Gaura Mala Tile</string>
+    <string name="tile_name">Gaura Mala</string>
     <string name="complication_name">Gaura Mala Rounds</string>
     <string name="bead_count_format">%1$d / %2$d</string>
     <string name="round_count_format">Round %1$d of %2$d</string>
@@ -11,6 +11,8 @@
     <string name="auto_count_notification_title">Auto Count</string>
     <string name="auto_count_notification_running">Counting with haptic cues</string>
     <string name="auto_count_notification_paused">Paused · tap to return</string>
+    <string name="auto_count_notification_running_status">Round %1$d · %2$d / 108</string>
+    <string name="auto_count_notification_paused_status">Paused · %1$d / 108</string>
     <string name="chant_reminder_notification_channel">Chanting Reminders</string>
     <string name="chant_reminder_notification_description">Gentle reminders to complete your daily rounds</string>
     <string name="chant_reminder_action_goal_done">All Rounds Complete</string>

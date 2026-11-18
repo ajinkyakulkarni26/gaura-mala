@@ -34,4 +34,38 @@ class GauraMalaTileContentTest {
         assertEquals("Round 16 / 16", content.roundProgress)
         assertEquals("0 / 108 Beads", content.beadProgress)
     }
+
+    @Test
+    fun runningAutoCountIsReferencedInTileContent() {
+        val content = GauraMalaTileContent.from(
+            UserPreferences(
+                completedRounds = 2,
+                beadCount = 19,
+                dailyGoalRounds = 16,
+                autoCountActive = true,
+                autoCountRunning = true
+            )
+        )
+
+        assertEquals("Round 2 / 16", content.roundProgress)
+        assertEquals("Auto Count · 19 / 108", content.beadProgress)
+        assertEquals("Auto Count", content.actionLabel)
+    }
+
+    @Test
+    fun pausedAutoCountIsReferencedInTileContent() {
+        val content = GauraMalaTileContent.from(
+            UserPreferences(
+                completedRounds = 2,
+                beadCount = 19,
+                dailyGoalRounds = 16,
+                autoCountActive = true,
+                autoCountRunning = false
+            )
+        )
+
+        assertEquals("Round 2 / 16", content.roundProgress)
+        assertEquals("Paused · 19 / 108", content.beadProgress)
+        assertEquals("Auto Count", content.actionLabel)
+    }
 }

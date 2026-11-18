@@ -3,20 +3,19 @@ package com.gauramala.wear.tile
 import android.content.Context
 import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders.argb
-import androidx.wear.protolayout.DimensionBuilders.dp
-import androidx.wear.protolayout.DimensionBuilders.sp
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.ModifiersBuilders
+import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders
-import androidx.wear.protolayout.material.Colors
 import androidx.wear.protolayout.material.CompactChip
 import androidx.wear.protolayout.material.Text
-import androidx.wear.protolayout.material.layouts.PrimaryLayout
-import androidx.wear.protolayout.ResourceBuilders
+import androidx.wear.protolayout.material3.materialScope
+import androidx.wear.protolayout.material3.primaryLayout
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders
 import androidx.wear.tiles.TileService
 import com.gauramala.wear.MainActivity
+import com.gauramala.wear.R
 import com.gauramala.wear.data.MantraPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,50 +38,55 @@ class GauraMalaTileService : TileService() {
         val userPrefs = prefs.userPreferencesFlow.first()
         val tileContent = GauraMalaTileContent.from(userPrefs)
 
-        val primaryLayout = PrimaryLayout.Builder(requestParams.deviceConfiguration)
-            .setPrimaryLabelTextContent(
-                Text.Builder(this@GauraMalaTileService, "GauraMala 📿")
-                    .setColor(argb(0xFFFFB300.toInt()))
-                    .setTypography(androidx.wear.protolayout.material.Typography.TYPOGRAPHY_CAPTION1)
-                    .build()
-            )
-            .setContent(
-                LayoutElementBuilders.Column.Builder()
-                    .addContent(
-                        Text.Builder(this@GauraMalaTileService, tileContent.roundProgress)
-                            .setColor(argb(0xFFFFFFFF.toInt()))
-                            .setTypography(androidx.wear.protolayout.material.Typography.TYPOGRAPHY_TITLE2)
-                            .build()
-                    )
-                    .addContent(
-                        Text.Builder(this@GauraMalaTileService, tileContent.beadProgress)
-                            .setColor(argb(0xFFFFE082.toInt()))
-                            .setTypography(androidx.wear.protolayout.material.Typography.TYPOGRAPHY_BODY2)
-                            .build()
-                    )
-                    .build()
-            )
-            .setPrimaryChipContent(
-                CompactChip.Builder(
-                    this@GauraMalaTileService,
-                    tileContent.actionLabel,
-                    ModifiersBuilders.Clickable.Builder()
-                        .setOnClick(
-                            ActionBuilders.LaunchAction.Builder()
-                                .setAndroidActivity(
-                                    ActionBuilders.AndroidActivity.Builder()
-                                        .setPackageName(packageName)
-                                        .setClassName(MainActivity::class.java.name)
-                                        .build()
-                                )
+        val primaryLayout = materialScope(
+            context = this@GauraMalaTileService,
+            deviceConfiguration = requestParams.deviceConfiguration
+        ) {
+            primaryLayout(
+                titleSlot = {
+                    Text.Builder(this@GauraMalaTileService, getString(R.string.tile_name))
+                        .setColor(argb(0xFFFFB300.toInt()))
+                        .setTypography(androidx.wear.protolayout.material.Typography.TYPOGRAPHY_CAPTION1)
+                        .build()
+                },
+                mainSlot = {
+                    LayoutElementBuilders.Column.Builder()
+                        .addContent(
+                            Text.Builder(this@GauraMalaTileService, tileContent.roundProgress)
+                                .setColor(argb(0xFFFFFFFF.toInt()))
+                                .setTypography(androidx.wear.protolayout.material.Typography.TYPOGRAPHY_TITLE2)
                                 .build()
                         )
-                        .build(),
-                    requestParams.deviceConfiguration
-                )
-                .build()
+                        .addContent(
+                            Text.Builder(this@GauraMalaTileService, tileContent.beadProgress)
+                                .setColor(argb(0xFFFFE082.toInt()))
+                                .setTypography(androidx.wear.protolayout.material.Typography.TYPOGRAPHY_BODY2)
+                                .build()
+                        )
+                        .build()
+                },
+                bottomSlot = {
+                    CompactChip.Builder(
+                        this@GauraMalaTileService,
+                        tileContent.actionLabel,
+                        ModifiersBuilders.Clickable.Builder()
+                            .setOnClick(
+                                ActionBuilders.LaunchAction.Builder()
+                                    .setAndroidActivity(
+                                        ActionBuilders.AndroidActivity.Builder()
+                                            .setPackageName(packageName)
+                                            .setClassName(MainActivity::class.java.name)
+                                            .build()
+                                    )
+                                    .build()
+                            )
+                            .build(),
+                        requestParams.deviceConfiguration
+                    )
+                        .build()
+                }
             )
-            .build()
+        }
 
         TileBuilders.Tile.Builder()
             .setResourcesVersion(RESOURCES_VERSION)

@@ -32,7 +32,9 @@ data class UserPreferences(
     val remindersEnabled: Boolean = false,
     val lastReminderTemplateIndex: Int = -1,
     val lastRecordedDate: String = "",
-    val autoChantPaceMillis: Int? = null
+    val autoChantPaceMillis: Int? = null,
+    val autoCountActive: Boolean = false,
+    val autoCountRunning: Boolean = false
 )
 
 class MantraPreferences(private val context: Context) {
@@ -50,9 +52,12 @@ class MantraPreferences(private val context: Context) {
         val KEY_LAST_REMINDER_TEMPLATE_INDEX = intPreferencesKey("key_last_reminder_template_index")
         val KEY_LAST_DATE = stringPreferencesKey("key_last_date")
         val KEY_AUTO_CHANT_PACE_MILLIS = intPreferencesKey("key_auto_chant_pace_millis")
+        val KEY_AUTO_COUNT_ACTIVE = booleanPreferencesKey("key_auto_count_active")
+        val KEY_AUTO_COUNT_RUNNING = booleanPreferencesKey("key_auto_count_running")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data.map { preferences ->
+        val isAutoCountActive = preferences[KEY_AUTO_COUNT_ACTIVE] ?: false
         UserPreferences(
             beadCount = preferences[KEY_BEAD_COUNT] ?: 0,
             completedRounds = preferences[KEY_COMPLETED_ROUNDS] ?: 0,
@@ -65,7 +70,9 @@ class MantraPreferences(private val context: Context) {
             remindersEnabled = preferences[KEY_REMINDERS_ENABLED] ?: false,
             lastReminderTemplateIndex = preferences[KEY_LAST_REMINDER_TEMPLATE_INDEX] ?: -1,
             lastRecordedDate = preferences[KEY_LAST_DATE] ?: "",
-            autoChantPaceMillis = preferences[KEY_AUTO_CHANT_PACE_MILLIS]?.takeIf { it > 0 }
+            autoChantPaceMillis = preferences[KEY_AUTO_CHANT_PACE_MILLIS]?.takeIf { it > 0 },
+            autoCountActive = isAutoCountActive,
+            autoCountRunning = isAutoCountActive && (preferences[KEY_AUTO_COUNT_RUNNING] ?: false)
         )
     }
 
@@ -77,6 +84,8 @@ class MantraPreferences(private val context: Context) {
             if (prefs[KEY_LAST_DATE] != today) {
                 prefs[KEY_BEAD_COUNT] = 0
                 prefs[KEY_COMPLETED_ROUNDS] = 0
+                prefs[KEY_AUTO_COUNT_ACTIVE] = false
+                prefs[KEY_AUTO_COUNT_RUNNING] = false
                 prefs[KEY_LAST_DATE] = today
                 didReset = true
             }
@@ -110,6 +119,21 @@ class MantraPreferences(private val context: Context) {
             } else {
                 prefs[KEY_AUTO_CHANT_PACE_MILLIS] = paceMillis
             }
+        }
+    }
+
+    suspend fun updateAutoCountState(active: Boolean, running: Boolean) {
+        val effectiveRunning = active && running
+        var changed = false
+        context.dataStore.edit { prefs ->
+            val prevActive = prefs[KEY_AUTO_COUNT_ACTIVE] ?: false
+            val prevRunning = prefs[KEY_AUTO_COUNT_RUNNING] ?: false
+            changed = prevActive != active || prevRunning != effectiveRunning
+            prefs[KEY_AUTO_COUNT_ACTIVE] = active
+            prefs[KEY_AUTO_COUNT_RUNNING] = effectiveRunning
+        }
+        if (changed) {
+            WearSurfaceUpdater.requestUpdate(context, updateComplications = false)
         }
     }
 
@@ -167,6 +191,8 @@ class MantraPreferences(private val context: Context) {
             }
             prefs[KEY_BEAD_COUNT] = 0
             prefs[KEY_COMPLETED_ROUNDS] = maxOf(currentRounds, goal)
+            prefs[KEY_AUTO_COUNT_ACTIVE] = false
+            prefs[KEY_AUTO_COUNT_RUNNING] = false
             prefs[KEY_LAST_DATE] = today
         }
         WearSurfaceUpdater.requestUpdate(context, updateComplications = true)
@@ -176,6 +202,8 @@ class MantraPreferences(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[KEY_BEAD_COUNT] = 0
             prefs[KEY_COMPLETED_ROUNDS] = 0
+            prefs[KEY_AUTO_COUNT_ACTIVE] = false
+            prefs[KEY_AUTO_COUNT_RUNNING] = false
             prefs[KEY_LAST_DATE] = LocalDate.now().toString()
         }
         WearSurfaceUpdater.requestUpdate(context)
