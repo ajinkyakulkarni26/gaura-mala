@@ -24,6 +24,6 @@ When a release contains changes of more than one type, use the highest applicabl
 - Play upload 15 (superseded before publication): `versionCode 15`, `versionName 1.1.0`.
 - Play upload 16 (superseded in draft after in-app privacy policy wording sync): `versionCode 16`, `versionName 1.1.0`.
 - Play upload 17 (superseded after Ongoing Activity and Tile navigation fixes): `versionCode 17`, `versionName 1.1.0`.
-- Next feature release: `versionCode 18`, `versionName 1.1.0`.
+- Next feature release: `versionCode 18`, `versionName 1.2.0`.
 
 Update this sequence when a release is actually uploaded, and keep the current Play review/rollout status in `AGENTS.md` based on the latest confirmed Play Console information.
