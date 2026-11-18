@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        viewModel.pauseAutoCount()
         viewModel.cancelVoiceRecording()
         super.onStop()
     }

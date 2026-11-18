@@ -537,13 +537,6 @@ class CounterInputIntegrationTest {
         awaitBeadCount("1", timeoutMillis = 8_000)
         awaitAutoCountNotification(true)
         saveScreenshot("auto-count-running")
-
-        // Navigating away while Auto Count is running must keep the ongoing session active.
-        composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
-        composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
-        awaitAutoCountNotification(true)
-
         composeRule.onNodeWithContentDescription("Pause auto count").performClick()
         composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
         composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
