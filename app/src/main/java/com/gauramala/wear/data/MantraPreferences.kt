@@ -8,8 +8,10 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.gauramala.wear.AutoCountSessionStore
 import com.gauramala.wear.WearSurfaceUpdater
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -34,7 +36,9 @@ data class UserPreferences(
     val lastRecordedDate: String = "",
     val autoChantPaceMillis: Int? = null,
     val autoCountActive: Boolean = false,
-    val autoCountRunning: Boolean = false
+    val autoCountRunning: Boolean = false,
+    val autoCountAnchorEpochMillis: Long = 0L,
+    val autoCountIntervalMillis: Int? = null
 )
 
 class MantraPreferences(private val context: Context) {
@@ -54,10 +58,13 @@ class MantraPreferences(private val context: Context) {
         val KEY_AUTO_CHANT_PACE_MILLIS = intPreferencesKey("key_auto_chant_pace_millis")
         val KEY_AUTO_COUNT_ACTIVE = booleanPreferencesKey("key_auto_count_active")
         val KEY_AUTO_COUNT_RUNNING = booleanPreferencesKey("key_auto_count_running")
+        val KEY_AUTO_COUNT_ANCHOR_EPOCH_MILLIS = longPreferencesKey("key_auto_count_anchor_epoch_millis")
+        val KEY_AUTO_COUNT_INTERVAL_MILLIS = intPreferencesKey("key_auto_count_interval_millis")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data.map { preferences ->
         val isAutoCountActive = preferences[KEY_AUTO_COUNT_ACTIVE] ?: false
+        val isAutoCountRunning = isAutoCountActive && (preferences[KEY_AUTO_COUNT_RUNNING] ?: false)
         UserPreferences(
             beadCount = preferences[KEY_BEAD_COUNT] ?: 0,
             completedRounds = preferences[KEY_COMPLETED_ROUNDS] ?: 0,
@@ -72,20 +79,35 @@ class MantraPreferences(private val context: Context) {
             lastRecordedDate = preferences[KEY_LAST_DATE] ?: "",
             autoChantPaceMillis = preferences[KEY_AUTO_CHANT_PACE_MILLIS]?.takeIf { it > 0 },
             autoCountActive = isAutoCountActive,
-            autoCountRunning = isAutoCountActive && (preferences[KEY_AUTO_COUNT_RUNNING] ?: false)
+            autoCountRunning = isAutoCountRunning,
+            autoCountAnchorEpochMillis = if (isAutoCountRunning) {
+                preferences[KEY_AUTO_COUNT_ANCHOR_EPOCH_MILLIS] ?: 0L
+            } else {
+                0L
+            },
+            autoCountIntervalMillis = preferences[KEY_AUTO_COUNT_INTERVAL_MILLIS]?.takeIf { it > 0 }
+                ?: preferences[KEY_AUTO_CHANT_PACE_MILLIS]?.takeIf { it > 0 }
         )
     }
 
     /** Starts a fresh daily count when saved progress belongs to an earlier local calendar day. */
-    suspend fun resetIfNewDay() {
-        val today = LocalDate.now().toString()
+    suspend fun resetIfNewDay(today: String = LocalDate.now().toString()) {
+        val keepRunningAutoCount = AutoCountSessionStore.peek()?.uiState?.value?.autoCountRunning == true
         var didReset = false
         context.dataStore.edit { prefs ->
             if (prefs[KEY_LAST_DATE] != today) {
                 prefs[KEY_BEAD_COUNT] = 0
                 prefs[KEY_COMPLETED_ROUNDS] = 0
-                prefs[KEY_AUTO_COUNT_ACTIVE] = false
-                prefs[KEY_AUTO_COUNT_RUNNING] = false
+                if (keepRunningAutoCount) {
+                    prefs[KEY_AUTO_COUNT_ACTIVE] = true
+                    prefs[KEY_AUTO_COUNT_RUNNING] = true
+                    prefs[KEY_AUTO_COUNT_ANCHOR_EPOCH_MILLIS] = System.currentTimeMillis()
+                } else {
+                    prefs[KEY_AUTO_COUNT_ACTIVE] = false
+                    prefs[KEY_AUTO_COUNT_RUNNING] = false
+                    prefs.remove(KEY_AUTO_COUNT_ANCHOR_EPOCH_MILLIS)
+                    prefs.remove(KEY_AUTO_COUNT_INTERVAL_MILLIS)
+                }
                 prefs[KEY_LAST_DATE] = today
                 didReset = true
             }
@@ -93,16 +115,29 @@ class MantraPreferences(private val context: Context) {
         if (didReset) WearSurfaceUpdater.requestUpdate(context)
     }
 
-    suspend fun saveCounts(beadCount: Int, completedRounds: Int) {
+    suspend fun saveCounts(
+        beadCount: Int,
+        completedRounds: Int,
+        autoCountAnchorEpochMillis: Long? = null
+    ) {
         val today = LocalDate.now().toString()
         var roundsChanged = false
         context.dataStore.edit { prefs ->
             roundsChanged = (prefs[KEY_COMPLETED_ROUNDS] ?: 0) != completedRounds
             prefs[KEY_BEAD_COUNT] = beadCount
             prefs[KEY_COMPLETED_ROUNDS] = completedRounds
+            if (autoCountAnchorEpochMillis != null && autoCountAnchorEpochMillis > 0L) {
+                prefs[KEY_AUTO_COUNT_ANCHOR_EPOCH_MILLIS] = autoCountAnchorEpochMillis
+            }
             prefs[KEY_LAST_DATE] = today
         }
-        WearSurfaceUpdater.requestUpdate(context, updateComplications = roundsChanged)
+        if (roundsChanged || autoCountAnchorEpochMillis != null) {
+            WearSurfaceUpdater.requestUpdate(
+                context,
+                updateComplications = roundsChanged,
+                forceTileUpdate = roundsChanged
+            )
+        }
     }
 
     suspend fun updateDailyGoal(goal: Int) {
@@ -122,7 +157,13 @@ class MantraPreferences(private val context: Context) {
         }
     }
 
-    suspend fun updateAutoCountState(active: Boolean, running: Boolean) {
+    suspend fun updateAutoCountState(
+        active: Boolean,
+        running: Boolean,
+        anchorEpochMillis: Long = 0L,
+        intervalMillis: Int? = null,
+        requestSurfaceUpdate: Boolean = true
+    ) {
         val effectiveRunning = active && running
         var changed = false
         context.dataStore.edit { prefs ->
@@ -131,9 +172,22 @@ class MantraPreferences(private val context: Context) {
             changed = prevActive != active || prevRunning != effectiveRunning
             prefs[KEY_AUTO_COUNT_ACTIVE] = active
             prefs[KEY_AUTO_COUNT_RUNNING] = effectiveRunning
+            if (active && prefs[KEY_LAST_DATE].isNullOrEmpty()) {
+                prefs[KEY_LAST_DATE] = LocalDate.now().toString()
+            }
+            if (effectiveRunning && anchorEpochMillis > 0L) {
+                prefs[KEY_AUTO_COUNT_ANCHOR_EPOCH_MILLIS] = anchorEpochMillis
+            } else if (!effectiveRunning) {
+                prefs.remove(KEY_AUTO_COUNT_ANCHOR_EPOCH_MILLIS)
+            }
+            if (effectiveRunning && intervalMillis != null && intervalMillis > 0) {
+                prefs[KEY_AUTO_COUNT_INTERVAL_MILLIS] = intervalMillis
+            } else if (!active) {
+                prefs.remove(KEY_AUTO_COUNT_INTERVAL_MILLIS)
+            }
         }
-        if (changed) {
-            WearSurfaceUpdater.requestUpdate(context, updateComplications = false)
+        if (requestSurfaceUpdate && (changed || (effectiveRunning && anchorEpochMillis > 0L))) {
+            WearSurfaceUpdater.requestUpdate(context, updateComplications = false, forceTileUpdate = true)
         }
     }
 
@@ -193,6 +247,8 @@ class MantraPreferences(private val context: Context) {
             prefs[KEY_COMPLETED_ROUNDS] = maxOf(currentRounds, goal)
             prefs[KEY_AUTO_COUNT_ACTIVE] = false
             prefs[KEY_AUTO_COUNT_RUNNING] = false
+            prefs.remove(KEY_AUTO_COUNT_ANCHOR_EPOCH_MILLIS)
+            prefs.remove(KEY_AUTO_COUNT_INTERVAL_MILLIS)
             prefs[KEY_LAST_DATE] = today
         }
         WearSurfaceUpdater.requestUpdate(context, updateComplications = true)
@@ -204,6 +260,8 @@ class MantraPreferences(private val context: Context) {
             prefs[KEY_COMPLETED_ROUNDS] = 0
             prefs[KEY_AUTO_COUNT_ACTIVE] = false
             prefs[KEY_AUTO_COUNT_RUNNING] = false
+            prefs.remove(KEY_AUTO_COUNT_ANCHOR_EPOCH_MILLIS)
+            prefs.remove(KEY_AUTO_COUNT_INTERVAL_MILLIS)
             prefs[KEY_LAST_DATE] = LocalDate.now().toString()
         }
         WearSurfaceUpdater.requestUpdate(context)

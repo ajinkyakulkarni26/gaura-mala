@@ -37,12 +37,31 @@ internal class ChantReminderScheduler(context: Context) {
     }
 
     fun sync(state: MantraUiState, now: LocalDateTime = LocalDateTime.now()) {
+        syncMidnightRollover(state, now)
         dismissNotification()
         if (!ChantReminderPolicy.isEligibleForReminder(state) || !canPostNotifications()) {
             cancelScheduledReminder()
             return
         }
         scheduleNext(now)
+    }
+
+    private fun syncMidnightRollover(state: MantraUiState, now: LocalDateTime) {
+        if (!state.autoCountActive && state.completedRounds == 0 && state.beadCount == 0) {
+            alarmManager?.cancel(midnightRolloverPendingIntent())
+            return
+        }
+        val nextMidnightMillis = now
+            .toLocalDate()
+            .plusDays(1)
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+        alarmManager?.set(
+            AlarmManager.RTC,
+            nextMidnightMillis,
+            midnightRolloverPendingIntent()
+        )
     }
 
     fun scheduleNext(now: LocalDateTime = LocalDateTime.now()) {
@@ -77,8 +96,14 @@ internal class ChantReminderScheduler(context: Context) {
     }
 
     fun dismissNotification() {
-        for (index in 0 until ChantReminderPolicy.TEMPLATE_COUNT) {
-            notifications.cancel(notificationIdForTemplate(index))
+        val manager = appContext.getSystemService(NotificationManager::class.java) ?: return
+        val activeReminderIds = runCatching {
+            manager.activeNotifications
+                .map { it.id }
+                .filter(::isReminderNotificationId)
+        }.getOrDefault(emptyList())
+        for (id in activeReminderIds) {
+            notifications.cancel(id)
         }
     }
 
@@ -151,6 +176,16 @@ internal class ChantReminderScheduler(context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+    private fun midnightRolloverPendingIntent(): PendingIntent =
+        PendingIntent.getBroadcast(
+            appContext,
+            REQUEST_MIDNIGHT_ROLLOVER,
+            Intent(appContext, ChantReminderReceiver::class.java).apply {
+                action = ACTION_MIDNIGHT_ROLLOVER
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = appContext.getSystemService(NotificationManager::class.java)
@@ -171,6 +206,7 @@ internal class ChantReminderScheduler(context: Context) {
         const val NOTIFICATION_ID = 109
         const val ACTION_SHOW_REMINDER = "com.gauramala.wear.action.SHOW_CHANT_REMINDER"
         const val ACTION_MARK_GOAL_DONE = "com.gauramala.wear.action.MARK_GOAL_DONE"
+        const val ACTION_MIDNIGHT_ROLLOVER = "com.gauramala.wear.action.MIDNIGHT_ROLLOVER"
         const val EXTRA_OPEN_ROUND_PICKER = "com.gauramala.wear.extra.OPEN_ROUND_PICKER"
 
         fun notificationIdForTemplate(templateIndex: Int): Int =
@@ -183,6 +219,7 @@ internal class ChantReminderScheduler(context: Context) {
         private const val REQUEST_OPEN_APP = 202
         private const val REQUEST_MARK_GOAL_DONE = 203
         private const val REQUEST_LOG_ROUNDS = 204
+        private const val REQUEST_MIDNIGHT_ROLLOVER = 205
         private const val ALARM_WINDOW_MILLIS = 15 * 60 * 1_000L
     }
 }

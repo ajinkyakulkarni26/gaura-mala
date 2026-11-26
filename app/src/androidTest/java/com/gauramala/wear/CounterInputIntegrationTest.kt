@@ -565,7 +565,7 @@ class CounterInputIntegrationTest {
     }
 
     @Test
-    fun leavingAppPausesAutoCountAndRetainsOngoingActivityAcrossActivityRecreation() {
+    fun leavingAppKeepsAutoCountForegroundOngoingActivityRunningAcrossRecreation() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val activityInfo = context.packageManager.getActivityInfo(
             ComponentName(context, MainActivity::class.java),
@@ -587,26 +587,44 @@ class CounterInputIntegrationTest {
         composeRule.onNodeWithTag("auto-chant-start-count").performScrollTo().performClick()
 
         awaitBeadCount("1", timeoutMillis = 8_000)
-        awaitAutoCountNotification(true)
+        awaitAutoCountNotification(expectedVisible = true, expectRunning = true)
 
-        // Leaving the app pauses counting while retaining the Ongoing Activity and session state.
+        // Leaving the app keeps Auto Count running in its Foreground Service + Ongoing Activity.
         composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
         composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
-        composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
-        awaitAutoCountNotification(true)
+        composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
+        awaitAutoCountNotification(expectedVisible = true, expectRunning = true)
 
         // Simulating back-swipe activity destruction and relaunch from Watch Face / Recents / Tile
-        // must reconnect to the retained AutoCountSessionStore ViewModel.
+        // must reconnect to the retained live AutoCountSessionStore ViewModel.
         composeRule.activityRule.scenario.recreate()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runCatching {
+                composeRule.onNodeWithContentDescription("Pause auto count").assertIsDisplayed()
+            }.isSuccess
+        }
+        awaitAutoCountNotification(expectedVisible = true, expectRunning = true)
+
+        // Notification Pause and Stop service actions control the active session directly.
+        context.startService(
+            Intent(context, AutoCountForegroundService::class.java).apply {
+                action = AutoCountForegroundService.ACTION_PAUSE
+            }
+        )
         composeRule.waitUntil(timeoutMillis = 5_000) {
             runCatching {
                 composeRule.onNodeWithContentDescription("Resume auto count").assertIsDisplayed()
             }.isSuccess
         }
         composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
-        awaitBeadCount("1")
-        awaitAutoCountNotification(true)
+        awaitAutoCountNotification(expectedVisible = true, expectRunning = false)
+
+        context.startService(
+            Intent(context, AutoCountForegroundService::class.java).apply {
+                action = AutoCountForegroundService.ACTION_STOP
+            }
+        )
+        awaitAutoCountNotification(expectedVisible = false)
     }
 
     @Test
@@ -728,6 +746,40 @@ class CounterInputIntegrationTest {
 
         awaitBeadCount("0")
         awaitRound("Round 1 of 16")
+    }
+
+    @Test
+    fun midnightRolloverClearsPausedAutoCountAndResetsRounds() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        runBlocking {
+            context.dataStore.edit {
+                it[MantraPreferences.KEY_AUTO_CHANT_PACE_MILLIS] = 15_000
+            }
+        }
+        setStoredProgress(beadCount = 5, completedRounds = 2)
+        awaitBeadCount("5")
+        awaitRound("Round 3 of 16")
+
+        openSettings()
+        composeRule.onNodeWithTag("settings-auto-chant").performScrollTo().performClick()
+        composeRule.onNodeWithTag("auto-chant-start-count").performScrollTo().performClick()
+        composeRule.onNodeWithContentDescription("Pause auto count").performClick()
+        composeRule.onNodeWithText("Auto count paused").assertIsDisplayed()
+        awaitAutoCountNotification(expectedVisible = true, expectRunning = false)
+
+        val nextDay = LocalDateTime.now().plusDays(1)
+        runBlocking {
+            ChantReminderReceiver().handleAction(
+                context = context,
+                action = ChantReminderScheduler.ACTION_MIDNIGHT_ROLLOVER,
+                now = nextDay
+            )
+        }
+
+        awaitAutoCountNotification(expectedVisible = false)
+        awaitBeadCount("0")
+        awaitRound("Round 1 of 16")
+        composeRule.onNodeWithText("Auto count paused").assertDoesNotExist()
     }
 
     @Test
@@ -922,21 +974,33 @@ class CounterInputIntegrationTest {
         }
     }
 
-    private fun awaitAutoCountNotification(expectedVisible: Boolean) {
+    private fun awaitAutoCountNotification(
+        expectedVisible: Boolean,
+        expectRunning: Boolean? = null
+    ) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            val isVisible = NotificationManagerCompat.from(context)
+            val activeSbn = NotificationManagerCompat.from(context)
                 .activeNotifications
-                .any { it.id == AutoCountOngoingActivity.NOTIFICATION_ID }
+                .firstOrNull { it.id == AutoCountOngoingActivity.NOTIFICATION_ID }
+            val isVisible = activeSbn != null
+            val isForegroundService = activeSbn != null &&
+                (activeSbn.notification.flags and Notification.FLAG_FOREGROUND_SERVICE) != 0
             val recovered = OngoingActivity.recoverOngoingActivity(
                 context,
                 AutoCountOngoingActivity.NOTIFICATION_ID
             )
+            val runningIconMatches = when (expectRunning) {
+                true -> recovered?.animatedIcon != null
+                false -> recovered?.animatedIcon == null
+                null -> true
+            }
             val hasOngoingMetadata = recovered != null &&
                 recovered.status != null &&
-                recovered.locusId?.id == AutoCountOngoingActivity.LOCUS_ID
+                recovered.locusId?.id == AutoCountOngoingActivity.LOCUS_ID &&
+                runningIconMatches
             if (expectedVisible) {
-                isVisible && hasOngoingMetadata
+                isVisible && isForegroundService && hasOngoingMetadata
             } else {
                 !isVisible
             }

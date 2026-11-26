@@ -127,13 +127,13 @@ fun AutoChantSetupScreen(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         val useVoiceGuide = pendingVoiceGuide
-        pendingVoiceGuide = null
         if (granted && AutoCountOngoingActivity.notificationsEnabled(context)) {
+            pendingVoiceGuide = null
             if (useVoiceGuide == null) page = notificationReturnPage
             else startCount(useVoiceGuide)
         } else {
             onNotificationPermissionDeclined()
-            page = notificationReturnPage
+            page = if (useVoiceGuide != null) AutoChantPage.NOTIFICATIONS else notificationReturnPage
         }
     }
 
@@ -141,23 +141,27 @@ fun AutoChantSetupScreen(
         ActivityResultContracts.StartActivityForResult()
     ) {
         val useVoiceGuide = pendingVoiceGuide
-        pendingVoiceGuide = null
         if (AutoCountOngoingActivity.notificationsEnabled(context)) {
+            pendingVoiceGuide = null
             if (useVoiceGuide == null) page = notificationReturnPage
             else startCount(useVoiceGuide)
         } else {
             onNotificationPermissionDeclined()
-            page = notificationReturnPage
+            if (useVoiceGuide == null) page = notificationReturnPage
         }
     }
 
     fun requestCountStart(useVoiceGuide: Boolean) {
-        if (notificationPermissionMissing && !notificationPermissionDeclined) {
+        if (AutoCountOngoingActivity.notificationsEnabled(context)) {
+            startCount(useVoiceGuide)
+        } else if (notificationPermissionMissing && !notificationPermissionDeclined) {
+            pendingVoiceGuide = useVoiceGuide
+            notificationReturnPage = page
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
             pendingVoiceGuide = useVoiceGuide
             notificationReturnPage = page
             page = AutoChantPage.NOTIFICATIONS
-        } else {
-            startCount(useVoiceGuide)
         }
     }
 
@@ -388,7 +392,7 @@ fun AutoChantSetupScreen(
                 AutoChantPage.NOTIFICATIONS -> {
                     PageTitle("Notifications", compact = true)
                     Text(
-                        "Return shortcut for Auto Count.",
+                        "Shows Auto Count on the watch face and Recent Apps.",
                         color = OnSurfaceMuted,
                         fontSize = 9.sp,
                         textAlign = TextAlign.Center
@@ -411,6 +415,15 @@ fun AutoChantSetupScreen(
                             }
                         }
                     )
+                    val requestedVoiceGuide = pendingVoiceGuide
+                    if (requestedVoiceGuide != null) {
+                        ActionButton(
+                            text = "Start without shortcut",
+                            tag = "auto-count-start-without-notifications",
+                            onClick = { startCount(requestedVoiceGuide) },
+                            color = AutoChantSecondary
+                        )
+                    }
                 }
 
                 AutoChantPage.OPTIONS -> {

@@ -30,6 +30,9 @@ internal object AutoCountSessionStore {
     }
 
     @Synchronized
+    fun peek(): MantraCounterViewModel? = activeViewModel
+
+    @Synchronized
     fun releaseIfInactive() {
         val current = activeViewModel ?: return
         if (!current.uiState.value.autoCountActive) {

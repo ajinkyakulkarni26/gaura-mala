@@ -116,7 +116,6 @@ struct CounterView: View {
             if phase == .active {
                 model.refreshForCurrentDay()
             } else if phase == .background {
-                model.pauseAutoCount()
                 model.cancelVoiceRecording()
             }
         }

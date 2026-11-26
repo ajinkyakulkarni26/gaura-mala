@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.wear.protolayout.DeviceParametersBuilders
 import androidx.wear.protolayout.StateBuilders
+import androidx.wear.protolayout.expression.VersionBuilders
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.connection.DefaultTileClient
 import com.gauramala.wear.data.MantraPreferences
@@ -28,6 +29,7 @@ class TileServiceIntegrationTest {
 
     @Before
     fun clearPreferences() {
+        AutoCountSessionStore.clear()
         runBlocking {
             context.dataStore.edit { it.clear() }
         }
@@ -58,6 +60,8 @@ class TileServiceIntegrationTest {
             preferences[MantraPreferences.KEY_COMPLETED_ROUNDS] = 2
             preferences[MantraPreferences.KEY_BEAD_COUNT] = 19
             preferences[MantraPreferences.KEY_DAILY_GOAL] = 16
+            preferences[MantraPreferences.KEY_AUTO_CHANT_PACE_MILLIS] = 5_000
+            preferences[MantraPreferences.KEY_AUTO_COUNT_ANCHOR_EPOCH_MILLIS] = 1_795_000_000_000L
             preferences[MantraPreferences.KEY_AUTO_COUNT_ACTIVE] = true
             preferences[MantraPreferences.KEY_AUTO_COUNT_RUNNING] = true
             preferences[MantraPreferences.KEY_LAST_DATE] = LocalDate.now().toString()
@@ -67,6 +71,10 @@ class TileServiceIntegrationTest {
         assertTrue(
             "Running Auto Count must be referenced on the Tile",
             runningPayload.contains("Auto Count · 19 / 108")
+        )
+        assertTrue(
+            "Running Auto Count must bind a DynamicInstant expression so each chant updates live",
+            runningPayload.contains("PlatformTimeSource")
         )
         assertTrue(
             "Tile heading must not include the redundant word 'Tile'",
@@ -80,6 +88,10 @@ class TileServiceIntegrationTest {
         assertTrue(
             "Paused Auto Count must remain referenced on the Tile",
             pausedPayload.contains("Paused · 19 / 108")
+        )
+        assertTrue(
+            "Paused Auto Count must not stream live time increments",
+            !pausedPayload.contains("PlatformTimeSource")
         )
 
         context.dataStore.edit { preferences ->
@@ -114,6 +126,7 @@ class TileServiceIntegrationTest {
             .setScreenDensity(context.resources.displayMetrics.density)
             .setScreenShape(DeviceParametersBuilders.SCREEN_SHAPE_ROUND)
             .setDevicePlatform(DeviceParametersBuilders.DEVICE_PLATFORM_WEAR_OS)
+            .setRendererSchemaVersion(VersionBuilders.VersionInfo.CURRENT)
             .build()
         val request = RequestBuilders.TileRequest.Builder()
             .setDeviceConfiguration(deviceParameters)
