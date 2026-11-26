@@ -13,6 +13,9 @@
     <string name="auto_count_notification_paused">Paused · tap to return</string>
     <string name="auto_count_notification_running_status">Round %1$d · %2$d / 108</string>
     <string name="auto_count_notification_paused_status">Paused · %1$d / 108</string>
+    <string name="auto_count_action_pause">Pause</string>
+    <string name="auto_count_action_resume">Resume</string>
+    <string name="auto_count_action_stop">Stop</string>
     <string name="chant_reminder_notification_channel">Chanting Reminders</string>
     <string name="chant_reminder_notification_description">Gentle reminders to complete your daily rounds</string>
     <string name="chant_reminder_action_goal_done">All Rounds Complete</string>

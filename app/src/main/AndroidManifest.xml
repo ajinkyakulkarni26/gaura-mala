@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Keeps self-paced Auto Count timing reliable while the display is dim. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Backs active Auto Count Ongoing Activity sessions on the watch face and Recent Apps. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <!-- Requested in context so Auto Count can remain available while the screen dims. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Requested only after the user chooses the optional voice guide. -->
@@ -79,8 +82,19 @@
             <intent-filter>
                 <action android:name="com.gauramala.wear.action.SHOW_CHANT_REMINDER" />
                 <action android:name="com.gauramala.wear.action.MARK_GOAL_DONE" />
+                <action android:name="com.gauramala.wear.action.MIDNIGHT_ROLLOVER" />
             </intent-filter>
         </receiver>
+
+        <!-- Foreground service backing active Auto Count Ongoing Activity sessions -->
+        <service
+            android:name=".AutoCountForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-initiated hands-free japa meditation pace timer and optional local chant guide on Wear OS with Ongoing Activity surfaces." />
+        </service>
 
     </application>
 

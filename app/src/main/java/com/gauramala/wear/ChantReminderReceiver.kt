@@ -9,9 +9,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
 
-/** Handles scheduled chanting reminder alarms and notification actions without opening the app. */
+/** Handles scheduled chanting reminder alarms, midnight rollovers, and notification actions. */
 class ChantReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action ?: return
@@ -34,6 +35,21 @@ class ChantReminderReceiver : BroadcastReceiver() {
         val preferences = MantraPreferences(context)
         val scheduler = ChantReminderScheduler(context)
         when (action) {
+            ChantReminderScheduler.ACTION_MIDNIGHT_ROLLOVER -> {
+                val today = now.toLocalDate().toString()
+                withContext(Dispatchers.Main.immediate) {
+                    AutoCountSessionStore.peek()?.let { viewModel ->
+                        viewModel.refreshDailySession(today)
+                        if (!viewModel.uiState.value.autoCountActive) {
+                            AutoCountForegroundService.stop(context)
+                        }
+                    }
+                }
+                preferences.resetIfNewDay(today)
+                if (AutoCountSessionStore.peek()?.uiState?.value?.autoCountActive != true) {
+                    AutoCountForegroundService.stop(context)
+                }
+            }
             ChantReminderScheduler.ACTION_MARK_GOAL_DONE -> {
                 preferences.markDailyGoalCompleted()
                 scheduler.cancelAll()

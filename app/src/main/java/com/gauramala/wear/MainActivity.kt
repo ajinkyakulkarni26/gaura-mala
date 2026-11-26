@@ -38,8 +38,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
-        viewModel.pauseAutoCount()
         viewModel.cancelVoiceRecording()
+        WearSurfaceUpdater.flushPendingTileUpdate(this)
         super.onStop()
     }
 

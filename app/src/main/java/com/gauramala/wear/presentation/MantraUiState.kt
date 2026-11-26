@@ -52,6 +52,7 @@ internal fun MantraUiState.withPreferences(
         preferences.completedRounds >= preferences.dailyGoalRounds &&
         completedRounds < preferences.dailyGoalRounds &&
         preferences.beadCount == 0
+    val clearAutoCountSession = (isNewDay && !autoCountRunning) || externalGoalCompleted
     val useSavedProgress = !preserveLocalProgress || isNewDay || externalGoalCompleted
 
     return copy(
@@ -67,6 +68,9 @@ internal fun MantraUiState.withPreferences(
         autoChantPaceMillis = preferences.autoChantPaceMillis,
         lastRecordedDate = preferences.lastRecordedDate,
         canUndo = if (isNewDay || externalGoalCompleted) false else canUndo,
-        showGoalAchievedDialog = if (isNewDay || externalGoalCompleted) false else showGoalAchievedDialog
+        showGoalAchievedDialog = if (isNewDay || externalGoalCompleted) false else showGoalAchievedDialog,
+        autoCountActive = if (clearAutoCountSession) false else autoCountActive,
+        autoCountRunning = if (clearAutoCountSession) false else autoCountRunning,
+        autoCountUsesVoiceGuide = if (clearAutoCountSession) false else autoCountUsesVoiceGuide
     )
 }

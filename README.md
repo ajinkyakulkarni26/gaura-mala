@@ -37,6 +37,7 @@ gaura-mala/
 │   │   │   └── drawable/ (ic_launcher.xml)
 │   │   └── java/com/gauramala/wear/
 │   │       ├── MainActivity.kt
+│   │       ├── AutoCountForegroundService.kt      # Foreground service backing active Auto Count sessions
 │   │       ├── AutoCountOngoingActivity.kt        # Ongoing Activity notification, watch face & Recents status
 │   │       ├── AutoCountSessionStore.kt           # Retains active Auto Count session across watch-face navigation
 │   │       ├── ChantReminderScheduler.kt          # Optional 2.5-hour daytime reminder alarms & notifications

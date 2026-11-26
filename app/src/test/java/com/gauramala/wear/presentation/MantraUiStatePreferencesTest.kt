@@ -3,6 +3,7 @@ package com.gauramala.wear.presentation
 import com.gauramala.wear.data.UserPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MantraUiStatePreferencesTest {
@@ -93,5 +94,57 @@ class MantraUiStatePreferencesTest {
         assertEquals(0, state.beadCount)
         assertEquals(16, state.completedRounds)
         assertFalse(state.canUndo)
+    }
+
+    @Test
+    fun newDaySnapshotClearsPausedAutoCountSession() {
+        val state = MantraUiState(
+            beadCount = 42,
+            completedRounds = 5,
+            lastRecordedDate = "2026-09-28",
+            autoCountActive = true,
+            autoCountRunning = false,
+            autoCountUsesVoiceGuide = true
+        ).withPreferences(
+            preferences = UserPreferences(
+                beadCount = 0,
+                completedRounds = 0,
+                lastRecordedDate = "2026-09-29"
+            ),
+            preserveLocalProgress = true
+        )
+
+        assertEquals(0, state.beadCount)
+        assertEquals(0, state.completedRounds)
+        assertFalse(state.autoCountActive)
+        assertFalse(state.autoCountRunning)
+        assertFalse(state.autoCountUsesVoiceGuide)
+    }
+
+    @Test
+    fun newDaySnapshotPreservesRunningAutoCountWhileResettingCounts() {
+        val state = MantraUiState(
+            beadCount = 107,
+            completedRounds = 3,
+            lastRecordedDate = "2026-09-28",
+            autoCountActive = true,
+            autoCountRunning = true,
+            autoCountUsesVoiceGuide = true
+        ).withPreferences(
+            preferences = UserPreferences(
+                beadCount = 0,
+                completedRounds = 0,
+                lastRecordedDate = "2026-09-29",
+                autoCountActive = true,
+                autoCountRunning = true
+            ),
+            preserveLocalProgress = true
+        )
+
+        assertEquals(0, state.beadCount)
+        assertEquals(0, state.completedRounds)
+        assertTrue(state.autoCountActive)
+        assertTrue(state.autoCountRunning)
+        assertTrue(state.autoCountUsesVoiceGuide)
     }
 }

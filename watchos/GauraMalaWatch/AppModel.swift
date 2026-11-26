@@ -35,6 +35,7 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
     private var lastIncrementMillis: Int64 = 0
     private let debounceWindowMillis: Int64 = 280
     private var lastNotificationSessionState: (Bool, Bool)?
+    nonisolated(unsafe) private var dayChangeObservers: [NSObjectProtocol] = []
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults === UserDefaults.standard
@@ -51,7 +52,26 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
         hasVoiceChantRecording = voiceChantAudio.hasRecording()
         super.init()
         configureNotificationCategories()
+        observeDayRolloverNotifications()
         persist()
+    }
+
+    deinit {
+        for observer in dayChangeObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    private func observeDayRolloverNotifications() {
+        let center = NotificationCenter.default
+        let names: [Notification.Name] = [.NSCalendarDayChanged, .NSSystemTimeZoneDidChange]
+        dayChangeObservers = names.map { name in
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.refreshForCurrentDay()
+                }
+            }
+        }
     }
 
     func countBead() {
@@ -173,6 +193,9 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
 
     func refreshForCurrentDay() {
         if engine.rollOverIfNeeded(to: Self.localDateString()) {
+            if autoCountActive && !autoCountRunning {
+                stopAutoCount()
+            }
             state = engine.state
             isShowingGoalAlert = false
             persist()
@@ -268,6 +291,7 @@ final class AppModel: NSObject, ObservableObject, UNUserNotificationCenterDelega
     }
 
     func resumeAutoCount() {
+        refreshForCurrentDay()
         guard autoCountActive, !autoCountRunning else { return }
         startAutoCount(useVoiceGuide: autoCountUsesVoiceGuide)
     }

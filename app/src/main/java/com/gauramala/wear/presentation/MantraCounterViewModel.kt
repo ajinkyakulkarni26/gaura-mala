@@ -7,7 +7,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.gauramala.wear.AutoCountOngoingActivity
 import com.gauramala.wear.ChantReminderScheduler
+import com.gauramala.wear.WearSurfaceUpdater
 import com.gauramala.wear.data.MantraPreferences
+import com.gauramala.wear.data.UserPreferences
 import com.gauramala.wear.haptics.HapticHelper
 import com.gauramala.wear.media.VoiceChantAudio
 import java.time.LocalDate
@@ -57,13 +59,21 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     private var preferencesLoaded = false
     private var hasLocalProgressChanges = false
     private var lastSyncedAutoCountState: Pair<Boolean, Boolean> = false to false
+    @Volatile
+    private var activeAutoCountAnchorEpochMs: Long = 0L
+    @Volatile
+    private var activeAutoCountIntervalMs: Int? = null
     private val pendingBeadInputs = ArrayDeque<PendingBeadInput>()
     private val countSaveRequests = Channel<CountSnapshot>(Channel.CONFLATED)
 
     init {
         viewModelScope.launch {
             for (snapshot in countSaveRequests) {
-                preferences.saveCounts(snapshot.beadCount, snapshot.completedRounds)
+                preferences.saveCounts(
+                    beadCount = snapshot.beadCount,
+                    completedRounds = snapshot.completedRounds,
+                    autoCountAnchorEpochMillis = snapshot.autoCountAnchorEpochMillis
+                )
             }
         }
 
@@ -83,7 +93,10 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
                     lastSyncedAutoCountState = autoCountState
                     preferences.updateAutoCountState(
                         active = state.autoCountActive,
-                        running = state.autoCountRunning
+                        running = state.autoCountRunning,
+                        anchorEpochMillis = activeAutoCountAnchorEpochMs,
+                        intervalMillis = activeAutoCountIntervalMs,
+                        requestSurfaceUpdate = false
                     )
                 }
             }
@@ -231,25 +244,36 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
     fun startAutoCount(useVoiceGuide: Boolean = false) {
         val state = _uiState.value
         if (!preferencesLoaded) return
-        if (useVoiceGuide) {
-            if (!state.hasVoiceChantRecording || voiceChantAudio.recordingDurationMillis() == null) return
+        val resolvedIntervalMs: Int = if (useVoiceGuide) {
+            if (!state.hasVoiceChantRecording) return
+            val recordingDuration = voiceChantAudio.recordingDurationMillis() ?: return
+            recordingDuration.coerceIn(1L, Int.MAX_VALUE.toLong()).toInt()
         } else {
             val paceMillis = state.autoChantPaceMillis?.toLong() ?: return
             if (!autoChantPacer.configure(paceMillis)) return
+            paceMillis.toInt()
         }
         autoCountJob?.cancel()
         releaseAutoCountWakeLock()
         if (!useVoiceGuide && !autoChantPacer.start(SystemClock.elapsedRealtime())) return
         acquireAutoCountWakeLock()
+        activeAutoCountAnchorEpochMs = System.currentTimeMillis()
+        activeAutoCountIntervalMs = resolvedIntervalMs
 
         _uiState.update {
             it.copy(
                 autoCountActive = true,
                 autoCountRunning = true,
                 autoCountUsesVoiceGuide = useVoiceGuide,
-                isVoiceChantPreviewing = false
+                isVoiceChantPreviewing = false,
+                lastRecordedDate = it.lastRecordedDate.ifEmpty { LocalDate.now().toString() }
             )
         }
+        WearSurfaceUpdater.requestUpdate(
+            context = getApplication(),
+            updateComplications = false,
+            forceTileUpdate = true
+        )
         hapticHelper.autoCountStarted(enabled = state.isHapticsEnabled)
         if (useVoiceGuide) {
             if (!voiceChantAudio.playLoop(::onVoiceChantCompleted)) {
@@ -283,25 +307,42 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         autoChantPacer.pause()
         voiceChantAudio.stopPlayback()
         releaseAutoCountWakeLock()
+        activeAutoCountAnchorEpochMs = 0L
         _uiState.update { it.copy(autoCountRunning = false) }
+        WearSurfaceUpdater.requestUpdate(
+            context = getApplication(),
+            updateComplications = false,
+            forceTileUpdate = true
+        )
     }
 
     fun resumeAutoCount() {
+        if (resetMemoryForNewDayIfNeeded()) return
         if (!_uiState.value.autoCountActive || _uiState.value.autoCountRunning) return
         startAutoCount(useVoiceGuide = _uiState.value.autoCountUsesVoiceGuide)
     }
 
     fun stopAutoCount() {
+        val wasActive = _uiState.value.autoCountActive || _uiState.value.autoCountRunning
         autoCountJob?.cancel()
         autoCountJob = null
         autoChantPacer.pause()
         voiceChantAudio.stopPlayback()
         releaseAutoCountWakeLock()
+        activeAutoCountAnchorEpochMs = 0L
+        activeAutoCountIntervalMs = null
         _uiState.update {
             it.copy(
                 autoCountActive = false,
                 autoCountRunning = false,
                 autoCountUsesVoiceGuide = false
+            )
+        }
+        if (wasActive) {
+            WearSurfaceUpdater.requestUpdate(
+                context = getApplication(),
+                updateComplications = false,
+                forceTileUpdate = true
             )
         }
     }
@@ -314,8 +355,14 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         val currentState = _uiState.value
         val transition = counterStateMachine.increment(currentState)
         val nextState = transition.state
+        val nowEpochMs = System.currentTimeMillis()
+        activeAutoCountAnchorEpochMs = nowEpochMs
         _uiState.value = nextState
-        saveCounts(nextState.beadCount, nextState.completedRounds)
+        saveCounts(
+            beads = nextState.beadCount,
+            rounds = nextState.completedRounds,
+            autoCountAnchorEpochMillis = nowEpochMs
+        )
 
         when (selectHapticCue(currentState, transition, BeadInputSource.AUTO)) {
             HapticCue.BEAD -> hapticHelper.beadClick()
@@ -453,8 +500,9 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         _uiState.update { it.copy(showGoalAchievedDialog = false) }
     }
 
-    fun refreshDailySession() {
-        viewModelScope.launch { preferences.resetIfNewDay() }
+    fun refreshDailySession(today: String = LocalDate.now().toString()) {
+        resetMemoryForNewDayIfNeeded(today)
+        viewModelScope.launch { preferences.resetIfNewDay(today) }
         val currentState = _uiState.value
         autoCountOngoingActivity.update(
             isActive = currentState.autoCountActive,
@@ -504,8 +552,38 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun saveCounts(beads: Int, rounds: Int) {
-        countSaveRequests.trySend(CountSnapshot(beads, rounds))
+    internal fun currentTilePreferencesSnapshot(
+        today: String = LocalDate.now().toString()
+    ): UserPreferences? {
+        if (!preferencesLoaded) return null
+        resetMemoryForNewDayIfNeeded(today)
+        val current = _uiState.value
+        return UserPreferences(
+            beadCount = current.beadCount,
+            completedRounds = current.completedRounds,
+            dailyGoalRounds = current.dailyGoalRounds,
+            gesturePinchEnabled = current.isPinchGestureEnabled,
+            screenTapEnabled = current.isScreenTapEnabled,
+            hapticFeedbackEnabled = current.isHapticsEnabled,
+            milestoneVibrationsEnabled = current.isMilestonesEnabled,
+            keepScreenOn = current.keepScreenOn,
+            remindersEnabled = current.isRemindersEnabled,
+            lastRecordedDate = current.lastRecordedDate,
+            autoChantPaceMillis = current.autoChantPaceMillis,
+            autoCountActive = current.autoCountActive,
+            autoCountRunning = current.autoCountRunning,
+            autoCountAnchorEpochMillis = if (current.autoCountRunning) activeAutoCountAnchorEpochMs else 0L,
+            autoCountIntervalMillis = activeAutoCountIntervalMs ?: current.autoChantPaceMillis
+        )
+    }
+
+    private fun saveCounts(
+        beads: Int,
+        rounds: Int,
+        autoCountAnchorEpochMillis: Long? = null
+    ) {
+        WearSurfaceUpdater.markStateChanged()
+        countSaveRequests.trySend(CountSnapshot(beads, rounds, autoCountAnchorEpochMillis))
     }
 
     override fun onCleared() {
@@ -515,22 +593,39 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         super.onCleared()
     }
 
-    private fun resetMemoryForNewDayIfNeeded() {
-        val today = LocalDate.now().toString()
-        if (_uiState.value.lastRecordedDate.isNotEmpty() && _uiState.value.lastRecordedDate != today) {
-            hasLocalProgressChanges = true
-            counterStateMachine.clearUndoHistory()
-            _uiState.update {
-                it.copy(
-                    beadCount = 0,
-                    completedRounds = 0,
-                    canUndo = false,
-                    showGoalAchievedDialog = false,
-                    lastRecordedDate = today
-                )
-            }
-            saveCounts(beads = 0, rounds = 0)
+    private fun resetMemoryForNewDayIfNeeded(today: String = LocalDate.now().toString()): Boolean {
+        val current = _uiState.value
+        if (current.lastRecordedDate.isEmpty() || current.lastRecordedDate == today) {
+            return false
         }
+        val wasPausedAutoCount = current.autoCountActive && !current.autoCountRunning
+        if (wasPausedAutoCount) {
+            stopAutoCount()
+        }
+        hasLocalProgressChanges = true
+        counterStateMachine.clearUndoHistory()
+        val nowEpochMs = System.currentTimeMillis()
+        if (current.autoCountRunning) {
+            activeAutoCountAnchorEpochMs = nowEpochMs
+        }
+        _uiState.update {
+            it.copy(
+                beadCount = 0,
+                completedRounds = 0,
+                canUndo = false,
+                showGoalAchievedDialog = false,
+                lastRecordedDate = today,
+                autoCountActive = if (wasPausedAutoCount) false else it.autoCountActive,
+                autoCountRunning = if (wasPausedAutoCount) false else it.autoCountRunning,
+                autoCountUsesVoiceGuide = if (wasPausedAutoCount) false else it.autoCountUsesVoiceGuide
+            )
+        }
+        saveCounts(
+            beads = 0,
+            rounds = 0,
+            autoCountAnchorEpochMillis = if (current.autoCountRunning) nowEpochMs else null
+        )
+        return true
     }
 
     private companion object {
@@ -538,7 +633,11 @@ class MantraCounterViewModel(application: Application) : AndroidViewModel(applic
         const val MAX_COMPLETED_ROUNDS = 999
     }
 
-    private data class CountSnapshot(val beadCount: Int, val completedRounds: Int)
+    private data class CountSnapshot(
+        val beadCount: Int,
+        val completedRounds: Int,
+        val autoCountAnchorEpochMillis: Long? = null
+    )
 
     private data class PendingBeadInput(
         val applyDebounce: Boolean,
